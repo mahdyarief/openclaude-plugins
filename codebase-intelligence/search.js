@@ -1,5 +1,7 @@
 const { spawn } = require("child_process");
 const diagnostics = require("./diagnostics.js");
+const indexModule = require("./index.js");
+const cache = require("./cache.js");
 
 function searchWithRg(cwd, query) {
   return new Promise((resolve, reject) => {
@@ -113,7 +115,36 @@ function mergeResults(rgResults, sgResults) {
   return merged.slice(0, 20);
 }
 
+/**
+ * Fast path: query the persistent index (built by codebase_scan).
+ * Returns a result object when the index is fresh and has hits, else null.
+ */
+function searchFromIndex(cwd, query) {
+  try {
+    const idx = indexModule.loadIndex(cwd);
+    if (!idx) return null;
+
+    const cached = cache.loadCache(cwd);
+    if (!cached || !indexModule.isIndexFresh(idx, cached.fingerprint)) return null;
+
+    const hits = indexModule.searchIndex(idx, query);
+    if (!hits) return null;
+
+    return {
+      mode: "indexed",
+      query,
+      results: hits,
+      suggestions: ["Persistent index hit — no rg spawned. Use codebase_scan --force to rebuild after code changes."],
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function hybridSearch(cwd, query) {
+  const fromIndex = searchFromIndex(cwd, query);
+  if (fromIndex) return fromIndex;
+
   const tools = diagnostics.detectAllTools();
 
   const promises = [];

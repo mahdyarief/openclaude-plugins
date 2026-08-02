@@ -3,6 +3,7 @@ const diagnostics = require("./diagnostics.js");
 const discovery = require("./discovery.js");
 const cache = require("./cache.js");
 const summary = require("./summary.js");
+const indexModule = require("./index.js");
 
 async function scanProject(cwd, force = false) {
   // Validate path
@@ -72,6 +73,14 @@ async function scanProject(cwd, force = false) {
   };
 
   cache.saveCache(cwd, envelope);
+
+  // Build + persist the search index (best-effort — scan must not fail on index errors)
+  try {
+    const idx = indexModule.buildIndex(files, cwd, fingerprint);
+    indexModule.saveIndex(cwd, idx);
+  } catch {
+    // index is optional; scan result still valid
+  }
 
   // Generate nextSteps based on findings
   const nextSteps = [];

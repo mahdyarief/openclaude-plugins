@@ -1,6 +1,6 @@
 {
   "name": "codebase-intelligence",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for local codebase intelligence with persistent cache, hybrid search, and blast radius analysis",
   "main": "server.js",
   "scripts": {

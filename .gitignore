@@ -4,6 +4,9 @@ node_modules/
 # Plugin cache (regenerated on install)
 cache/
 
+# Runtime codebase cache inside projects (scan-cache + search index)
+**/.openclaude/codebase-cache/
+
 # Credentials — never commit real API keys
 **/context7-keys.json
 

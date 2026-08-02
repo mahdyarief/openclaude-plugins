@@ -13,7 +13,7 @@ const artifacts = require("./artifacts.js");
 const impact = require("./impact.js");
 
 const server = new Server(
-  { name: "codebase-intelligence", version: "1.0.0" },
+  { name: "codebase-intelligence", version: "1.1.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -101,11 +101,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const missingTools = diagnostics.getInstallHints(tools);
 
         const cache = require("./cache.js");
+        const indexModule = require("./index.js");
         const { fs, path: p } = require("./shared.js");
 
         let cacheFresh = false;
         let lastScanAt = null;
         let mode = diagnostics.getMode(tools);
+        let indexFresh = false;
+        let indexTokenCount = 0;
 
         if (fs.existsSync(args.path)) {
           const cached = cache.loadCache(args.path);
@@ -114,6 +117,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const fileCounts = cached.fileCounts || {};
             cacheFresh = cache.isCacheFresh(cached, fileCounts, args.path);
             lastScanAt = cached.scannedAt || null;
+
+            const idx = indexModule.loadIndex(args.path);
+            indexFresh = indexModule.isIndexFresh(idx, cached.fingerprint);
+            indexTokenCount = idx ? idx.tokenCount || 0 : 0;
           }
         }
 
@@ -126,6 +133,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               missingTools: missingTools.map((h) => h.tool),
               installHints: missingTools,
               cacheFresh,
+              indexFresh,
+              indexTokenCount,
               mode,
               lastScanAt,
             }, null, 2),

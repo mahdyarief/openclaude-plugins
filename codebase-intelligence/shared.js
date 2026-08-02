@@ -5,6 +5,7 @@ const SCHEMA_VERSION = 1;
 const MAX_FILES = 10000;
 const CACHE_DIR_NAME = ".openclaude";
 const CACHE_FILE_NAME = "codebase-cache/scan-cache.json";
+const INDEX_FILE_NAME = "codebase-cache/search-index.json";
 
 const CODE_EXTENSIONS = new Set([
   ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts",
@@ -93,6 +94,10 @@ function getCachePath(projectRoot) {
   return path.join(projectRoot, CACHE_DIR_NAME, CACHE_FILE_NAME);
 }
 
+function getIndexPath(projectRoot) {
+  return path.join(projectRoot, CACHE_DIR_NAME, INDEX_FILE_NAME);
+}
+
 function errorResponse(code, message) {
   return { error: true, code, message };
 }
@@ -102,6 +107,7 @@ module.exports = {
   MAX_FILES,
   CACHE_DIR_NAME,
   CACHE_FILE_NAME,
+  INDEX_FILE_NAME,
   CODE_EXTENSIONS,
   TEST_PATTERNS,
   DOC_PATTERNS,
@@ -115,6 +121,7 @@ module.exports = {
   classifyFile,
   classifyArtifact,
   getCachePath,
+  getIndexPath,
   errorResponse,
   path,
   fs,
