@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "minLines": 40,
+  "rules": [],
+  "skipCommands": [
+    "cat",
+    "type",
+    "head",
+    "tail",
+    "bat",
+    "less",
+    "more",
+    "nano",
+    "vim",
+    "code"
+  ]
+}

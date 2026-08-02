@@ -1,0 +1,8 @@
+{
+  "name": "productivity-hooks",
+  "description": "PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking). Ships hooks/hooks.json, no MCP server.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Mahdy Arief"
+  }
+}

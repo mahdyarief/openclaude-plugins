@@ -35,6 +35,12 @@
       "source": "./context7",
       "description": "Context7 documentation lookup for any library/framework with API key rotation. 9 MCP tools: ctx7_resolve_library, ctx7_query_docs, ctx7_add_key, ctx7_remove_key, ctx7_list_keys, ctx7_set_strategy, ctx7_set_limit, ctx7_reset_stats, ctx7_current_key.",
       "category": "development"
+    },
+    {
+      "name": "productivity-hooks",
+      "source": "./productivity-hooks",
+      "description": "PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking). No MCP server.",
+      "category": "development"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # OpenClaude Plugins
 
-Plugin marketplace for [OpenClaude](https://github.com/Gitlawb/openclaude) — MCP server plugins and a skill for building your own.
+Plugin marketplace for [OpenClaude](https://github.com/Gitlawb/openclaude) — MCP server plugins, a hooks-only plugin, and a skill for building your own.
 
 ## Prerequisites
 
@@ -35,6 +35,7 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 | [web-access](./web-access) | `web_search`, `web_get_contents`, `github_search`, `web_search_exa` | none | Web search, URL fetching, GitHub search |
 | [vision-ocr](./vision-ocr) | `vision-ocr` | `@modelcontextprotocol/sdk` + Python `rapidocr-onnxruntime`, `pymupdf`, `Pillow`, `numpy` | Extract text from images/PDFs (RapidOCR, CPU) |
 | [codebase-intelligence](./codebase-intelligence) | `codebase_scan`, `codebase_search`, `codebase_context`, `codebase_impact`, `codebase_status` | `@modelcontextprotocol/sdk` | Codebase analysis (local, no LLM dependency) |
+| [productivity-hooks](./productivity-hooks) | none (hooks only) | none | PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking) |
 
 ## Install
 
@@ -48,6 +49,7 @@ openclaude plugin install context7@<marketplace-name>
 openclaude plugin install web-access@<marketplace-name>
 openclaude plugin install vision-ocr@<marketplace-name>
 openclaude plugin install codebase-intelligence@<marketplace-name>
+openclaude plugin install productivity-hooks@<marketplace-name>
 ```
 
 **After installing, run `/reload-plugins` inside OpenClaude.**

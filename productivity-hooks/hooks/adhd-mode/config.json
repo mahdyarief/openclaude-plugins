@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "rules": [],
+  "skipCommands": [
+    "cat",
+    "type",
+    "head",
+    "tail",
+    "bat",
+    "less",
+    "more",
+    "nano",
+    "vim",
+    "code"
+  ]
+}
