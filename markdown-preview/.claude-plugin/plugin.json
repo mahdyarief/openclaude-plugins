@@ -1,0 +1,9 @@
+{
+  "name": "markdown-preview",
+  "description": "MCP server for markdown to PDF/HTML/PNG conversion using pandoc + LaTeX + DrissionPage. Exposes 3 tools: markdown_to_pdf, markdown_to_html, markdown_to_png.",
+  "version": "1.0.0",
+  "keywords": ["markdown", "pdf", "html", "png", "pandoc", "latex", "mcp"],
+  "author": {
+    "name": "Custom"
+  }
+}

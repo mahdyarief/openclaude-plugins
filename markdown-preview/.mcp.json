@@ -1,0 +1,10 @@
+{
+  "markdown-preview": {
+    "command": "node",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/server.js"],
+    "env": {
+      "PANDOC_PATH": "pandoc",
+      "PDF_ENGINE": "xelatex"
+    }
+  }
+}

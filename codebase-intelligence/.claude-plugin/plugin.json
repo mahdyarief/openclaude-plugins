@@ -1,0 +1,9 @@
+{
+  "name": "codebase-intelligence",
+  "description": "Codebase intelligence for OpenClaude — scan, search, analyze impact of any project directory. Hybrid search (regex + AST), import graph analysis, artifact detection, persistent cache.",
+  "version": "1.0.0",
+  "keywords": ["codebase", "search", "impact", "mcp"],
+  "author": {
+    "name": "Custom"
+  }
+}

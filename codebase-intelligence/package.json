@@ -1,0 +1,13 @@
+{
+  "name": "codebase-intelligence",
+  "version": "1.0.0",
+  "description": "MCP server for local codebase intelligence with persistent cache, hybrid search, and blast radius analysis",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/test-*.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

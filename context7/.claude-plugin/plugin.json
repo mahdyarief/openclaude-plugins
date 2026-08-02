@@ -1,0 +1,9 @@
+{
+  "name": "context7",
+  "description": "Context7 MCP server — resolve library docs and query documentation for any library/framework. Includes API key rotation management. Exposes 9 tools: ctx7_resolve_library, ctx7_query_docs, ctx7_add_key, ctx7_remove_key, ctx7_list_keys, ctx7_set_strategy, ctx7_set_limit, ctx7_reset_stats, ctx7_current_key.",
+  "version": "1.0.0",
+  "keywords": ["context7", "docs", "documentation", "library", "mcp"],
+  "author": {
+    "name": "Custom"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "local-plugins",
+  "owner": {
+    "name": "Custom",
+    "email": "local@openclaude"
+  },
+  "plugins": [
+    {
+      "name": "codebase-intelligence",
+      "source": "./codebase-intelligence",
+      "description": "Codebase intelligence — scan, search, analyze impact of any project directory",
+      "category": "development"
+    },
+    {
+      "name": "vision-ocr",
+      "source": "./vision-ocr",
+      "description": "Vision OCR plugin for OpenClaude — extract text from images, PDFs, and URLs using RapidOCR (ONNX, CPU)",
+      "category": "development"
+    },
+    {
+      "name": "web-access",
+      "source": "./web-access",
+      "description": "Web access for OpenClaude — web search, URL fetching, and GitHub search via local MCP server",
+      "category": "development"
+    },
+    {
+      "name": "markdown-preview",
+      "source": "./markdown-preview",
+      "description": "Markdown to PDF/HTML/PNG conversion via pandoc + LaTeX + DrissionPage. 3 MCP tools: markdown_to_pdf, markdown_to_html, markdown_to_png.",
+      "category": "development"
+    },
+    {
+      "name": "context7",
+      "source": "./context7",
+      "description": "Context7 documentation lookup for any library/framework with API key rotation. 9 MCP tools: ctx7_resolve_library, ctx7_query_docs, ctx7_add_key, ctx7_remove_key, ctx7_list_keys, ctx7_set_strategy, ctx7_set_limit, ctx7_reset_stats, ctx7_current_key.",
+      "category": "development"
+    }
+  ]
+}

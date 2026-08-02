@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Plugin cache (regenerated on install)
+cache/
+
+# Credentials — never commit real API keys
+**/context7-keys.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,9 @@
+{
+  "name": "context7",
+  "version": "1.0.0",
+  "description": "Context7 MCP server — documentation lookup for any library/framework with API key rotation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "vision-ocr",
+  "version": "1.0.0",
+  "description": "MCP server for local OCR on images, PDFs, and URLs using RapidOCR (ONNX, CPU)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

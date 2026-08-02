@@ -1,0 +1,9 @@
+{
+  "name": "vision-ocr",
+  "description": "Vision OCR plugin for OpenClaude — extract text from images, PDFs, and URLs using RapidOCR (ONNX, CPU). Supports PNG, JPG, GIF, BMP, WebP, TIFF, PDF, and image URLs including Imgur.",
+  "version": "1.0.0",
+  "keywords": ["vision", "ocr", "rapidocr", "pymupdf", "image", "pdf", "text-extraction", "mcp"],
+  "author": {
+    "name": "Custom"
+  }
+}

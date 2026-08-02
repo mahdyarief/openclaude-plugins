@@ -1,0 +1,24 @@
+{
+  "keys": [
+    {
+      "id": "keyA",
+      "apiKey": "ctx7sk-YOUR_API_KEY_HERE",
+      "label": "Primary",
+      "addedAt": "2026-01-01T00:00:00.000Z",
+      "requestCount": 0,
+      "lastUsed": null,
+      "status": "active"
+    }
+  ],
+  "settings": {
+    "rotationStrategy": "least-used",
+    "maxRequestsPerKey": 1000,
+    "autoRotate": true
+  },
+  "stats": {
+    "totalRequests": 0,
+    "rotationCount": 0,
+    "currentPeriodStart": "2026-08-01T00:00:00.000Z",
+    "lastReset": "2026-08-01T00:00:00.000Z"
+  }
+}
