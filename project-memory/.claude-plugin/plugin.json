@@ -1,0 +1,9 @@
+{
+  "name": "project-memory",
+  "description": "Persistent project memory via MEMORY.md files. Store, search, and incrementally update project knowledge across sessions. Auto-read hook loads memory on first prompt.",
+  "version": "0.4.8",
+  "keywords": ["memory", "project", "persistent", "markdown", "mcp"],
+  "author": {
+    "name": "wallneradam"
+  }
+}

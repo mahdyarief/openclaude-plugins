@@ -41,6 +41,18 @@
       "source": "./productivity-hooks",
       "description": "PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking). No MCP server.",
       "category": "development"
+    },
+    {
+      "name": "documents-reader",
+      "source": "./documents-reader",
+      "description": "Read PDF, DOCX, Excel, and TXT files. Extract text from documents for analysis and processing.",
+      "category": "development"
+    },
+    {
+      "name": "project-memory",
+      "source": "./project-memory",
+      "description": "Persistent project memory via MEMORY.md. Store, search, and incrementally update project knowledge across sessions.",
+      "category": "development"
     }
   ]
 }
