@@ -1,0 +1,6 @@
+{
+  "documents-reader": {
+    "command": "uv",
+    "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "mcp_documents_reader.py"]
+  }
+}
