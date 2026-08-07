@@ -36,6 +36,7 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 | [vision-ocr](./vision-ocr) | `vision-ocr` | `@modelcontextprotocol/sdk` + Python `rapidocr-onnxruntime`, `pymupdf`, `Pillow`, `numpy` | Extract text from images/PDFs (RapidOCR, CPU) |
 | [codebase-intelligence](./codebase-intelligence) | `codebase_scan`, `codebase_search`, `codebase_context`, `codebase_impact`, `codebase_status` | `@modelcontextprotocol/sdk` | Codebase analysis (local, no LLM dependency) |
 | [productivity-hooks](./productivity-hooks) | none (hooks only) | none | PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking) |
+| [office-mcp](./office-mcp) | 47 tools: read/write/edit/format/export docx, xlsx, pptx | Python `mcp[cli]`, `python-docx`, `openpyxl`, `python-pptx`, `mammoth`, `xlsxwriter` | Word/Excel/PowerPoint document management via LibreOffice |
 
 ## Install
 
@@ -50,6 +51,7 @@ openclaude plugin install web-access@<marketplace-name>
 openclaude plugin install vision-ocr@<marketplace-name>
 openclaude plugin install codebase-intelligence@<marketplace-name>
 openclaude plugin install productivity-hooks@<marketplace-name>
+openclaude plugin install office-mcp@<marketplace-name>
 ```
 
 **After installing, run `/reload-plugins` inside OpenClaude.**
@@ -106,6 +108,19 @@ Build your own plugins with the included skill:
 
 - Path: `skills/plugin-creator/SKILL.md`
 - Copy it to `~/.openclaude/skills/plugin-creator/` (or install via this marketplace) to make it available in every session.
+
+## Office Skills (docx / xlsx / pptx / office-pdf)
+
+Office document manipulation skills from [tfriedel/claude-office-skills](https://github.com/tfriedel/claude-office-skills) — copy these folders to `~/.openclaude/skills/` (or use the copy-mapping below):
+
+| Skill | Purpose |
+|---|---|
+| [docx](./skills/docx) | Create/edit .docx documents — tracked changes, comments, formatting preservation, text extraction |
+| [xlsx](./skills/xlsx) | Create/edit .xlsx spreadsheets — formulas, formatting, data analysis, visualization |
+| [pptx](./skills/pptx) | Create/edit .pptx presentations — slides, layouts, themes |
+| [office-pdf](./skills/office-pdf) | PDF manipulation — extract text/tables, merge/split, fill forms (renamed from `pdf` to avoid conflict with the `pdf` generation skill) |
+
+> Note: the `pdf` skill from the upstream repo is shipped here as `office-pdf` because a `pdf` skill (PDF generation) already exists in the default skill set — renaming avoids the name conflict.
 - Covers: plugin structure, `.mcp.json` / `plugin.json` templates, MCP server patterns (SDK vs manual JSON-RPC), local registration, critical gotchas (cache sync, stale process kill, NODE_PATH, pandoc verbatim headers, binary version checks), GitHub publishing, common mistakes.
 
 ## Anti-AI-Slop Frontend / UI-UX Skills

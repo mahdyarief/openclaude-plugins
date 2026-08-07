@@ -1,0 +1,9 @@
+{
+  "name": "office-mcp",
+  "description": "MCP server for managing Word, Excel, and PowerPoint documents (docx, xlsx, pptx) — 47 tools for read, write, edit, format, and export via LibreOffice.",
+  "version": "0.1.0",
+  "keywords": ["docx", "xlsx", "pptx", "word", "excel", "powerpoint", "office", "mcp"],
+  "author": {
+    "name": "office-mcp contributors"
+  }
+}
