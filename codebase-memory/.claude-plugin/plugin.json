@@ -1,0 +1,9 @@
+{
+  "name": "codebase-memory",
+  "description": "Codebase Memory for OpenClaude — high-performance codebase knowledge graph MCP server (native binary v0.10.2). Indexes repos in milliseconds, 158 languages, sub-ms structural queries. Tools: index_repository, search_graph, trace_path, get_code_snippet, query_graph, get_architecture, index_status, list_projects, search_code, check_index_coverage, and more.",
+  "version": "0.10.2",
+  "keywords": ["codebase", "search", "graph", "index", "intelligence", "mcp"],
+  "author": {
+    "name": "Custom"
+  }
+}

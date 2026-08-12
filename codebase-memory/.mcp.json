@@ -1,0 +1,7 @@
+{
+  "codebase-memory": {
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/codebase-memory-mcp.exe",
+    "args": [],
+    "env": {}
+  }
+}

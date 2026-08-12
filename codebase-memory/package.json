@@ -1,0 +1,6 @@
+{
+  "name": "codebase-memory",
+  "version": "0.10.2",
+  "description": "OpenClaude plugin bundling the codebase-memory-mcp native binary (v0.10.2) — codebase knowledge graph MCP server",
+  "private": true
+}

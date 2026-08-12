@@ -10,6 +10,9 @@ cache/
 # Credentials — never commit real API keys
 **/context7-keys.json
 
+# Downloaded binary (install via codebase-memory/install-binary.ps1)
+codebase-memory/bin/*.exe
+
 # OS
 .DS_Store
 Thumbs.db
