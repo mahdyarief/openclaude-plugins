@@ -1,7 +1,7 @@
 {
   "name": "web-access",
   "description": "Web access for OpenClaude — web search, URL fetching, and GitHub search via local MCP server. Bypasses built-in WebSearch/WebFetch.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "keywords": ["web", "search", "fetch", "mcp", "github"],
   "author": {
     "name": "Custom"
