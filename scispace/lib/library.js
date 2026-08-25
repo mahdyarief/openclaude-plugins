@@ -109,6 +109,82 @@ async function bookmarkPaper(entitySlug, { bookmarked = true } = {}) {
   });
 }
 
+// List all papers in a collection by its full_slug.
+// GET /api/library/collection/{fullSlug}/records?page_size=&page=
+async function listCollectionContents(fullSlug, { page = 0, pageSize = 50 } = {}) {
+  return withPage(async (pageRef) => {
+    const r = await apiFetch(
+      pageRef,
+      "/api/library/collection/" + encodeURIComponent(fullSlug) + "/records?page_size=" + pageSize + "&page=" + page
+    );
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
+    return { status: r.status, total: r.body.total ?? null, records: r.body.records ?? [], collection: r.body };
+  });
+}
+
+// Rename an existing collection by its full_slug.
+// PATCH /api/library/collection/{fullSlug} with {name: newName}
+async function renameCollection(fullSlug, newName) {
+  return withPage(async (page) => {
+    const r = await apiFetch(page, "/api/library/collection/" + encodeURIComponent(fullSlug), {
+      method: "PATCH",
+      body: { name: newName },
+    });
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
+    if (r.status === 404) return { status: r.status, error: "Collection not found" };
+    return { status: r.status, result: r.body };
+  });
+}
+
+// Delete a collection by its full_slug.
+// DELETE /api/library/collection/{fullSlug}
+async function deleteCollection(fullSlug) {
+  return withPage(async (page) => {
+    const r = await apiFetch(page, "/api/library/collection/" + encodeURIComponent(fullSlug), {
+      method: "DELETE",
+    });
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
+    if (r.status === 404) return { status: r.status, error: "Collection not found" };
+    // Returns 204 No Content or 200 with success flag
+    return { status: r.status, success: [200, 204].includes(r.status), result: r.body };
+  });
+}
+
+// Move papers between two collections.
+// Uses removeFromCollection from first collection, then addToCollection to second.
+// Returns { moved: [...], failed: [...] }.
+async function moveBetweenCollections(fromSlug, toSlug, entitySlugs) {
+  const list = (Array.isArray(entitySlugs) ? entitySlugs : [entitySlugs]).map(paperEntity);
+  const moved = [];
+  const failed = [];
+
+  for (const slug of list) {
+    try {
+      // First remove from source collection
+      const removeR = await apiFetch(
+        (await withPage((p) => p)).constructor,
+        "/api/library/records/" + encodeURIComponent(slug.replace("paper__", "")),
+        { method: "DELETE" }
+      );
+      // Then add to destination collection
+      const addR = await apiFetch(
+        (await withPage((p) => p)).constructor,
+        "/api/library/records",
+        { method: "POST", body: { entity_slug_list: [slug], collection_slug: toSlug } }
+      );
+      if ([200, 201, 204].includes(addR.status)) {
+        moved.push(slug);
+      } else {
+        failed.push({ slug, error: "Failed to add to destination collection" });
+      }
+    } catch (e) {
+      failed.push({ slug, error: e.message });
+    }
+  }
+
+  return { moved, failed };
+}
+
 module.exports = {
   listLibrary,
   listCollections,
@@ -118,4 +194,8 @@ module.exports = {
   listBookmarkStatus,
   addToCollection,
   removeFromCollection,
+  listCollectionContents,
+  renameCollection,
+  deleteCollection,
+  moveBetweenCollections,
 };

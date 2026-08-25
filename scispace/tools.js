@@ -321,6 +321,63 @@ const TOOLS = [
       required: ["collectionSlug", "entitySlugs"],
     },
   },
+  {
+    name: "list_collection_contents",
+    description:
+      "List all papers in a specific collection folder by its full_slug, with pagination support.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "full_slug of the collection folder" },
+        page: { type: "number", description: "Page index (default: 0)" },
+        pageSize: { type: "number", description: "Records per page (default: 50)" },
+      },
+      required: ["slug"],
+    },
+  },
+  {
+    name: "rename_collection",
+    description:
+      "Rename an existing collection folder in My Library by its full_slug. Returns updated collection metadata.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "full_slug of the collection folder to rename" },
+        name: { type: "string", description: "New name for the collection" },
+      },
+      required: ["slug", "name"],
+    },
+  },
+  {
+    name: "delete_collection",
+    description:
+      "Delete a collection folder from My Library by its full_slug. Returns success status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "full_slug of the collection folder to delete" },
+      },
+      required: ["slug"],
+    },
+  },
+  {
+    name: "move_between_collections",
+    description:
+      "Move one or more papers between two collections. First removes from source collection, then adds to destination.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        fromSlug: { type: "string", description: "full_slug of the source collection" },
+        toSlug: { type: "string", description: "full_slug of the destination collection" },
+        entitySlugs: {
+          type: "array",
+          items: { type: "string" },
+          description: "Paper slugs to move",
+        },
+      },
+      required: ["fromSlug", "toSlug", "entitySlugs"],
+    },
+  },
 ];
 
 async function dispatchTool(name, args) {
@@ -416,6 +473,25 @@ async function dispatchTool(name, args) {
     case "remove_from_collection":
       return JSON.stringify(
         await client.removeFromCollection(args.collectionSlug, args.entitySlugs),
+        null,
+        2
+      );
+    case "list_collection_contents":
+      return JSON.stringify(
+        await client.listCollectionContents(args.slug, {
+          page: args.page || 0,
+          pageSize: args.pageSize || 50,
+        }),
+        null,
+        2
+      );
+    case "rename_collection":
+      return JSON.stringify(await client.renameCollection(args.slug, args.name), null, 2);
+    case "delete_collection":
+      return JSON.stringify(await client.deleteCollection(args.slug), null, 2);
+    case "move_between_collections":
+      return JSON.stringify(
+        await client.moveBetweenCollections(args.fromSlug, args.toSlug, args.entitySlugs),
         null,
         2
       );
