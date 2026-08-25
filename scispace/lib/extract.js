@@ -58,6 +58,24 @@ function extractDoi(input) {
   return m ? m[0].replace(/[.,;]+$/, "") : null;
 }
 
+// Fallback DOI resolution by title via Crossref bibliographic search.
+// Used when a paper record has no DOI embedded in its title/url/context.
+async function resolveDoiByTitle(title) {
+  if (!title) return null;
+  try {
+    const url =
+      "https://api.crossref.org/works?query.bibliographic=" +
+      encodeURIComponent(title) +
+      "&rows=1";
+    const data = await getJsonWithRetry(url);
+    const items = data && data.message && data.message.items;
+    if (items && items.length && items[0].DOI) return items[0].DOI;
+  } catch (e) {
+    // silent — enrichment proceeds without a DOI
+  }
+  return null;
+}
+
 // Full deep extraction for one DOI: metadata + abstract + references from
 // Crossref, citation/OA info from OpenAlex, TLDR/citations from Semantic
 // Scholar, and a list of accessible URLs (PDF first, then DOI resolver).
@@ -173,6 +191,7 @@ async function enrichPapers(papers, { maxDepth = 3, concurrency = 3 } = {}) {
   const out = list.map((p) => ({ ...p, doi: extractDoi(p.title + " " + (p.url || "") + " " + (p.context || "")) }));
 
   await mapWithConcurrency(out, concurrency, async (entry, i) => {
+    if (!entry.doi) entry.doi = await resolveDoiByTitle(entry.title);
     if (!entry.doi) return;
     try {
       if (i < maxDepth) {

@@ -65,12 +65,14 @@ async function listBookmarkStatus(entitySlugs) {
 }
 
 // Add papers to a collection folder (by the collection's full_slug).
+// Uses POST /api/library/records with entity_slug_list + collection_slug,
+// matching the same pattern as the confirmed bookmark/list endpoint.
 async function addToCollection(collectionSlug, entitySlugs) {
   const list = (Array.isArray(entitySlugs) ? entitySlugs : [entitySlugs]).map(paperEntity);
   return withPage(async (page) => {
-    const r = await apiFetch(page, "/api/library/collection/" + encodeURIComponent(collectionSlug) + "/records", {
+    const r = await apiFetch(page, "/api/library/records", {
       method: "POST",
-      body: { entity_slugs: list },
+      body: { entity_slug_list: list, collection_slug: collectionSlug },
     });
     if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     return { status: r.status, result: r.body };
@@ -78,12 +80,14 @@ async function addToCollection(collectionSlug, entitySlugs) {
 }
 
 // Remove papers from a collection folder.
+// Uses DELETE /api/library/records/{entity_slug} (the detail route confirmed
+// to exist from probes — 405 on POST means GET/DELETE are the allowed methods).
 async function removeFromCollection(collectionSlug, entitySlugs) {
   const list = (Array.isArray(entitySlugs) ? entitySlugs : [entitySlugs]).map(paperEntity);
   return withPage(async (page) => {
-    const r = await apiFetch(page, "/api/library/collection/" + encodeURIComponent(collectionSlug) + "/records", {
+    const r = await apiFetch(page, "/api/library/records/" + encodeURIComponent(list[0].replace("paper__", "")), {
       method: "DELETE",
-      body: { entity_slugs: list },
+      body: { collection_slug: collectionSlug },
     });
     if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     return { status: r.status, result: r.body };

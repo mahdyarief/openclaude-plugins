@@ -18,11 +18,15 @@ async function listAgentThreads({ page = 0, pageSize = 20 } = {}) {
 
 // Ask a question to the SciSpace AI. entitySlugs are optional paper references;
 // without them the question is asked in the general (search-table) context.
-async function askPaper(question, { entitySlugs, entityType = "PAPER" } = {}) {
+// searchTerm and globalInsightsSlug mirror the fields the search-page UI sends
+// (captured from the related-questions request shape).
+async function askPaper(question, { entitySlugs, entityType = "PAPER", searchTerm, globalInsightsSlug } = {}) {
   const body = { entity_type: entityType, question };
   if (Array.isArray(entitySlugs) && entitySlugs.length) {
     body.entity_slugs = entitySlugs.map((s) => (String(s).startsWith("paper__") ? s : "paper__" + s));
   }
+  if (searchTerm) body.search_term = searchTerm;
+  if (globalInsightsSlug) body.global_insights_slug = globalInsightsSlug;
   return withPage(async (page) => {
     const r = await apiFetch(page, "/api/genius/conversation", {
       method: "POST",
