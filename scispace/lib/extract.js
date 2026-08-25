@@ -71,7 +71,8 @@ async function resolveDoiByTitle(title) {
     const items = data && data.message && data.message.items;
     if (items && items.length && items[0].DOI) return items[0].DOI;
   } catch (e) {
-    // silent — enrichment proceeds without a DOI
+    // Return null silently — enrichment can proceed without a DOI, but callers
+    // should surface an enrichError field when they know the enrichment failed.
   }
   return null;
 }
@@ -185,14 +186,20 @@ async function mapWithConcurrency(items, concurrency, fn) {
 // maxDepth papers get a full deep extract (abstract, analytics); the rest just
 // get DOI resolution. Enrichment runs in parallel (concurrency 3) so a batch of
 // 10 papers completes in ~1/3 of the sequential time, with per-paper error
-// capture instead of failing the whole batch.
+// capture and non-silent failure reporting.
 async function enrichPapers(papers, { maxDepth = 3, concurrency = 3 } = {}) {
   const list = Array.isArray(papers) ? papers : [];
   const out = list.map((p) => ({ ...p, doi: extractDoi(p.title + " " + (p.url || "") + " " + (p.context || "")) }));
 
   await mapWithConcurrency(out, concurrency, async (entry, i) => {
-    if (!entry.doi) entry.doi = await resolveDoiByTitle(entry.title);
-    if (!entry.doi) return;
+    if (!entry.doi) {
+      const doi = await resolveDoiByTitle(entry.title);
+      if (!doi) {
+        entry.enrichError = "No DOI found and title lookup failed";
+        return;
+      }
+      entry.doi = doi;
+    }
     try {
       if (i < maxDepth) {
         const deep = await deepExtractPaper(entry.doi);
@@ -206,17 +213,22 @@ async function enrichPapers(papers, { maxDepth = 3, concurrency = 3 } = {}) {
           citationCount: deep.citationCount,
           tldr: deep.tldr,
         });
+        // If deep extraction had partial failures, surface them as warnings
+        if (deep.crossrefError || deep.semanticScholarError || deep.unpaywallError) {
+          entry.enrichWarnings = [deep.crossrefError, deep.semanticScholarError, deep.unpaywallError].filter(Boolean);
+        }
       } else {
         // Shallow: just resolve a working URL (PDF via OpenAlex, else DOI resolver).
+        let pdfUrl;
         try {
           const oa = await getJsonWithRetry(
             "https://api.openalex.org/works/https://doi.org/" + encodeURIComponent(entry.doi)
           );
-          const pdf = oa.best_oa_location && oa.best_oa_location.pdf_url;
-          entry.accessibleUrls = pdf ? [pdf, "https://doi.org/" + entry.doi] : ["https://doi.org/" + entry.doi];
-        } catch {
-          entry.accessibleUrls = ["https://doi.org/" + entry.doi];
+          pdfUrl = oa.best_oa_location && oa.best_oa_location.pdf_url;
+        } catch (e) {
+          entry.enrichWarning = "OpenAlex PDF lookup failed";
         }
+        entry.accessibleUrls = pdfUrl ? [pdfUrl, "https://doi.org/" + entry.doi] : ["https://doi.org/" + entry.doi];
       }
     } catch (e) {
       entry.enrichError = e.message;

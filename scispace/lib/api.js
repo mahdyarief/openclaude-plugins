@@ -49,10 +49,13 @@ async function withPage(fn) {
   }
 }
 
-// True when the API says the session is gone (401/403). Callers can use this
-// to return a friendly "run scispace_login" message instead of raw errors.
+// True when the API says the session is gone (401/403) or CSRF token mismatch (500 with Django error).
+// Callers should check this and return a friendly "run scispace_login" message instead of raw errors.
 function sessionExpired(r) {
-  return r.status === 401 || r.status === 403;
+  if (r.status === 401 || r.status === 403) return true;
+  // Heuristic: Django often returns 500 with "Something went wrong" on session expiry + CSRF mismatch
+  if (r.status === 500 && typeof r.body === "object" && r.body.message === "Something went wrong") return true;
+  return false;
 }
 
 module.exports = { apiFetch, withPage, sessionExpired };
