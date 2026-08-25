@@ -1,0 +1,45 @@
+{
+  "cookies": [
+    {
+      "name": "sessionid",
+      "value": "REPLACE_WITH_YOUR_SESSION_ID",
+      "domain": ".scispace.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "csrftoken",
+      "value": "REPLACE_WITH_YOUR_CSRF_TOKEN",
+      "domain": ".scispace.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "refreshToken",
+      "value": "REPLACE_WITH_YOUR_REFRESH_TOKEN",
+      "domain": ".scispace.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "access_token",
+      "value": "REPLACE_WITH_YOUR_ACCESS_TOKEN",
+      "domain": ".scispace.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

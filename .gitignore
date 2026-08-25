@@ -10,6 +10,10 @@ cache/
 # Credentials — never commit real API keys
 **/context7-keys.json
 
+# SciSpace session cookies — never commit real session data
+**/storage-state.json
+**/cookies.txt
+
 # Downloaded binary (install via codebase-memory/install-binary.ps1)
 codebase-memory/bin/*.exe
 
