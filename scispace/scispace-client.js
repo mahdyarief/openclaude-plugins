@@ -3,5 +3,16 @@
 const { searchPapers } = require("./lib/search.js");
 const { login, status } = require("./lib/auth.js");
 const { extractDoi, deepExtractPaper, enrichPapers } = require("./lib/extract.js");
+const { listLibrary, listCollections, getCollection, createCollection, bookmarkPaper } = require("./lib/library.js");
+const { exportCitation, exportLibraryCsv } = require("./lib/citations.js");
+const { checkCredits, listTranslationLanguages, getModelAccess } = require("./lib/utils.js");
+const { getReviewColumns } = require("./lib/review.js");
 
-module.exports = { searchPapers, login, status, extractDoi, deepExtractPaper, enrichPapers };
+module.exports = {
+  searchPapers, login, status,
+  extractDoi, deepExtractPaper, enrichPapers,
+  listLibrary, listCollections, getCollection, createCollection, bookmarkPaper,
+  exportCitation, exportLibraryCsv,
+  checkCredits, listTranslationLanguages, getModelAccess,
+  getReviewColumns,
+};
