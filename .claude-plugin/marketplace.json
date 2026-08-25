@@ -65,6 +65,12 @@
       "source": "./codebase-memory",
       "description": "Codebase Memory — high-performance codebase knowledge graph MCP server (native binary v0.10.2, 158 languages). Index repos in milliseconds, sub-ms structural queries. Tools: index_repository, search_graph, trace_path, get_code_snippet, query_graph, get_architecture, index_status, list_projects, search_code, check_index_coverage.",
       "category": "development"
+    },
+    {
+      "name": "scispace",
+      "source": "./scispace",
+      "description": "SciSpace access for OpenClaude — headless Playwright MCP server for literature search on scispace.com using your logged-in (premium) session. 3 tools: search_papers, scispace_login, scispace_status.",
+      "category": "development"
     }
   ]
 }
