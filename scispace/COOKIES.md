@@ -66,19 +66,74 @@ Important cookies for the login session (look for these names):
 
 ---
 
-## Method 2 — "Get cookies.txt LOCALLY" extension (Netscape format)
+## Method 2 — "Get cookies.txt LOCALLY" extension (Netscape format) ⭐ RECOMMENDED
 
-1. Install the **"Get cookies.txt LOCALLY"** extension from the Chrome Web Store.
-2. Open a **scispace.com** tab (signed in), click the extension icon.
-3. Click **Export** — you get a `cookies.txt` file in Netscape format:
+The easiest and most reliable way to export the **full** cookie set (including
+HttpOnly session cookies like `sessionid`, `csrftoken`, `refreshToken`) without
+restarting your browser. This is the method used to set up the premium session
+that ships with this plugin.
+
+### Install the extension
+
+1. Open the Chrome Web Store page for **"Get cookies.txt LOCALLY"** by
+   **kairi** (https://chromewebstore.google.com/detail/cclelndahbckbenkjhflpdbgdldlbecc)
+   — or search "Get cookies.txt LOCALLY" in the Chrome Web Store.
+2. Click **Add to Chrome** → **Add extension**.
+3. The extension icon (a cookie 🍪) appears in the toolbar. If you don't see it,
+   click the puzzle icon and pin it.
+
+### Export cookies for scispace.com
+
+1. In your normal browser, make sure you are **signed in** to scispace.com with
+   your premium account (check the top-right account menu).
+2. Stay on the scispace.com tab, click the **Get cookies.txt LOCALLY** icon.
+3. A popup opens — click **Export** (or **Copy to clipboard** if you prefer).
+4. The browser downloads a `cookies.txt` file (Netscape format). Note the
+   download location (default: `~/Downloads/cookies.txt`).
+
+The exported file looks like this — note it contains ALL cookies for the
+`.scispace.com` domain, including the HttpOnly `sessionid`, `csrftoken`,
+`refreshToken` and `access_token` that make the premium session work:
 
 ```
 # Netscape HTTP Cookie File
-.scispace.com	TRUE	/	FALSE	1893456000	__Secure-next-auth.session-token	<value>
+# https://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file! Do not edit.
+
+.scispace.com	TRUE	/	FALSE	1803181466	AMP_MKTG_5bff562365	JTdC...
+.scispace.com	TRUE	/	FALSE	1803183462	intercom-device-id-jtijbv5y	813e14cd-...
+scispace.com	FALSE	/	FALSE	1803181477	csrftoken	4vqZiC6f...
+scispace.com	FALSE	/	TRUE	0	refreshToken	eyJhbGciOiJSUzI1NiIs...
+scispace.com	FALSE	/	FALSE	1796271460	sessionid	9wdj3g2vryrkkpsj98s63493987v13id
+.scispace.com	TRUE	/	TRUE	1787977060	aws-waf-token	29fe6e16-...
+scispace.com	FALSE	/	TRUE	1796271460	access_token	eyJhbGciOiJSUzI1NiIs...
 ```
 
-4. Convert to Playwright format with this Node script (`convert-cookies.js`,
-   run `node convert-cookies.js` in the same folder as your `cookies.txt`):
+> **Important:** export from the tab that is *already signed in*. If the export
+> only has 2–3 analytics cookies (e.g. `AMP_MKTG_*` only), you exported from a
+> logged-out session — go back to step 1.
+
+### Convert to Playwright storage-state.json
+
+The plugin already ships a converter script. From the plugin directory, copy
+your `cookies.txt` next to it and run:
+
+```bash
+cd ~/.openclaude/plugins/cache/local-plugins/scispace/1.0.0
+# copy your exported cookies.txt here
+cp ~/Downloads/cookies.txt ./cookies.txt
+node convert-cookies.js
+```
+
+The script reads `cookies.txt`, converts every line into Playwright
+`storage-state.json` format, and writes it to `storage-state.json` in the plugin
+directory (the same file the plugin loads on every search). You should see:
+
+```
+Converted 12 cookies → storage-state.json
+```
+
+If you prefer to convert manually, here is what `convert-cookies.js` does:
 
 ```js
 const fs = require('fs');
