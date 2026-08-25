@@ -1,20 +1,13 @@
 // lib/citations.js — citation generation & export via public Crossref APIs.
 // No browser needed: these endpoints are open and CAPTCHA-free.
-
-const API_UA = "OpenClaudeScispace/1.0 (mailto:dy@users.noreply.github.com)";
-
-async function getText(url) {
-  const r = await fetch(url, { headers: { "User-Agent": API_UA } });
-  if (!r.ok) throw new Error("HTTP " + r.status + " from " + url);
-  return r.text();
-}
+const { getTextWithRetry } = require("./extract.js");
 
 // Generate a single citation for a DOI in the requested style.
 //   style: "bibtex" (Crossref transform) | "apa" | "mla" | "chicago" | "harvard" (DataCite formatter)
 async function exportCitation(doi, { style = "apa" } = {}) {
   if (style === "bibtex") {
     const citation = (
-      await getText(
+      await getTextWithRetry(
         "https://api.crossref.org/works/" + encodeURIComponent(doi) + "/transform/application/x-bibtex"
       )
     ).trim();
@@ -33,8 +26,25 @@ async function exportCitation(doi, { style = "apa" } = {}) {
     "&style=" +
     mapped +
     "&lang=en-US";
-  const citation = (await getText(url)).trim();
+  const citation = (await getTextWithRetry(url)).trim();
   return { format: style, doi, citation };
+}
+
+// Bulk BibTeX export for a list of paper records (any records with a doi).
+async function exportLibraryBibtex(records) {
+  const list = Array.isArray(records) ? records : [];
+  const entries = [];
+  for (const r of list) {
+    const doi = r.doi || (r.url && r.url.match(/doi\.org\/([^/?#]+)/i)?.[1]) || null;
+    if (!doi) continue;
+    try {
+      const c = await exportCitation(doi, { style: "bibtex" });
+      entries.push(c.citation);
+    } catch (e) {
+      entries.push("% " + (r.title || doi) + " — failed: " + e.message);
+    }
+  }
+  return { format: "bibtex", entryCount: entries.length, bibtex: entries.join("\n\n") };
 }
 
 // Build a CSV export from a list of paper records.
@@ -54,4 +64,4 @@ async function exportLibraryCsv(records) {
   return { format: "csv", rowCount: records.length, csv: header + "\n" + rows.join("\n") };
 }
 
-module.exports = { exportCitation, exportLibraryCsv };
+module.exports = { exportCitation, exportLibraryCsv, exportLibraryBibtex };

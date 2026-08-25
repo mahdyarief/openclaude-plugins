@@ -1,7 +1,10 @@
-// lib/search.js — SciSpace paper search via headless browser
+// lib/search.js — SciSpace paper search via headless browser.
 const { launchContext } = require("./browser.js");
 
 // Search scispace.com for papers. Returns structured results.
+// Polling is adaptive: every 2s we check for paper cards or an explicit
+// "no results" state, so we return as soon as the page settles instead of
+// always waiting the full window.
 async function searchPapers(query, { mode = "standard", limit = 10 } = {}) {
   const { browser, ctx, hasState } = await launchContext();
   try {
@@ -29,12 +32,12 @@ async function searchPapers(query, { mode = "standard", limit = 10 } = {}) {
     await page.waitForTimeout(800);
     await page.keyboard.press("Enter");
 
-    // SciSpace runs an AI search: it creates a literature-review session and
-    // renders results progressively. Poll until paper cards appear (~7-15s).
+    // Adaptive poll: 2s interval, up to 15 attempts (30s max), early exit on
+    // results or when the page explicitly reports no matches.
     let papers = [];
-    for (let i = 0; i < 10; i++) {
-      await page.waitForTimeout(5000);
-      papers = await page.evaluate(() => {
+    for (let i = 0; i < 15; i++) {
+      await page.waitForTimeout(2000);
+      const state = await page.evaluate(() => {
         const out = [];
         const anchors = Array.from(
           document.querySelectorAll('a[href*="/papers/"]')
@@ -44,50 +47,37 @@ async function searchPapers(query, { mode = "standard", limit = 10 } = {}) {
           const href = a.href;
           if (seen.has(href)) continue;
           seen.add(href);
-          const title = (a.innerText || "")
-            .trim()
-            .replace(/^\d+\.\s*/, "")
-            .slice(0, 300);
-          if (!title || href.includes("/browse")) continue;
-          // Find the closest card container for authors/journal context
-          let container = a.closest("div") || a;
-          for (let j = 0; j < 4 && container.parentElement; j++) {
-            container = container.parentElement;
-            if (container.innerText && container.innerText.length > title.length + 20) break;
-          }
-          out.push({
-            title,
-            url: href,
-            context: (container.innerText || "").replace(/\s+/g, " ").trim().slice(0, 500),
-          });
+          const title = (a.innerText || "").trim();
+          const container = a.closest("div") || a;
+          const context = (container.innerText || "").trim().slice(0, 400);
+          out.push({ title: title || null, url: href, context });
         }
-        return out.slice(0, 30);
+        const bodyText = document.body ? document.body.innerText : "";
+        const noResults =
+          /no (papers|results|matches?)/i.test(bodyText) &&
+          !/showing .* results/i.test(bodyText);
+        return { papers: out, noResults };
       });
-      if (papers.length > 0) break;
+      papers = state.papers;
+      if (papers.length || state.noResults) break;
     }
 
-    const url = page.url();
-    if (!hasState && papers.length === 0) {
-      return {
-        note: "Not logged in — results limited. Run the login tool first to unlock premium features.",
-        query,
-        mode,
-        finalUrl: url,
-        bodySnippet: (
-          await page.evaluate(() => (document.body ? document.body.innerText : ""))
-        )
-          .replace(/\s+/g, " ")
-          .slice(0, 400),
-        papers,
-      };
+    // De-duplicate by URL, drop UI/nav links like /papers/browse.
+    const unique = [];
+    const seenUrls = new Set();
+    for (const p of papers) {
+      const slug = (p.url.split("/papers/")[1] || "").split(/[/?#]/)[0];
+      if (!slug || slug === "browse" || seenUrls.has(p.url)) continue;
+      seenUrls.add(p.url);
+      unique.push(p);
     }
 
     return {
       query,
       mode,
-      finalUrl: url,
-      totalFound: papers.length,
-      papers: papers.slice(0, limit),
+      loggedIn: hasState,
+      count: unique.length,
+      papers: unique.slice(0, limit),
     };
   } finally {
     await browser.close();

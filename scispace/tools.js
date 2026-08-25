@@ -202,6 +202,125 @@ const TOOLS = [
       },
     },
   },
+  {
+    name: "deep_review_synthesis",
+    description:
+      "Generate a literature-review comparison table for a list of paper slugs: for each requested column (tldr, insights, methods_used, results, conclusions, etc.) SciSpace extracts the per-paper value via POST /api/paper-info/columns/bulk-data. Pass the full /papers/<slug> slugs (the 12-char suffix is extracted automatically).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slugs: {
+          type: "array",
+          items: { type: "string" },
+          description: "Paper entity slugs, e.g. ['climate-change-impacts-on-global-biodiversity-28ivps89p7i0']",
+        },
+        columns: {
+          type: "array",
+          items: { type: "string" },
+          description: "Column keys from get_review_columns, e.g. ['tldr','methods_used','results'] (default: ['tldr'])",
+        },
+        searchTerm: { type: "string", description: "Optional original search query for context" },
+        modelVariant: { type: "string", enum: ["V1", "V2", "V3"], description: "Model tier: V1 standard, V2 premium, V3 advanced (default: V1)" },
+      },
+      required: ["slugs"],
+    },
+  },
+  {
+    name: "ask_paper",
+    description:
+      "Ask a question to the SciSpace AI (genius conversation backend). Optionally scope it to specific paper slugs. The question is asked in the logged-in account's context; answer data comes from the conversation API.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        question: { type: "string", description: "The research question to ask, e.g. 'What is the main finding of this paper?'" },
+        entitySlugs: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional paper slugs to scope the question to (paper__ prefix added automatically)",
+        },
+        entityType: { type: "string", enum: ["PAPER", "SEARCH_TABLE"], description: "Entity context type (default: PAPER)" },
+      },
+      required: ["question"],
+    },
+  },
+  {
+    name: "list_agent_threads",
+    description:
+      "List existing SciSpace AI-agent threads from the account (GET /api/scispace-agent/threads). Useful to resume or inspect prior AI conversations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        page: { type: "number", description: "Page index (default: 0)" },
+        pageSize: { type: "number", description: "Threads per page (default: 20)" },
+      },
+    },
+  },
+  {
+    name: "export_library_bibtex",
+    description:
+      "Bulk BibTeX export for a list of paper records (title/authors/year/journal/doi/url). Uses the public Crossref BibTeX transform — no CAPTCHA, no browser needed.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        records: {
+          type: "array",
+          items: { type: "object" },
+          description: "Paper records, each may have title, authors (array), year, journal, doi, url.",
+        },
+      },
+      required: ["records"],
+    },
+  },
+  {
+    name: "list_bookmark_status",
+    description:
+      "Check bookmark status for one or more paper slugs via POST /api/bookmark/list (the same endpoint the SciSpace UI uses). Accepts bare slugs or full /papers/ URLs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entitySlugs: {
+          type: "array",
+          items: { type: "string" },
+          description: "Paper slugs or /papers/ URLs to check",
+        },
+      },
+      required: ["entitySlugs"],
+    },
+  },
+  {
+    name: "add_to_collection",
+    description:
+      "Add papers to a collection folder in My Library (by the collection's full_slug, e.g. 'untitled-folder-p3fi09sf').",
+    inputSchema: {
+      type: "object",
+      properties: {
+        collectionSlug: { type: "string", description: "full_slug of the collection folder" },
+        entitySlugs: {
+          type: "array",
+          items: { type: "string" },
+          description: "Paper slugs to add",
+        },
+      },
+      required: ["collectionSlug", "entitySlugs"],
+    },
+  },
+  {
+    name: "remove_from_collection",
+    description:
+      "Remove papers from a collection folder in My Library (by the collection's full_slug).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        collectionSlug: { type: "string", description: "full_slug of the collection folder" },
+        entitySlugs: {
+          type: "array",
+          items: { type: "string" },
+          description: "Paper slugs to remove",
+        },
+      },
+      required: ["collectionSlug", "entitySlugs"],
+    },
+  },
 ];
 
 async function dispatchTool(name, args) {
@@ -259,6 +378,47 @@ async function dispatchTool(name, args) {
       return JSON.stringify(await client.getReviewColumns(), null, 2);
     case "get_model_access":
       return JSON.stringify(await client.getModelAccess(args.kind || "literature-review"), null, 2);
+    case "deep_review_synthesis":
+      return JSON.stringify(
+        await client.deepReviewSynthesis(args.slugs || [], {
+          columns: args.columns,
+          searchTerm: args.searchTerm,
+          modelVariant: args.modelVariant,
+        }),
+        null,
+        2
+      );
+    case "ask_paper":
+      return JSON.stringify(
+        await client.askPaper(args.question, {
+          entitySlugs: args.entitySlugs,
+          entityType: args.entityType,
+        }),
+        null,
+        2
+      );
+    case "list_agent_threads":
+      return JSON.stringify(
+        await client.listAgentThreads({ page: args.page || 0, pageSize: args.pageSize || 20 }),
+        null,
+        2
+      );
+    case "export_library_bibtex":
+      return JSON.stringify(await client.exportLibraryBibtex(args.records || []), null, 2);
+    case "list_bookmark_status":
+      return JSON.stringify(await client.listBookmarkStatus(args.entitySlugs), null, 2);
+    case "add_to_collection":
+      return JSON.stringify(
+        await client.addToCollection(args.collectionSlug, args.entitySlugs),
+        null,
+        2
+      );
+    case "remove_from_collection":
+      return JSON.stringify(
+        await client.removeFromCollection(args.collectionSlug, args.entitySlugs),
+        null,
+        2
+      );
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

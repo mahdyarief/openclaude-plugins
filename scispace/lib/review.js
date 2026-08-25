@@ -1,52 +1,19 @@
-// lib/review.js — literature-review session helpers.
-// The search UI creates a review session; this module exposes the column schema
-// SciSpace uses to compare papers (methods, results, conclusions, etc.) and a
-// helper that assembles the per-column extraction request for a set of paper slugs.
-const { launchContext } = require("./browser.js");
+// lib/review.js — literature-review column schema & deep review synthesis.
+// Uses the same-origin API helper so every request carries session cookies + CSRF.
+const { apiFetch, withPage, sessionExpired } = require("./api.js");
 
-async function apiFetch(page, path, { method = "GET", headers = {}, body } = {}) {
-  return page.evaluate(
-    async ({ path, method, headers, body }) => {
-      const resp = await fetch(path, {
-        method,
-        headers: { Accept: "application/json", ...headers },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const ct = resp.headers.get("content-type") || "";
-      const text = await resp.text();
-      let parsed;
-      try {
-        parsed = ct.includes("json") ? JSON.parse(text) : text;
-      } catch {
-        parsed = text;
-      }
-      return { status: resp.status, body: parsed };
-    },
-    { path, method, headers, body }
-  );
+// Return the short 12-char unique ID from the end of a SciSpace entity slug.
+// e.g. "climate-change-impacts-28ivps89p7i0" → "28ivps89p7i0"
+function uniqueIdFromSlug(slug) {
+  const parts = String(slug || "").split("-");
+  return parts[parts.length - 1] || slug;
 }
 
-async function withPage(fn) {
-  const { browser, ctx } = await launchContext();
-  try {
-    const page = await ctx.newPage();
-    await page.goto("https://scispace.com/search", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-    await page.waitForTimeout(3000);
-    return await fn(page);
-  } finally {
-    await browser.close();
-  }
-}
-
-// Available comparison columns (what SciSpace can extract per paper):
-// insights, tldr, conclusions, summarized_abstract, results,
-// summarized_introduction, methods_used, literature_survey.
+// Available comparison columns (what SciSpace can extract per paper).
 async function getReviewColumns() {
   return withPage(async (page) => {
     const r = await apiFetch(page, "/api/paper-info/columns");
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     const generic = (r.body && r.body.generic && r.body.generic.data) || [];
     return {
       status: r.status,
@@ -60,4 +27,37 @@ async function getReviewColumns() {
   });
 }
 
-module.exports = { getReviewColumns };
+// Deep review synthesis: extract comparison columns for a list of paper slugs.
+// Uses the confirmed POST /api/paper-info/columns/bulk-data endpoint with the
+// exact request shape captured from the live UI (unique_ids = 12-char suffixes).
+//   slugs: array of full entity slugs like "climate-change-...-28ivps89p7i0"
+//   columns: array of column keys from getReviewColumns (default: ["tldr"])
+//   searchTerm: the original search query (used for context; optional)
+//   modelVariant: "V1" (standard) | "V2" (premium) | "V3" (advanced)
+async function deepReviewSynthesis(slugs, { columns, searchTerm, modelVariant, language } = {}) {
+  const colList = Array.isArray(columns) && columns.length ? columns : ["tldr"];
+  const uids = (Array.isArray(slugs) ? slugs : [slugs]).map(uniqueIdFromSlug);
+
+  return withPage(async (page) => {
+    const results = {};
+    for (const key of colList) {
+      const r = await apiFetch(page, "/api/paper-info/columns/bulk-data", {
+        method: "POST",
+        body: {
+          key,
+          search_term: searchTerm || "",
+          language: language || "en",
+          column_type: "GENERIC_COLUMN",
+          entity_type: "PAPER",
+          model_variant: modelVariant || "V1",
+          unique_ids: uids,
+        },
+      });
+      if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
+      results[key] = { status: r.status, data: r.body };
+    }
+    return { status: 200, columnCount: colList.length, slugCount: slugs.length, results };
+  });
+}
+
+module.exports = { getReviewColumns, deepReviewSynthesis };

@@ -1,15 +1,51 @@
-// lib/extract.js — deep paper extraction from public scholarly APIs
+// lib/extract.js — deep paper extraction from public scholarly APIs.
 // SciSpace paper detail pages are protected by an Amazon CAPTCHA, so instead
 // of scraping them we enrich results from public metadata APIs (Crossref,
-// OpenAlex, Semantic Scholar) and resolve accessible URLs (open-access PDFs
-// and the DOI resolver), which are always reachable without a CAPTCHA.
+// OpenAlex, Semantic Scholar, Unpaywall) and resolve accessible URLs
+// (open-access PDFs and the DOI resolver), which are always CAPTCHA-free.
 
 const API_UA = "OpenClaudeScispace/1.0 (mailto:dy@users.noreply.github.com)";
 
-async function getJson(url) {
-  const r = await fetch(url, { headers: { "User-Agent": API_UA } });
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
+// fetch wrapper with exponential backoff retry for rate limits (429) and
+// transient server errors (5xx). Semantic Scholar throttles hard, so a small
+// backoff here makes batch enrichment reliable instead of failing halfway.
+async function getJsonWithRetry(url, { retries = 3, baseDelayMs = 800 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(url, { headers: { "User-Agent": API_UA } });
+      if (r.ok) return await r.json();
+      lastErr = new Error("HTTP " + r.status);
+      if (r.status !== 429 && r.status < 500) throw lastErr; // 4xx (other than 429) won't recover
+    } catch (e) {
+      lastErr = e;
+      if (!/HTTP (429|5\d\d)/.test(e.message)) throw e;
+    }
+    if (attempt < retries) {
+      await new Promise((res) => setTimeout(res, baseDelayMs * 2 ** attempt));
+    }
+  }
+  throw lastErr || new Error("fetch failed: " + url);
+}
+
+// Plain text fetch with the same retry behavior (for citations endpoints).
+async function getTextWithRetry(url, { retries = 2, baseDelayMs = 500 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(url, { headers: { "User-Agent": API_UA } });
+      if (r.ok) return await r.text();
+      lastErr = new Error("HTTP " + r.status);
+      if (r.status !== 429 && r.status < 500) throw lastErr;
+    } catch (e) {
+      lastErr = e;
+      if (!/HTTP (429|5\d\d)/.test(e.message)) throw e;
+    }
+    if (attempt < retries) {
+      await new Promise((res) => setTimeout(res, baseDelayMs * 2 ** attempt));
+    }
+  }
+  throw lastErr || new Error("fetch failed: " + url);
 }
 
 function cleanAbstract(html) {
@@ -30,136 +66,145 @@ async function deepExtractPaper(doi) {
 
   // 1. Crossref — metadata, abstract, references
   try {
-    const cr = (await getJson("https://api.crossref.org/works/" + encodeURIComponent(doi))).message;
+    const cr = (await getJsonWithRetry("https://api.crossref.org/works/" + encodeURIComponent(doi))).message;
     out.title = (cr.title || [""])[0];
     out.type = cr.type;
     out.journal = (cr["container-title"] || [""])[0];
     out.issn = cr.ISSN || [];
     out.publisher = cr.publisher;
-    const pub = cr.published || cr["published-print"] || cr["published-online"] || {};
-    out.published = pub["date-parts"] || null;
-    out.volume = cr.volume;
-    out.issue = cr.issue;
-    out.page = cr.page;
-    out.authors = (cr.author || []).map((a) => ((a.given || "") + " " + (a.family || "")).trim());
+    const pub = cr.published || cr["published-print"] || cr["published-online"];
+    const parts = pub && pub["date-parts"] && pub["date-parts"][0];
+    if (parts) {
+      out.year = parts[0];
+      out.month = parts[1] || null;
+      out.day = parts[2] || null;
+    }
+    out.authors = (cr.author || []).map((a) =>
+      [a.given, a.family].filter(Boolean).join(" ")
+    );
     out.abstract = cleanAbstract(cr.abstract);
-    out.license = (cr.license || []).map((l) => l.URL).filter(Boolean);
-    out.language = cr.language;
-    out.refCount = (cr.reference || []).length;
-    out.references = (cr.reference || []).slice(0, 10).map((r) => r["article-title"] || r.unstructured || r.DOI || "untitled");
+    out.references = (cr.reference || []).slice(0, 20).map((r) => ({
+      doi: r.DOI || null,
+      title: r["article-title"] || null,
+      year: r["year"] || null,
+      authors: r.author || null,
+    }));
   } catch (e) {
     out.crossrefError = e.message;
   }
 
-  // 2. OpenAlex — citations, concepts, open-access status + PDF
+  // 2. OpenAlex — citation count, concepts, open-access status + PDF
   try {
-    const oa = await getJson("https://api.openalex.org/works/doi:" + encodeURIComponent(doi));
-    out.openAlex = {
-      citedByCount: oa.cited_by_count,
-      openAccess: oa.open_access
-        ? { status: oa.open_access.oa_status, isOa: oa.open_access.is_oa, pdfUrl: oa.open_access.oa_url }
-        : null,
-      concepts: (oa.concepts || []).slice(0, 5).map((c) => c.display_name),
-      keywords: (oa.keywords || []).slice(0, 6).map((k) => k.display_name),
-      publicationYear: oa.publication_year,
-    };
+    const oa = await getJsonWithRetry(
+      "https://api.openalex.org/works/https://doi.org/" + encodeURIComponent(doi)
+    );
+    out.citationCount = oa.cited_by_count;
+    out.concepts = (oa.concepts || []).slice(0, 5).map((c) => c.display_name);
+    out.openAccess = oa.open_access;
+    const pdfUrl = oa.best_oa_location && oa.best_oa_location.pdf_url;
+    if (pdfUrl) out.accessibleUrls.push(pdfUrl);
   } catch (e) {
     out.openAlexError = e.message;
   }
 
-  // 3. Semantic Scholar — TLDR, citations, OA PDF
+  // 3. Semantic Scholar — TLDR, citation count, OA PDF
   try {
-    const ss = await getJson(
+    const s2 = await getJsonWithRetry(
       "https://api.semanticscholar.org/graph/v1/paper/DOI:" +
         encodeURIComponent(doi) +
-        "?fields=title,citationCount,influentialCitationCount,fieldsOfStudy,tldr,openAccessPdf,venue,referenceCount"
+        "?fields=title,tldr,citationCount,openAccessPdf"
     );
-    out.semanticScholar = {
-      citationCount: ss.citationCount,
-      influentialCitationCount: ss.influentialCitationCount,
-      fieldsOfStudy: ss.fieldsOfStudy || [],
-      tldr: ss.tldr ? ss.tldr.text : null,
-      openAccessPdf: ss.openAccessPdf ? ss.openAccessPdf.url : null,
-      venue: ss.venue,
-      referenceCount: ss.referenceCount,
-    };
+    out.tldr = (s2.tldr && s2.tldr.text) || null;
+    out.s2CitationCount = s2.citationCount;
+    if (s2.openAccessPdf && s2.openAccessPdf.url) {
+      out.accessibleUrls.push(s2.openAccessPdf.url);
+    }
   } catch (e) {
     out.semanticScholarError = e.message;
   }
 
-  // 4. Unpaywall — extra OA location (best_oa_location)
+  // 4. Unpaywall — best OA location (fallback PDF source)
   try {
-    const up = await getJson(
-      "https://api.unpaywall.org/v2/" + encodeURIComponent(doi) + "?email=dy@users.noreply.github.com"
+    const up = await getJsonWithRetry(
+      "https://api.unpaywall.org/v2/" + encodeURIComponent(doi) + "?email=openclaude@example.com"
     );
-    if (up.best_oa_location && up.best_oa_location.url) {
-      out.unpaywall = { oaStatus: up.oa_status, pdfUrl: up.best_oa_location.url_for_pdf || up.best_oa_location.url };
-    }
+    const loc = up.best_oa_location;
+    if (loc && loc.url_for_pdf) out.accessibleUrls.push(loc.url_for_pdf);
+    else if (loc && loc.url) out.accessibleUrls.push(loc.url);
   } catch (e) {
-    // Unpaywall is best-effort; ignore failures.
+    out.unpaywallError = e.message;
   }
 
-  // Accessible URLs, PDF first, DOI resolver as the always-usable fallback.
+  // Dedupe accessible URLs, keep PDFs first, always include the DOI resolver.
   const seen = new Set();
-  const pushUrl = (label, url) => {
-    if (url && !seen.has(url)) {
-      seen.add(url);
-      out.accessibleUrls.push({ label, url });
+  out.accessibleUrls = out.accessibleUrls.filter((u) => {
+    if (!u || seen.has(u)) return false;
+    seen.add(u);
+    return true;
+  });
+  if (!out.accessibleUrls.length || !out.accessibleUrls.some((u) => /\.pdf($|\?)/i.test(u))) {
+    out.accessibleUrls.push("https://doi.org/" + doi);
+  }
+  return out;
+}
+
+// Run async work over an array with limited concurrency (small worker pool).
+async function mapWithConcurrency(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
     }
-  };
-  if (out.openAlex && out.openAlex.openAccess && out.openAlex.openAccess.pdfUrl) {
-    pushUrl("PDF (OpenAlex)", out.openAlex.openAccess.pdfUrl);
   }
-  if (out.semanticScholar && out.semanticScholar.openAccessPdf) {
-    pushUrl("PDF (Semantic Scholar)", out.semanticScholar.openAccessPdf);
-  }
-  if (out.unpaywall && out.unpaywall.pdfUrl) {
-    pushUrl("PDF (Unpaywall)", out.unpaywall.pdfUrl);
-  }
-  pushUrl("DOI resolver", out.doiUrl);
-  if (out.accessibleUrls.length === 0) {
-    pushUrl("DOI resolver", out.doiUrl);
-  }
+  const poolSize = Math.min(concurrency, items.length || 1);
+  await Promise.all(Array.from({ length: poolSize }, worker));
+  return results;
+}
+
+// Enrich a list of papers (from search) with DOI + accessible URLs. The first
+// maxDepth papers get a full deep extract (abstract, analytics); the rest just
+// get DOI resolution. Enrichment runs in parallel (concurrency 3) so a batch of
+// 10 papers completes in ~1/3 of the sequential time, with per-paper error
+// capture instead of failing the whole batch.
+async function enrichPapers(papers, { maxDepth = 3, concurrency = 3 } = {}) {
+  const list = Array.isArray(papers) ? papers : [];
+  const out = list.map((p) => ({ ...p, doi: extractDoi(p.title + " " + (p.url || "") + " " + (p.context || "")) }));
+
+  await mapWithConcurrency(out, concurrency, async (entry, i) => {
+    if (!entry.doi) return;
+    try {
+      if (i < maxDepth) {
+        const deep = await deepExtractPaper(entry.doi);
+        Object.assign(entry, {
+          title: deep.title || entry.title,
+          accessibleUrls: deep.accessibleUrls,
+          abstract: deep.abstract,
+          year: deep.year,
+          journal: deep.journal,
+          authors: deep.authors,
+          citationCount: deep.citationCount,
+          tldr: deep.tldr,
+        });
+      } else {
+        // Shallow: just resolve a working URL (PDF via OpenAlex, else DOI resolver).
+        try {
+          const oa = await getJsonWithRetry(
+            "https://api.openalex.org/works/https://doi.org/" + encodeURIComponent(entry.doi)
+          );
+          const pdf = oa.best_oa_location && oa.best_oa_location.pdf_url;
+          entry.accessibleUrls = pdf ? [pdf, "https://doi.org/" + entry.doi] : ["https://doi.org/" + entry.doi];
+        } catch {
+          entry.accessibleUrls = ["https://doi.org/" + entry.doi];
+        }
+      }
+    } catch (e) {
+      entry.enrichError = e.message;
+    }
+  });
 
   return out;
 }
 
-// Batch enrichment: given search results (title + url + context), extract the
-// DOI from each card and resolve an accessible URL (open-access PDF or DOI
-// resolver) so every result has a URL that actually works without CAPTCHA.
-async function enrichPapers(papers, { maxDepth = 3 } = {}) {
-  const results = [];
-  for (const p of papers) {
-    const doi = extractDoi((p.context || "") + " " + (p.url || ""));
-    const entry = {
-      title: p.title,
-      scispaceUrl: p.url || null,
-      doi: doi || null,
-      accessibleUrls: [],
-    };
-    if (doi) {
-      entry.doiUrl = "https://doi.org/" + doi;
-      entry.accessibleUrls.push({ label: "DOI resolver", url: entry.doiUrl });
-    }
-    // For the first few papers, also try to resolve a direct open-access PDF.
-    if (doi && results.length < maxDepth) {
-      try {
-        const deep = await deepExtractPaper(doi);
-        entry.journal = deep.journal;
-        entry.authors = deep.authors;
-        entry.published = deep.published;
-        entry.abstract = deep.abstract ? deep.abstract.slice(0, 500) : null;
-        entry.citedBy = deep.openAlex ? deep.openAlex.citedByCount : null;
-        entry.accessType = deep.openAlex && deep.openAlex.openAccess ? deep.openAlex.openAccess.status : null;
-        entry.tldr = deep.semanticScholar ? deep.semanticScholar.tldr : null;
-        entry.accessibleUrls = deep.accessibleUrls.length ? deep.accessibleUrls : entry.accessibleUrls;
-      } catch (e) {
-        entry.enrichError = e.message;
-      }
-    }
-    results.push(entry);
-  }
-  return results;
-}
-
-module.exports = { extractDoi, deepExtractPaper, enrichPapers };
+module.exports = { extractDoi, deepExtractPaper, enrichPapers, getJsonWithRetry, getTextWithRetry };

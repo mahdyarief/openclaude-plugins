@@ -1,49 +1,21 @@
 // lib/library.js — My Library management via SciSpace internal API.
-// All calls run inside a logged-in browser page so session cookies apply.
-const { launchContext } = require("./browser.js");
+// All calls run inside a logged-in browser page so session cookies apply,
+// and every request carries the X-CSRFToken header (see lib/api.js).
+const { apiFetch, withPage, sessionExpired } = require("./api.js");
 
-// Run a same-origin fetch from inside the page context (carries session cookies).
-async function apiFetch(page, path, { method = "GET", headers = {}, body } = {}) {
-  return page.evaluate(
-    async ({ path, method, headers, body }) => {
-      const resp = await fetch(path, {
-        method,
-        headers: { Accept: "application/json", ...headers },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const ct = resp.headers.get("content-type") || "";
-      const text = await resp.text();
-      let parsed;
-      try {
-        parsed = ct.includes("json") ? JSON.parse(text) : text;
-      } catch {
-        parsed = text;
-      }
-      return { status: resp.status, body: parsed };
-    },
-    { path, method, headers, body }
-  );
-}
-
-async function withPage(fn) {
-  const { browser, ctx } = await launchContext();
-  try {
-    const page = await ctx.newPage();
-    await page.goto("https://scispace.com/search", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-    await page.waitForTimeout(3000);
-    return await fn(page);
-  } finally {
-    await browser.close();
-  }
+// Normalize a paper reference to the "paper__<slug>" entity form the API expects
+// (confirmed from the live network capture: /api/bookmark/list sends
+// entity_slug_list like ["paper__climate-change-...-28ivps89p7i0"]).
+function paperEntity(slug) {
+  const s = String(slug || "");
+  return s.startsWith("paper__") ? s : "paper__" + s;
 }
 
 // List saved paper records in My Library.
 async function listLibrary() {
   return withPage(async (page) => {
     const r = await apiFetch(page, "/api/library/records");
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     return { status: r.status, total: r.body.total ?? null, records: r.body.data ?? [] };
   });
 }
@@ -52,6 +24,7 @@ async function listLibrary() {
 async function listCollections() {
   return withPage(async (page) => {
     const r = await apiFetch(page, "/api/library/collection");
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     return { status: r.status, total: r.body.total ?? null, collections: r.body.data ?? [] };
   });
 }
@@ -60,32 +33,85 @@ async function listCollections() {
 async function getCollection(fullSlug) {
   return withPage(async (page) => {
     const r = await apiFetch(page, "/api/library/collection/" + encodeURIComponent(fullSlug));
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     return { status: r.status, collection: r.body };
   });
 }
 
-// Create a new collection folder. Returns the created collection if the API accepts it.
+// Create a new collection folder. Returns the created collection.
 async function createCollection(name) {
   return withPage(async (page) => {
     const r = await apiFetch(page, "/api/library/collection", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: { name },
     });
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
+    return { status: r.status, result: r.body };
+  });
+}
+
+// Check bookmark status for one or more paper slugs (entity slug or full URL).
+// POST /api/bookmark/list is what the SciSpace UI itself calls (confirmed 200).
+async function listBookmarkStatus(entitySlugs) {
+  const list = (Array.isArray(entitySlugs) ? entitySlugs : [entitySlugs]).map(paperEntity);
+  return withPage(async (page) => {
+    const r = await apiFetch(page, "/api/bookmark/list", {
+      method: "POST",
+      body: { entity_slug_list: list },
+    });
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
+    return { status: r.status, result: r.body };
+  });
+}
+
+// Add papers to a collection folder (by the collection's full_slug).
+async function addToCollection(collectionSlug, entitySlugs) {
+  const list = (Array.isArray(entitySlugs) ? entitySlugs : [entitySlugs]).map(paperEntity);
+  return withPage(async (page) => {
+    const r = await apiFetch(page, "/api/library/collection/" + encodeURIComponent(collectionSlug) + "/records", {
+      method: "POST",
+      body: { entity_slugs: list },
+    });
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
+    return { status: r.status, result: r.body };
+  });
+}
+
+// Remove papers from a collection folder.
+async function removeFromCollection(collectionSlug, entitySlugs) {
+  const list = (Array.isArray(entitySlugs) ? entitySlugs : [entitySlugs]).map(paperEntity);
+  return withPage(async (page) => {
+    const r = await apiFetch(page, "/api/library/collection/" + encodeURIComponent(collectionSlug) + "/records", {
+      method: "DELETE",
+      body: { entity_slugs: list },
+    });
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     return { status: r.status, result: r.body };
   });
 }
 
 // Toggle a bookmark for a paper entity (by its /papers/ slug).
+// Note: /api/bookmark/update returned 404 in live probes (both with and without
+// the paper__ prefix), so this is best-effort — the confirmed read endpoint is
+// listBookmarkStatus above.
 async function bookmarkPaper(entitySlug, { bookmarked = true } = {}) {
   return withPage(async (page) => {
     const r = await apiFetch(page, "/api/bookmark/update", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: { entity_slug: entitySlug, entity_type: "PAPER", is_bookmarked: bookmarked },
+      body: { entity_slug: paperEntity(entitySlug), entity_type: "PAPER", is_bookmarked: bookmarked },
     });
+    if (sessionExpired(r)) return { status: r.status, error: "Session expired — run scispace_login." };
     return { status: r.status, result: r.body };
   });
 }
 
-module.exports = { listLibrary, listCollections, getCollection, createCollection, bookmarkPaper };
+module.exports = {
+  listLibrary,
+  listCollections,
+  getCollection,
+  createCollection,
+  bookmarkPaper,
+  listBookmarkStatus,
+  addToCollection,
+  removeFromCollection,
+};
