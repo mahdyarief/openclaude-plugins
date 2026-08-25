@@ -37,6 +37,7 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 | [codebase-intelligence](./codebase-intelligence) | `codebase_scan`, `codebase_search`, `codebase_context`, `codebase_impact`, `codebase_status` | `@modelcontextprotocol/sdk` | Codebase analysis (local, no LLM dependency) |
 | [productivity-hooks](./productivity-hooks) | none (hooks only) | none | PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking) |
 | [office-mcp](./office-mcp) | 47 tools: read/write/edit/format/export docx, xlsx, pptx | Python `mcp[cli]`, `python-docx`, `openpyxl`, `python-pptx`, `mammoth`, `xlsxwriter` | Word/Excel/PowerPoint document management via LibreOffice |
+| [scispace](./scispace) | `search_papers`, `scispace_login`, `scispace_status` | `playwright` (npm) | SciSpace literature search via headless Playwright using a logged-in premium session |
 
 ## Install
 
@@ -52,6 +53,7 @@ openclaude plugin install vision-ocr@<marketplace-name>
 openclaude plugin install codebase-intelligence@<marketplace-name>
 openclaude plugin install productivity-hooks@<marketplace-name>
 openclaude plugin install office-mcp@<marketplace-name>
+openclaude plugin install scispace@<marketplace-name>
 ```
 
 **After installing, run `/reload-plugins` inside OpenClaude.**

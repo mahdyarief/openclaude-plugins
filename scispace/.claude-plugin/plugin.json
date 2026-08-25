@@ -1,0 +1,9 @@
+{
+  "name": "scispace",
+  "description": "SciSpace access for OpenClaude — headless Playwright MCP server for literature search on scispace.com using your logged-in (premium) session.",
+  "version": "1.0.0",
+  "keywords": ["scispace", "research", "papers", "literature", "mcp", "playwright"],
+  "author": {
+    "name": "Custom"
+  }
+}
