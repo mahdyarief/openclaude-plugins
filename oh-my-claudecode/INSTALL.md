@@ -91,6 +91,17 @@ Output yang benar: `Reloaded: 10 plugins · 25 agents · 30 hooks · 10 plugin M
 
 Cek keberhasilan di sesi: agent types baru muncul dengan prefix `oh-my-claudecode:` (planner, executor, critic, dll.) dan skills `/oh-my-claudecode:autopilot`, `/oh-my-claudecode:team`, dll.
 
+## Update versi
+
+Untuk update OMC ke versi baru tanpa mengulang langkah manual, jalankan script:
+
+```bash
+./update.sh            # ke versi terbaru dari npm
+./update.sh 5.4.0      # ke versi tertentu
+```
+
+Script otomatis: clone ke cache versi baru, update `installed_plugins.json`, sync folder marketplace, update description di `marketplace.json`. Setelahnya jalankan `/reload-plugins`. Versi lama di cache dibiarkan (rollback mudah).
+
 ## Bonus — Statusline gabungan OMC HUD + graft
 
 Untuk menampilkan OMC HUD sekaligus graft statusline dalam satu tampilan (support Windows & Linux), ikuti panduan terpisah: [HUD.md](./HUD.md).
