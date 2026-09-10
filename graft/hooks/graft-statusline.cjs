@@ -64,4 +64,31 @@ function entry(name) {
   return path.join(dir, 'dist', 'claude', name); // last-ditch; import will no-op if absent
 }
 
-import(pathToFileURL(entry("statusline.js")).href).then((m) => m.main()).catch(() => { /* graft unavailable — no-op */ });
+const input = (() => {
+  try { return JSON.parse(fs.readFileSync(0, 'utf8')); }
+  catch { return {}; }
+})();
+
+import(pathToFileURL(entry("statusline.js")).href).then(async (statusline) => {
+  const format = await import(pathToFileURL(entry("format.js")).href);
+  const state = await import(pathToFileURL(entry("state.js")).href);
+  const dir = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  const session = state.readSession(dir, input.session_id || 'default');
+  const agent = input?.agent?.name;
+  if (agent) {
+    process.stdout.write(format.renderSubagent(agent, session));
+    return;
+  }
+  const stats = statusline.resolveStats(dir);
+  const raw = input?.context_window?.used_percentage;
+  const ctxPct = typeof raw === 'number' ? Math.round(raw) : null;
+  const graftLines = format.renderStatusline(stats, session, { ctxPct: null });
+  const model = input?.model?.display_name || input?.model?.id;
+  const used = input?.context_window?.current_usage?.input_tokens;
+  const total = input?.context_window?.context_window_size;
+  const context = Number.isFinite(used) && Number.isFinite(total)
+    ? `ctx ${used.toLocaleString()} / ${total.toLocaleString()}${ctxPct === null ? '' : ` (${ctxPct}%)`}`
+    : ctxPct === null ? null : `ctx ${ctxPct}%`;
+  const modelLine = [model, context].filter(Boolean).join(' · ');
+  process.stdout.write([modelLine, ...graftLines].filter(Boolean).join('\n'));
+}).catch(() => { /* graft unavailable — no-op */ });
