@@ -1,6 +1,6 @@
 {
   "graft": {
-    "command": "/home/dy/.local/bin/graft",
+    "command": "graft",
     "args": ["mcp"]
   }
 }

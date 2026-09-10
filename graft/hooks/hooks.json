@@ -7,17 +7,17 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/graft-hooks.cjs\" post-edit",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       },
       {
-        "matcher": "Bash|mcp__graft__|Read|Grep|Glob",
+        "matcher": "Bash|Read|Grep|Glob|mcp__plugin_graft_graft__.*",
         "hooks": [
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/graft-hooks.cjs\" tool-savings",
-            "timeout": 8000
+            "timeout": 8
           }
         ]
       }
@@ -28,7 +28,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/graft-hooks.cjs\" prompt",
-            "timeout": 15000
+            "timeout": 15
           }
         ]
       }
@@ -39,7 +39,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/graft-hooks.cjs\" session-start",
-            "timeout": 8000
+            "timeout": 8
           }
         ]
       }
@@ -50,7 +50,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/graft-hooks.cjs\" stop",
-            "timeout": 8000
+            "timeout": 8
           }
         ]
       }
