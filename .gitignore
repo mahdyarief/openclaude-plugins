@@ -25,3 +25,7 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# graft graph cache artifacts (regenerable — source files ARE committed)
+graft/.graph/
+graft/.cache/
