@@ -71,6 +71,12 @@
       "source": "./scispace",
       "description": "SciSpace access for OpenClaude — headless Playwright MCP server for literature search on scispace.com using your logged-in (premium) session. 3 tools: search_papers, scispace_login, scispace_status.",
       "category": "development"
+    },
+    {
+      "name": "graft",
+      "source": "./graft",
+      "description": "Graft code context graph for OpenClaude — 6 MCP tools (graft_find_code, graft_find_all, graft_trace_calls, graft_file_api, graft_repo_map, graft_check_freshness) + auto hooks that inject graph context into prompts, rebuild after edits, track token savings. Requires npm install -g @nanonets/graft.",
+      "category": "development"
     }
   ]
 }

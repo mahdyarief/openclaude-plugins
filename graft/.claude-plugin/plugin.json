@@ -1,0 +1,9 @@
+{
+  "name": "graft",
+  "description": "Graft code context graph for OpenClaude — build a repo's wiring graph + per-file cards as linked markdown. 6 MCP tools (graft_find_code, graft_find_all, graft_trace_calls, graft_file_api, graft_repo_map, graft_check_freshness) + auto hooks that inject relevant graph context into every prompt, rebuild the graph after edits, and track token savings. Requires `npm install -g @nanonets/graft`.",
+  "version": "1.0.0",
+  "keywords": ["graft", "code-graph", "context", "mcp", "hooks"],
+  "author": {
+    "name": "Custom"
+  }
+}
