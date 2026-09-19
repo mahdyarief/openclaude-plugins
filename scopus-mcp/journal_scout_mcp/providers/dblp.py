@@ -38,11 +38,19 @@ class DblpProvider(ProviderBase):
             url=info.get("ee") or info.get("url"),
             type=info.get("type"),
             sources=["dblp"],
-            ids={"dblp": doi} if doi else {},
+            ids={"dblp": info.get("doi")} if info.get("doi") else {},
         )
 
     async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False) -> List[Paper]:
         params = {"q": query, "format": "json", "h": limit}
         data = await self._fetch_json(DBLP_URL, params=params)
         hits = ((data.get("result") or {}).get("hits") or {}).get("hit") or []
-        return [self._to_paper((h or {}).get("info") or {}) for h in hits]
+        results = []
+        for hit in hits:
+            info = hit.get("info") or {}
+            if year_from and info.get("year") and int(info["year"]) < year_from:
+                continue
+            if year_to and info.get("year") and int(info["year"]) > year_to:
+                continue
+            results.append(self._to_paper(info))
+        return results

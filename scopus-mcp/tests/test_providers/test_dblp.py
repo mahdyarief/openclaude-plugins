@@ -29,3 +29,20 @@ async def test_search_maps_hits_to_paper():
         assert p.ids["dblp"] == "10.5555/3295222.3295349"
     finally:
         await client.aclose()
+
+
+async def test_search_filters_by_year_range():
+    payload = json.loads((FIXTURES / "dblp_search.json").read_text(encoding="utf-8"))
+
+    def handler(request):
+        return httpx.Response(200, json=payload)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = DblpProvider(client)
+    try:
+        # The fixture hit is dated 2017.
+        assert len(await provider.search("q", 5, year_from=2010, year_to=2020)) == 1
+        assert len(await provider.search("q", 5, year_from=2018)) == 0
+        assert len(await provider.search("q", 5, year_to=2010)) == 0
+    finally:
+        await client.aclose()
