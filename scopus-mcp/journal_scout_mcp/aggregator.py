@@ -81,25 +81,18 @@ async def _enrich_with_unpaywall(providers: List[ProviderBase], paper: Paper) ->
     return paper
 
 
-async def _lookup(provider: ProviderBase, identifier: str) -> List[Paper]:
-    """Fetch by identifier, falling back to a search-style lookup.
-
-    Providers that cannot resolve an identifier via ``get`` (e.g. search-only
-    sources) are given a chance to match it through ``search`` so that a paper
-    can be assembled from every provider that knows about it.
-    """
-    paper = await provider.get(identifier)
-    if paper is not None:
-        return [paper]
-    if provider.supports_search:
-        return list(await provider.search(identifier, 1))
-    return []
-
-
 async def get_paper(providers: List[ProviderBase], identifier: str) -> Dict[str, Any]:
     active = [p for p in providers if p.name != UNPAYWALL_NAME]
-    calls = {p.name: _lookup(p, identifier) for p in active}
-    papers, errors, _counts = await _gather(calls)
+    calls = {p.name: p.get(identifier) for p in active}
+    names = list(calls.keys())
+    outcomes = await asyncio.gather(*calls.values(), return_exceptions=True)
+    papers: List[Paper] = []
+    errors: Dict[str, str] = {}
+    for name, outcome in zip(names, outcomes):
+        if isinstance(outcome, Exception):
+            errors[name] = getattr(outcome, "message", str(outcome))
+        elif outcome is not None:
+            papers.append(outcome)
     merged = merge_papers(papers)
     if not merged:
         return {"paper": None, "errors": errors}
@@ -112,9 +105,7 @@ async def get_citations(
     identifier: str,
     limit: int = 20,
 ) -> Dict[str, Any]:
-    # Query every supplied provider; providers without a citations implementation
-    # inherit the base no-op (empty list) and simply report a zero count.
-    active = list(providers)
+    active = [p for p in providers if p.name in {"scopus", "openalex", "semanticscholar"}]
     calls = {p.name: p.citations(identifier, limit) for p in active}
     papers, errors, counts = await _gather(calls)
     merged = merge_papers(papers)
