@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 
 from ..config import get_semantic_scholar_key
@@ -46,8 +47,14 @@ class SemanticScholarProvider(ProviderBase):
 
     @staticmethod
     def _ident(identifier: str) -> str:
+        if ":" in identifier:
+            return identifier
         if identifier.startswith("10."):
             return f"DOI:{identifier}"
+        if re.fullmatch(r"\d{4}\.\d{4,5}(v\d+)?", identifier):
+            return f"ARXIV:{identifier}"
+        if identifier.isdigit():
+            return f"CorpusId:{identifier}"
         return identifier
 
     async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False) -> List[Paper]:
