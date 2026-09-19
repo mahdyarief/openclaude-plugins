@@ -22,6 +22,22 @@ async def test_get_json_returns_payload():
         await f.close()
 
 
+async def test_get_json_non_json_body_raises_provider_error():
+    def handler(request):
+        return httpx.Response(
+            200, headers={"content-type": "text/plain"}, text="not json"
+        )
+
+    f = _fetcher(handler)
+    try:
+        with pytest.raises(ProviderError) as exc:
+            await f.get_json("https://example.test/x", provider="crossref")
+        assert exc.value.provider == "crossref"
+        assert "not json" in str(exc.value)
+    finally:
+        await f.close()
+
+
 async def test_retries_then_succeeds():
     calls = {"n": 0}
 

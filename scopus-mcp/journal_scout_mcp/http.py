@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from typing import Any, Dict, Optional
 
@@ -101,7 +102,12 @@ class Fetcher:
 
     async def get_json(self, url, params=None, headers=None, provider=None) -> Dict[str, Any]:
         response = await self._request(url, params, headers, provider)
-        return response.json()
+        try:
+            return response.json()
+        except json.JSONDecodeError as e:
+            raise ProviderError(
+                provider or "unknown", f"Expected JSON but got: {response.text[:200]}"
+            ) from e
 
     async def get_text(self, url, params=None, headers=None, provider=None) -> str:
         response = await self._request(url, params, headers, provider)
