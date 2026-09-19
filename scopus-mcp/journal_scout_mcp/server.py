@@ -174,6 +174,14 @@ def start() -> None:
                 payload = {"error": str(e)}
             return [types.TextContent(type="text", text=json.dumps(payload, ensure_ascii=False, indent=2))]
 
+        @server.list_prompts()
+        async def _list_prompts() -> List[types.Prompt]:
+            return []
+
+        @server.get_prompt()
+        async def _get_prompt(name: str, arguments: Dict[str, Any] | None) -> types.GetPromptResult:
+            raise ValueError(f"Unknown prompt: {name}")
+
         async with stdio_server() as (read_stream, write_stream):
             await server.run(read_stream, write_stream, server.create_initialization_options())
         await fetcher.close()
