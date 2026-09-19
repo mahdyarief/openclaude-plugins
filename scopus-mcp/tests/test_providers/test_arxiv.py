@@ -31,6 +31,22 @@ async def test_search_parses_atom_entry():
         await client.aclose()
 
 
+async def test_search_sends_sortby_submitteddate():
+    captured = {}
+
+    def handler(request):
+        captured["sortBy"] = request.url.params.get("sortBy")
+        return httpx.Response(200, text=(FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        await provider.search("attention is all you need", 5)
+        assert captured["sortBy"] == "submittedDate"
+    finally:
+        await client.aclose()
+
+
 async def test_tech_only_adds_cs_categories_to_query():
     captured = {}
 

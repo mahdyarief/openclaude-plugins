@@ -58,7 +58,7 @@ class ArxivProvider(ProviderBase):
             "search_query": search_query,
             "start": 0,
             "max_results": limit,
-            "sortBy": "relevance",
+            "sortBy": "submittedDate",
             "sortOrder": "descending",
         }
         text = await self._fetch_text(ARXIV_URL, params=params)
