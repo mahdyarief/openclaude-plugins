@@ -1,0 +1,19 @@
+{
+  "result": {
+    "hits": {
+      "hit": [
+        {
+          "info": {
+            "title": "Attention is All you Need.",
+            "authors": {"author": [{"text": "Ashish Vaswani"}, {"text": "Noam Shazeer"}]},
+            "venue": "NIPS",
+            "year": "2017",
+            "type": "Conference and Workshop Papers",
+            "doi": "10.5555/3295222.3295349",
+            "ee": "https://doi.org/10.5555/3295222.3295349"
+          }
+        }
+      ]
+    }
+  }
+}
