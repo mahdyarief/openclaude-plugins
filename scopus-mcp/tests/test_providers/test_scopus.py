@@ -46,3 +46,9 @@ async def test_tech_only_adds_subjarea():
         assert "SUBJAREA(COMP)" in captured["query"]
     finally:
         await client.aclose()
+
+
+def test_scopus_provider_has_detail_helpers():
+    from journal_scout_mcp.providers.scopus import ScopusProvider
+    assert hasattr(ScopusProvider, "get_author")
+    assert hasattr(ScopusProvider, "get_quota_status")
