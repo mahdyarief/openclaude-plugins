@@ -63,7 +63,7 @@ def _tool_list() -> List[types.Tool]:
         ),
         types.Tool(
             name="get_paper",
-            description="Resolve a DOI/arXiv/Scopus/OpenAlex id or title across sources, merge metadata, and attach open-access links.",
+            description="Resolve a DOI/arXiv/Scopus/OpenAlex id across sources, merge metadata, and attach open-access links.",
             inputSchema={
                 "type": "object",
                 "properties": {"identifier": {"type": "string"}},
@@ -156,7 +156,11 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
 def start() -> None:
     async def run() -> None:
         fetcher = Fetcher()
-        providers = build_providers(fetcher, {"api_key": config.get_api_key()})
+        try:
+            api_key = config.get_api_key()
+        except ValueError:
+            api_key = None
+        providers = build_providers(fetcher, {"api_key": api_key})
         scopus_provider = next(p for p in providers if p.name == "scopus")
         server = Server("journal-scout-mcp")
 

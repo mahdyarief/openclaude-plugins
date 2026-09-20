@@ -7,6 +7,7 @@ from .base import ProviderBase
 
 OPENALEX_URL = "https://api.openalex.org/works"
 CS_CONCEPT_ID = "C41008148"
+_DOI_URL_PREFIXES = ("https://doi.org/", "http://doi.org/")
 
 
 def reconstruct_abstract(inverted_index):
@@ -70,15 +71,21 @@ class OpenAlexProvider(ProviderBase):
         data = await self._fetch_json(OPENALEX_URL, params=params)
         return [self._to_paper(w) for w in data.get("results", []) or []]
 
+    @staticmethod
+    def _work_id(identifier: str) -> str:
+        if identifier.lower().startswith(_DOI_URL_PREFIXES):
+            identifier = normalize_doi(identifier) or identifier
+        return f"doi:{identifier}" if identifier.startswith("10.") else identifier
+
     async def get(self, identifier: str) -> Optional[Paper]:
-        work_id = f"doi:{identifier}" if identifier.startswith("10.") else identifier
+        work_id = self._work_id(identifier)
         data = await self._fetch_json(
             f"{OPENALEX_URL}/{work_id}", params={"mailto": get_polite_email()}
         )
         return self._to_paper(data) if data else None
 
     async def citations(self, identifier: str, limit: int) -> List[Paper]:
-        work_id = f"doi:{identifier}" if identifier.startswith("10.") else identifier
+        work_id = self._work_id(identifier)
         params = {
             "filter": f"cites:{work_id}",
             "per-page": limit,

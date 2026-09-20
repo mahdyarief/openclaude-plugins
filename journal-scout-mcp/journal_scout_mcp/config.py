@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 
 PLUGIN_DIR = Path(__file__).resolve().parent.parent
 CONFIG_FILE = PLUGIN_DIR / "config.json"
-DEFAULT_CACHE_DIR = PLUGIN_DIR / ".cache"
 
 
 def load_config_file() -> Dict[str, Any]:
@@ -43,11 +42,3 @@ def get_polite_email() -> str:
         or load_config_file().get("polite_email")
         or "anonymous@example.com"
     )
-
-
-def get_cache_config() -> Dict[str, Any]:
-    config = load_config_file()
-    cache_dir = os.getenv("JOURNAL_SCOUT_CACHE_DIR") or config.get(
-        "cache_dir", str(DEFAULT_CACHE_DIR)
-    )
-    return {"dir": cache_dir, "default": 86400}

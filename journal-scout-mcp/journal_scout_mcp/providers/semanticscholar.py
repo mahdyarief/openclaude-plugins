@@ -8,6 +8,7 @@ from .base import ProviderBase
 
 S2_URL = "https://api.semanticscholar.org/graph/v1"
 FIELDS = "title,abstract,year,citationCount,authors,externalIds,openAccessPdf,venue,publicationTypes,tldr"
+_DOI_URL_PREFIXES = ("https://doi.org/", "http://doi.org/")
 
 
 class SemanticScholarProvider(ProviderBase):
@@ -47,6 +48,10 @@ class SemanticScholarProvider(ProviderBase):
 
     @staticmethod
     def _ident(identifier: str) -> str:
+        if identifier.lower().startswith(_DOI_URL_PREFIXES):
+            doi = normalize_doi(identifier)
+            if doi:
+                return f"DOI:{doi}"
         if ":" in identifier:
             return identifier
         if identifier.startswith("10."):

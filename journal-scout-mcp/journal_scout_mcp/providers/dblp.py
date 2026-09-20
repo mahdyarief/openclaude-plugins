@@ -48,9 +48,15 @@ class DblpProvider(ProviderBase):
         results = []
         for hit in hits:
             info = hit.get("info") or {}
-            if year_from and info.get("year") and int(info["year"]) < year_from:
+            year = None
+            if info.get("year"):
+                try:
+                    year = int(info["year"])
+                except (TypeError, ValueError):
+                    year = None
+            if year_from and year is not None and year < year_from:
                 continue
-            if year_to and info.get("year") and int(info["year"]) > year_to:
+            if year_to and year is not None and year > year_to:
                 continue
             results.append(self._to_paper(info))
         return results

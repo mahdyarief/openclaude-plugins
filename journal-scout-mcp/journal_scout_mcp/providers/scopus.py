@@ -136,12 +136,13 @@ class ScopusProvider(ProviderBase):
         )
 
     async def get_author(self, author_id: str) -> Dict[str, Any]:
-        return await self._fetch_json(f"{SCOPUS_BASE}author/author_id/{author_id}")
+        return await self._fetch_json(
+            f"{SCOPUS_BASE}author/author_id/{author_id}", headers=self._headers()
+        )
 
     async def get_quota_status(self) -> Dict[str, Any]:
         return {
             "note": "Elsevier does not expose a quota endpoint. Quota is tracked "
             "via the X-RateLimit-* and X-ELS-Status response headers on actual "
             "API calls; a 429 with QUOTA_EXCEEDED means the weekly quota is spent.",
-            "seen": getattr(self, "quota_info", None),
         }

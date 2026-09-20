@@ -171,3 +171,23 @@ async def test_citations_passes_through_explicitly_prefixed_identifier():
         assert _path_contains(captured["path"], "CorpusId%3A123456")
     finally:
         await client.aclose()
+
+
+async def test_get_normalizes_doi_url_to_same_request_as_bare_doi():
+    captured = []
+
+    def handler(request):
+        captured.append(request.url.path)
+        return httpx.Response(200, json={})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        await provider.get("10.1/x")
+        await provider.get("https://doi.org/10.1/x")
+        assert len(captured) == 2
+        bare, url_form = captured
+        assert url_form == bare
+        assert _path_contains(bare, "DOI%3A10.1")
+    finally:
+        await client.aclose()

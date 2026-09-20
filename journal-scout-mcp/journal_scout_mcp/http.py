@@ -54,9 +54,6 @@ class Fetcher:
 
             last_status = response.status_code
             if last_status == 429:
-                retries -= 1
-                if retries <= 0:
-                    break
                 els_status = response.headers.get("X-ELS-Status", "")
                 if "QUOTA_EXCEEDED" in els_status:
                     raise ProviderError(
@@ -64,6 +61,9 @@ class Fetcher:
                         "Elsevier weekly quota exceeded (QUOTA_EXCEEDED). "
                         "Wait for the weekly reset or raise the quota.",
                     )
+                retries -= 1
+                if retries <= 0:
+                    break
                 await asyncio.sleep(min(backoff, MAX_BACKOFF_SECONDS))
                 backoff *= 2
                 continue
