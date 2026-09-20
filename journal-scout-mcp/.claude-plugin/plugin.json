@@ -1,0 +1,6 @@
+{
+  "name": "journal-scout-mcp",
+  "version": "2.0.0",
+  "description": "Multi-source journal research MCP: Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, DBLP, Unpaywall. Unified search with DOI-first dedup, cross-source citation graph, and open-access resolution.",
+  "keywords": ["mcp", "research", "scopus", "arxiv", "openalex", "semantic-scholar", "crossref", "dblp", "unpaywall"]
+}

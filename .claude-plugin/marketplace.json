@@ -77,6 +77,12 @@
       "source": "./graft",
       "description": "Graft code context graph for OpenClaude — 6 MCP tools (graft_find_code, graft_find_all, graft_trace_calls, graft_file_api, graft_repo_map, graft_check_freshness) + auto hooks that inject graph context into prompts, rebuild after edits, track token savings. Requires npm install -g @nanonets/graft.",
       "category": "development"
+    },
+    {
+      "name": "journal-scout-mcp",
+      "source": "./journal-scout-mcp",
+      "description": "Multi-source journal research MCP (Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, DBLP, Unpaywall) with unified dedup.",
+      "category": "development"
     }
   ]
 }
