@@ -38,6 +38,7 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 | [productivity-hooks](./productivity-hooks) | none (hooks only) | none | PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking) |
 | [office-mcp](./office-mcp) | 47 tools: read/write/edit/format/export docx, xlsx, pptx | Python `mcp[cli]`, `python-docx`, `openpyxl`, `python-pptx`, `mammoth`, `xlsxwriter` | Word/Excel/PowerPoint document management via LibreOffice |
 | [scispace](./scispace) | `search_papers`, `scispace_login`, `scispace_status` | `playwright` (npm) | SciSpace literature search via headless Playwright using a logged-in premium session |
+| [oh-my-claudecode](./oh-my-claudecode/INSTALL.md) | 36 skills (autopilot, team, ralplan, ultragoal, wiki, dll.), 19 agents, hooks, MCP server | `oh-my-claude-sisyphus` (npm, global) | Multi-agent orchestration (OMC v5.3.0). Install manual — lihat [INSTALL.md](./oh-my-claudecode/INSTALL.md); statusline gabungan OMC+graft: [HUD.md](./oh-my-claudecode/HUD.md) |
 
 ## Install
 
