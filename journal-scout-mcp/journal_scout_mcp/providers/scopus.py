@@ -7,6 +7,7 @@ from .base import ProviderBase
 
 SCOPUS_BASE = "https://api.elsevier.com/content/"
 SCIVAL_BASE = "https://api.elsevier.com/analytics/scival/"
+_SCOPUS_ID_PREFIX = "SCOPUS_ID:"
 
 
 def _year_from_date(value: str) -> Optional[int]:
@@ -77,16 +78,35 @@ class ScopusProvider(ProviderBase):
             results.append(self._to_paper(entry))
         return results
 
+    @staticmethod
+    def _scopus_id(identifier: str) -> str:
+        ident = (identifier or "").strip()
+        if ident.upper().startswith(_SCOPUS_ID_PREFIX):
+            ident = ident[len(_SCOPUS_ID_PREFIX):].strip()
+        return ident
+
+    @classmethod
+    def _identifier_path(cls, identifier: str) -> Optional[str]:
+        ident = cls._scopus_id(identifier)
+        if ident.isdigit():
+            return f"abstract/scopus_id/{ident}"
+        doi = normalize_doi(ident)
+        if doi and doi.startswith("10."):
+            return f"abstract/doi/{doi}"
+        return None
+
     async def get(self, identifier: str) -> Optional[Paper]:
-        sid = identifier.replace("SCOPUS_ID:", "")
-        data = await self._fetch_json(
-            f"{SCOPUS_BASE}abstract/scopus_id/{sid}", headers=self._headers()
-        )
+        path = self._identifier_path(identifier)
+        if not path:
+            return None
+        data = await self._fetch_json(f"{SCOPUS_BASE}{path}", headers=self._headers())
         core = (data.get("abstracts-retrieval-response") or {}).get("coredata") or {}
         return self._to_paper(core) if core else None
 
     async def citations(self, identifier: str, limit: int) -> List[Paper]:
-        sid = identifier.replace("SCOPUS_ID:", "")
+        sid = self._scopus_id(identifier)
+        if not sid.isdigit():
+            return []
         data = await self._fetch_json(
             f"{SCOPUS_BASE}search/scopus",
             params={"query": f"REF({sid})", "count": limit},

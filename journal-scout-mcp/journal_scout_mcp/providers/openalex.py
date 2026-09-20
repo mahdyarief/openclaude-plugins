@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 
 from ..config import get_polite_email
@@ -8,6 +9,8 @@ from .base import ProviderBase
 OPENALEX_URL = "https://api.openalex.org/works"
 CS_CONCEPT_ID = "C41008148"
 _DOI_URL_PREFIXES = ("https://doi.org/", "http://doi.org/")
+_OPENALEX_ID = re.compile(r"W\d+")
+_OPENALEX_URL_PREFIXES = ("https://openalex.org/", "http://openalex.org/")
 
 
 def reconstruct_abstract(inverted_index):
@@ -72,13 +75,29 @@ class OpenAlexProvider(ProviderBase):
         return [self._to_paper(w) for w in data.get("results", []) or []]
 
     @staticmethod
-    def _work_id(identifier: str) -> str:
-        if identifier.lower().startswith(_DOI_URL_PREFIXES):
-            identifier = normalize_doi(identifier) or identifier
-        return f"doi:{identifier}" if identifier.startswith("10.") else identifier
+    def _work_id(identifier: str) -> Optional[str]:
+        if not identifier:
+            return None
+        value = identifier.strip()
+        if value.lower().startswith("openalex:"):
+            value = value[len("openalex:"):].strip()
+        if value.lower().startswith(_DOI_URL_PREFIXES):
+            value = normalize_doi(value) or value
+        if value.startswith("10."):
+            return f"doi:{value}"
+        lowered = value.rstrip("/").lower()
+        for prefix in _OPENALEX_URL_PREFIXES:
+            if lowered.startswith(prefix):
+                value = value[len(prefix):]
+                break
+        if _OPENALEX_ID.fullmatch(value):
+            return value
+        return None
 
     async def get(self, identifier: str) -> Optional[Paper]:
         work_id = self._work_id(identifier)
+        if not work_id:
+            return None
         data = await self._fetch_json(
             f"{OPENALEX_URL}/{work_id}", params={"mailto": get_polite_email()}
         )
@@ -86,6 +105,8 @@ class OpenAlexProvider(ProviderBase):
 
     async def citations(self, identifier: str, limit: int) -> List[Paper]:
         work_id = self._work_id(identifier)
+        if not work_id:
+            return []
         params = {
             "filter": f"cites:{work_id}",
             "per-page": limit,

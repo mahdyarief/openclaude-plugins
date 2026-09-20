@@ -61,3 +61,85 @@ async def test_tech_only_adds_cs_categories_to_query():
         assert "cat:cs." in captured["query"]
     finally:
         await client.aclose()
+
+
+async def test_get_returns_none_for_doi_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, text=(FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        assert await provider.get("10.1145/3292500.3330701") is None
+        assert calls == []
+    finally:
+        await client.aclose()
+
+
+async def test_get_returns_none_for_scopus_id_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, text=(FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        assert await provider.get("SCOPUS_ID:85012345678") is None
+        assert calls == []
+    finally:
+        await client.aclose()
+
+
+async def test_get_requests_id_list_for_bare_arxiv_id():
+    captured = {}
+
+    def handler(request):
+        captured["id_list"] = request.url.params.get("id_list")
+        return httpx.Response(200, text=(FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        paper = await provider.get("1706.03762")
+        assert captured["id_list"] == "1706.03762"
+        assert paper is not None
+        assert paper.ids["arxiv"] == "1706.03762v5"
+    finally:
+        await client.aclose()
+
+
+async def test_get_extracts_id_from_arxiv_abs_url():
+    captured = {}
+
+    def handler(request):
+        captured["id_list"] = request.url.params.get("id_list")
+        return httpx.Response(200, text=(FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        await provider.get("https://arxiv.org/abs/1706.03762")
+        assert captured["id_list"] == "1706.03762"
+    finally:
+        await client.aclose()
+
+
+async def test_get_extracts_id_from_arxiv_prefixed_identifier():
+    captured = {}
+
+    def handler(request):
+        captured["id_list"] = request.url.params.get("id_list")
+        return httpx.Response(200, text=(FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        await provider.get("ARXIV:1706.03762")
+        assert captured["id_list"] == "1706.03762"
+    finally:
+        await client.aclose()

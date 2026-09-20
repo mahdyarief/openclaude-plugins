@@ -74,3 +74,70 @@ async def test_citations_normalizes_doi_url_to_same_request_as_bare_doi():
         assert bare["filter"] == "cites:doi:10.1/x"
     finally:
         await client.aclose()
+
+
+async def test_get_returns_none_for_arxiv_id_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, json={})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        assert await provider.get("2301.12345") is None
+        assert calls == []
+    finally:
+        await client.aclose()
+
+
+async def test_get_returns_none_for_scopus_id_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, json={})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        assert await provider.get("SCOPUS_ID:85012345678") is None
+        assert calls == []
+    finally:
+        await client.aclose()
+
+
+async def test_get_requests_work_id_for_openalex_url_and_bare_id():
+    captured = []
+
+    def handler(request):
+        captured.append(request.url.path)
+        return httpx.Response(200, json={})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        await provider.get("W2963403868")
+        await provider.get("https://openalex.org/W2963403868")
+        assert len(captured) == 2
+        assert captured[0] == captured[1]
+        assert captured[0].endswith("/W2963403868")
+    finally:
+        await client.aclose()
+
+
+async def test_citations_returns_empty_for_arxiv_id_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, json={"results": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        assert await provider.citations("2301.12345", 3) == []
+        assert calls == []
+    finally:
+        await client.aclose()

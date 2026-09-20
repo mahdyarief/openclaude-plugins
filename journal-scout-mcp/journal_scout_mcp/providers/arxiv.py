@@ -9,12 +9,40 @@ from .base import ProviderBase
 ARXIV_URL = "https://export.arxiv.org/api/query"
 ATOM = "{http://www.w3.org/2005/Atom}"
 TECH_CATEGORIES = ["cs.AI", "cs.LG", "cs.CL", "cs.CR", "cs.NI", "cs.CV", "cs.SE"]
+_NEW_ARXIV_ID = re.compile(r"\d{4}\.\d{4,5}(v\d+)?")
+_OLD_ARXIV_ID = re.compile(r"[a-z-]+(?:\.[A-Za-z]{2})?/\d{7}(v\d+)?")
+_ARXIV_URL_PREFIXES = (
+    "https://arxiv.org/abs/",
+    "http://arxiv.org/abs/",
+    "https://arxiv.org/pdf/",
+    "http://arxiv.org/pdf/",
+)
 
 
 def _arxiv_id(raw_id: str) -> str:
     if not raw_id:
         return ""
     return raw_id.rstrip("/").rsplit("/", 1)[-1]
+
+
+def _valid_arxiv_id(identifier: str) -> str:
+    if not identifier:
+        return ""
+    value = identifier.strip()
+    if value.lower().startswith("arxiv:"):
+        value = value[len("arxiv:"):].strip()
+    lowered = value.lower()
+    for prefix in _ARXIV_URL_PREFIXES:
+        if lowered.startswith(prefix):
+            value = value[len(prefix):]
+            break
+    value = value.rstrip("/")
+    if _OLD_ARXIV_ID.fullmatch(value):
+        return value
+    candidate = _arxiv_id(value)
+    if _NEW_ARXIV_ID.fullmatch(candidate):
+        return candidate
+    return ""
 
 
 class ArxivProvider(ProviderBase):
@@ -74,7 +102,7 @@ class ArxivProvider(ProviderBase):
         return results
 
     async def get(self, identifier: str) -> Optional[Paper]:
-        aid = _arxiv_id(identifier)
+        aid = _valid_arxiv_id(identifier)
         if not aid:
             return None
         text = await self._fetch_text(ARXIV_URL, params={"id_list": aid})
