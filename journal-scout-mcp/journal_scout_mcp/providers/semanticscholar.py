@@ -9,6 +9,11 @@ from .base import ProviderBase
 S2_URL = "https://api.semanticscholar.org/graph/v1"
 FIELDS = "title,abstract,year,citationCount,authors,externalIds,openAccessPdf,venue,publicationTypes,tldr"
 _DOI_URL_PREFIXES = ("https://doi.org/", "http://doi.org/")
+_NEW_ARXIV_ID = re.compile(r"\d{4}\.\d{4,5}(v\d+)?")
+_S2_PAPER_ID = re.compile(r"[0-9a-f]{40}")
+_S2_PREFIXES = frozenset(
+    {"doi", "arxiv", "mag", "acl", "pmid", "pmcid", "corpusid", "url"}
+)
 
 
 class SemanticScholarProvider(ProviderBase):
@@ -47,20 +52,28 @@ class SemanticScholarProvider(ProviderBase):
         )
 
     @staticmethod
-    def _ident(identifier: str) -> str:
-        if identifier.lower().startswith(_DOI_URL_PREFIXES):
-            doi = normalize_doi(identifier)
+    def _ident(identifier: str) -> Optional[str]:
+        if not identifier:
+            return None
+        value = identifier.strip()
+        if value.lower().startswith(_DOI_URL_PREFIXES):
+            doi = normalize_doi(value)
             if doi:
                 return f"DOI:{doi}"
-        if ":" in identifier:
-            return identifier
-        if identifier.startswith("10."):
-            return f"DOI:{identifier}"
-        if re.fullmatch(r"\d{4}\.\d{4,5}(v\d+)?", identifier):
-            return f"ARXIV:{identifier}"
-        if identifier.isdigit():
-            return f"CorpusId:{identifier}"
-        return identifier
+        if ":" in value:
+            scheme = value.split(":", 1)[0].lower()
+            if scheme in _S2_PREFIXES:
+                return value
+            return None
+        if value.startswith("10."):
+            return f"DOI:{value}"
+        if _NEW_ARXIV_ID.fullmatch(value):
+            return f"ARXIV:{value}"
+        if value.isdigit():
+            return f"CorpusId:{value}"
+        if _S2_PAPER_ID.fullmatch(value.lower()):
+            return value
+        return None
 
     async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False) -> List[Paper]:
         params = {"query": query, "limit": limit, "fields": FIELDS}
@@ -74,14 +87,20 @@ class SemanticScholarProvider(ProviderBase):
         return [self._to_paper(i) for i in data.get("data", []) or []]
 
     async def get(self, identifier: str) -> Optional[Paper]:
+        ident = self._ident(identifier)
+        if not ident:
+            return None
         data = await self._fetch_json(
-            f"{S2_URL}/paper/{self._ident(identifier)}", params={"fields": FIELDS}, headers=self._headers()
+            f"{S2_URL}/paper/{ident}", params={"fields": FIELDS}, headers=self._headers()
         )
         return self._to_paper(data) if data and data.get("paperId") else None
 
     async def citations(self, identifier: str, limit: int) -> List[Paper]:
+        ident = self._ident(identifier)
+        if not ident:
+            return []
         data = await self._fetch_json(
-            f"{S2_URL}/paper/{self._ident(identifier)}/citations",
+            f"{S2_URL}/paper/{ident}/citations",
             params={"limit": limit, "fields": FIELDS},
             headers=self._headers(),
         )

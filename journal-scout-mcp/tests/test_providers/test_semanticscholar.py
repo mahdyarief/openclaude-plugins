@@ -191,3 +191,68 @@ async def test_get_normalizes_doi_url_to_same_request_as_bare_doi():
         assert _path_contains(bare, "DOI%3A10.1")
     finally:
         await client.aclose()
+
+
+async def test_get_returns_none_for_unknown_identifier_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, json={})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        assert await provider.get("W2949676527") is None
+        assert calls == []
+    finally:
+        await client.aclose()
+
+
+async def test_get_returns_none_for_scopus_id_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, json={})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        assert await provider.get("SCOPUS_ID:85012345678") is None
+        assert calls == []
+    finally:
+        await client.aclose()
+
+
+async def test_get_passes_through_bare_s2_paper_id():
+    paper_id = "9f6a3a1e0d5b1c2a3b4c5d6e7f8a9b0c1d2e3f40"
+    captured = {}
+
+    def handler(request):
+        captured["path"] = request.url.path
+        return httpx.Response(200, json={})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        await provider.get(paper_id)
+        assert captured["path"].rstrip("/").endswith(f"/paper/{paper_id}")
+    finally:
+        await client.aclose()
+
+
+async def test_citations_returns_empty_for_unknown_identifier_without_request():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, json={"data": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        assert await provider.citations("W2949676527", 3) == []
+        assert calls == []
+    finally:
+        await client.aclose()
