@@ -1,0 +1,9 @@
+{
+  "name": "navigating-docs",
+  "description": "INDEX-first local document navigation for OpenClaude — fast, zero-RAM keyword search across markdown, PDF, DOCX, and XLSX without heavy vector databases. Bundles nv-index.sh (builds 1KB structural map) and nv-search.sh (parallel ripgrep + pdftotext + pandoc search).",
+  "version": "1.0.0",
+  "keywords": ["documents", "search", "markdown", "pdf", "docx", "index", "rag", "local", "skill"],
+  "author": {
+    "name": "Custom"
+  }
+}

@@ -83,6 +83,12 @@
       "source": "./journal-scout-mcp",
       "description": "Multi-source journal research MCP (Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, DBLP, Unpaywall) with unified dedup.",
       "category": "development"
+    },
+    {
+      "name": "navigating-docs",
+      "source": "./navigating-docs",
+      "description": "INDEX-first local document navigation — fast, zero-RAM keyword search across markdown, PDF, DOCX, XLSX without heavy vector DBs. Bundles nv-index.sh (1KB structural map) + nv-search.sh (parallel ripgrep + pdftotext + pandoc). Skill-only, no MCP server.",
+      "category": "development"
     }
   ]
 }

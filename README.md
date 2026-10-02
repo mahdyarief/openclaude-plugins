@@ -1,6 +1,6 @@
 # OpenClaude Plugins
 
-Plugin marketplace for [OpenClaude](https://github.com/Gitlawb/openclaude) — MCP server plugins, a hooks-only plugin, and a skill for building your own.
+Plugin marketplace for [OpenClaude](https://github.com/Gitlawb/openclaude) — MCP server plugins and a skill for building your own.
 
 ## Prerequisites
 
@@ -35,10 +35,10 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 | [web-access](./web-access) | `web_search`, `web_get_contents`, `github_search`, `web_search_exa` | none | Web search, URL fetching, GitHub search |
 | [vision-ocr](./vision-ocr) | `vision-ocr` | `@modelcontextprotocol/sdk` + Python `rapidocr-onnxruntime`, `pymupdf`, `Pillow`, `numpy` | Extract text from images/PDFs (RapidOCR, CPU) |
 | [codebase-intelligence](./codebase-intelligence) | `codebase_scan`, `codebase_search`, `codebase_context`, `codebase_impact`, `codebase_status` | `@modelcontextprotocol/sdk` | Codebase analysis (local, no LLM dependency) |
-| [productivity-hooks](./productivity-hooks) | none (hooks only) | none | PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking) |
 | [office-mcp](./office-mcp) | 47 tools: read/write/edit/format/export docx, xlsx, pptx | Python `mcp[cli]`, `python-docx`, `openpyxl`, `python-pptx`, `mammoth`, `xlsxwriter` | Word/Excel/PowerPoint document management via LibreOffice |
 | [scispace](./scispace) | `search_papers`, `scispace_login`, `scispace_status` | `playwright` (npm) | SciSpace literature search via headless Playwright using a logged-in premium session |
 | [oh-my-claudecode](./oh-my-claudecode/INSTALL.md) | 36 skills (autopilot, team, ralplan, ultragoal, wiki, dll.), 19 agents, hooks, MCP server | `oh-my-claude-sisyphus` (npm, global) | Multi-agent orchestration (OMC v5.3.0). Install manual — lihat [INSTALL.md](./oh-my-claudecode/INSTALL.md); statusline gabungan OMC+graft: [HUD.md](./oh-my-claudecode/HUD.md) |
+| [navigating-docs](./navigating-docs) | skill `navigating-docs` + `nv-index.sh`, `nv-search.sh` | `rg` (ripgrep); optional `pdftotext`, `pandoc` | INDEX-first navigation folder dokumen lokal — search md/PDF/DOCX cepat tanpa vector DB, zero RAM |
 
 ## Install
 
@@ -52,9 +52,9 @@ openclaude plugin install context7@<marketplace-name>
 openclaude plugin install web-access@<marketplace-name>
 openclaude plugin install vision-ocr@<marketplace-name>
 openclaude plugin install codebase-intelligence@<marketplace-name>
-openclaude plugin install productivity-hooks@<marketplace-name>
 openclaude plugin install office-mcp@<marketplace-name>
 openclaude plugin install scispace@<marketplace-name>
+openclaude plugin install navigating-docs@<marketplace-name>
 ```
 
 **After installing, run `/reload-plugins` inside OpenClaude.**
