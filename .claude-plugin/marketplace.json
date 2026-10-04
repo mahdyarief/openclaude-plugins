@@ -89,6 +89,12 @@
       "source": "./navigating-docs",
       "description": "INDEX-first local document navigation — fast, zero-RAM keyword search across markdown, PDF, DOCX, XLSX without heavy vector DBs. Bundles nv-index.sh (1KB structural map) + nv-search.sh (parallel ripgrep + pdftotext + pandoc). Skill-only, no MCP server.",
       "category": "development"
+    },
+    {
+      "name": "pr-slop-guard",
+      "source": "./pr-slop-guard",
+      "description": "PR slop detection — static AST/grep scan + LLM judgment for AI-generated low-quality code before a PR is opened. Verdicts SLOP / SUSPECT / CLEAN with P1/P2/P3 findings. Skill + /slop-check command, no MCP server.",
+      "category": "development"
     }
   ]
 }

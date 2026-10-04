@@ -1,0 +1,9 @@
+{
+  "name": "pr-slop-guard",
+  "description": "PR slop detection for OpenClaude — static AST/grep scan plus LLM judgment for AI-generated low-quality code (try-except blankets, race blind spots, fake tests, over-abstraction). Verdicts SLOP / SUSPECT / CLEAN before a PR is opened.",
+  "version": "0.1.0",
+  "keywords": ["code-review", "ai-slop", "pull-request", "quality-gate", "static-analysis", "skill"],
+  "author": {
+    "name": "Custom"
+  }
+}
