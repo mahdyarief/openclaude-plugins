@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 PLUGIN_DIR = Path(__file__).resolve().parent.parent
 CONFIG_FILE = PLUGIN_DIR / "config.json"
+DEFAULT_CACHE_TTL = 300.0
 
 
 def load_config_file() -> Dict[str, Any]:
@@ -42,3 +43,14 @@ def get_polite_email() -> str:
         or load_config_file().get("polite_email")
         or "anonymous@example.com"
     )
+
+
+def get_cache_ttl() -> float:
+    """Seconds to cache identical upstream queries; ``<= 0`` disables it."""
+    raw = os.getenv("JOURNAL_SCOUT_CACHE_TTL")
+    if raw is None:
+        raw = load_config_file().get("cache_ttl", DEFAULT_CACHE_TTL)
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_CACHE_TTL

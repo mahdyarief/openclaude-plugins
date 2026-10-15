@@ -143,3 +143,57 @@ async def test_get_extracts_id_from_arxiv_prefixed_identifier():
         assert captured["id_list"] == "1706.03762"
     finally:
         await client.aclose()
+
+
+async def test_search_sends_start_for_pagination():
+    captured = {}
+
+    def handler(request):
+        captured["start"] = request.url.params.get("start")
+        return httpx.Response(200, text=(FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        await provider.search("lstm", 5, offset=15)
+        assert captured["start"] == "15"
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_uses_au_field_prefix():
+    captured = {}
+    xml = (FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8")
+
+    def handler(request):
+        captured["search_query"] = request.url.params.get("search_query")
+        return httpx.Response(200, text=xml)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        await provider.search_author("Yoshua Bengio", 5)
+        assert captured["search_query"] == 'au:"Yoshua Bengio"'
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_still_honors_offset_and_year():
+    captured = {}
+    xml = (FIXTURES / "arxiv_search.xml").read_text(encoding="utf-8")
+
+    def handler(request):
+        captured["start"] = request.url.params.get("start")
+        return httpx.Response(200, text=xml)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ArxivProvider(client)
+    try:
+        # The fixture is dated 2017, so a 2020 lower bound must drop it.
+        kept = await provider.search_author("Yoshua Bengio", 5, year_from=2016, offset=20)
+        assert captured["start"] == "20"
+        assert len(kept) == 1
+        filtered = await provider.search_author("Yoshua Bengio", 5, year_from=2020)
+        assert filtered == []
+    finally:
+        await client.aclose()

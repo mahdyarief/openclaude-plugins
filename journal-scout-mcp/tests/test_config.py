@@ -47,3 +47,31 @@ def test_semantic_scholar_key_optional(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "CONFIG_FILE", cfg)
     monkeypatch.delenv("SEMANTIC_SCHOLAR_API_KEY", raising=False)
     assert config.get_semantic_scholar_key() is None
+
+
+def test_cache_ttl_prefers_env(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"cache_ttl": 100})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.setenv("JOURNAL_SCOUT_CACHE_TTL", "42")
+    assert config.get_cache_ttl() == 42.0
+
+
+def test_cache_ttl_falls_back_to_file(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"cache_ttl": 120})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("JOURNAL_SCOUT_CACHE_TTL", raising=False)
+    assert config.get_cache_ttl() == 120.0
+
+
+def test_cache_ttl_default_when_unset(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("JOURNAL_SCOUT_CACHE_TTL", raising=False)
+    assert config.get_cache_ttl() == config.DEFAULT_CACHE_TTL
+
+
+def test_cache_ttl_invalid_falls_back_to_default(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"cache_ttl": "not-a-number"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("JOURNAL_SCOUT_CACHE_TTL", raising=False)
+    assert config.get_cache_ttl() == config.DEFAULT_CACHE_TTL

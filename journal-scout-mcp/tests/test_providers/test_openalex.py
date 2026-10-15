@@ -141,3 +141,35 @@ async def test_citations_returns_empty_for_arxiv_id_without_request():
         assert calls == []
     finally:
         await client.aclose()
+
+
+async def test_search_sends_page_for_pagination():
+    captured = {}
+
+    def handler(request):
+        captured["page"] = request.url.params.get("page")
+        return httpx.Response(200, json={"results": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        await provider.search("q", 10, offset=20)
+        assert captured["page"] == "3"
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_sends_raw_author_name_filter():
+    captured = {}
+
+    def handler(request):
+        captured["filter"] = request.url.params.get("filter")
+        return httpx.Response(200, json={"results": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        await provider.search_author("Vaswani", 5)
+        assert "raw_author_name.search:Vaswani" in captured["filter"]
+    finally:
+        await client.aclose()

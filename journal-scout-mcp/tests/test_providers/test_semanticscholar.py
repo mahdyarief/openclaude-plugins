@@ -256,3 +256,88 @@ async def test_citations_returns_empty_for_unknown_identifier_without_request():
         assert calls == []
     finally:
         await client.aclose()
+
+
+async def test_search_sends_offset_for_pagination():
+    captured = {}
+
+    def handler(request):
+        captured["offset"] = request.url.params.get("offset")
+        return httpx.Response(200, json={"data": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        await provider.search("attention", 10, offset=25)
+        assert captured["offset"] == "25"
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_resolves_id_then_lists_papers():
+    calls = []
+
+    def handler(request):
+        calls.append((request.url.path, dict(request.url.params)))
+        if request.url.path.endswith("/author/search"):
+            return httpx.Response(
+                200, json={"total": 1, "data": [{"authorId": "1741101", "name": "Ashish Vaswani"}]}
+            )
+        return httpx.Response(
+            200,
+            json={"total": 1, "data": [{"paperId": "abc", "title": "Attention", "year": 2017}]},
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        papers = await provider.search_author("Ashish Vaswani", 5, year_from=2017, offset=10)
+        # Two-step: resolve the name, then page that author's papers.
+        paths = [path for path, _ in calls]
+        assert paths[0].endswith("/author/search")
+        assert paths[1].endswith("/author/1741101/papers")
+        assert calls[0][1]["query"] == "Ashish Vaswani"
+        assert calls[0][1]["limit"] == "1"
+        assert calls[1][1]["offset"] == "10"
+        assert calls[1][1]["limit"] == "5"
+        assert len(papers) == 1
+        assert papers[0].title == "Attention"
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_returns_empty_when_unresolved():
+    def handler(request):
+        return httpx.Response(200, json={"total": 0, "data": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        assert await provider.search_author("Nobody At All", 5) == []
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_filters_years_client_side():
+    def handler(request):
+        if request.url.path.endswith("/author/search"):
+            return httpx.Response(200, json={"total": 1, "data": [{"authorId": "42"}]})
+        return httpx.Response(
+            200,
+            json={
+                "data": [
+                    {"paperId": "old", "title": "Old", "year": 2010},
+                    {"paperId": "new", "title": "New", "year": 2021},
+                ]
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        papers = await provider.search_author("Someone", 5, year_from=2020)
+        # The papers endpoint has no server-side year filter, so bounds are
+        # applied after parsing; an unknown year is never dropped.
+        assert [p.title for p in papers] == ["New"]
+    finally:
+        await client.aclose()

@@ -4,6 +4,7 @@ from urllib.parse import unquote
 
 import httpx
 
+from journal_scout_mcp.http import Fetcher
 from journal_scout_mcp.providers.scopus import ScopusProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
@@ -53,6 +54,131 @@ def test_scopus_provider_has_detail_helpers():
     from journal_scout_mcp.providers.scopus import ScopusProvider
     assert hasattr(ScopusProvider, "get_author")
     assert hasattr(ScopusProvider, "get_quota_status")
+
+
+async def test_search_sends_start_for_pagination():
+    captured = {}
+
+    def handler(request):
+        captured["start"] = request.url.params.get("start")
+        return httpx.Response(200, json={"search-results": {"entry": []}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ScopusProvider(client, {"api_key": "test-key"})
+    try:
+        await provider.search("networks", 10, offset=20)
+        assert captured["start"] == "20"
+    finally:
+        await client.aclose()
+
+
+async def test_abstract_endpoint_collects_all_authors():
+    # The abstracts-retrieval endpoint exposes a full author array; every
+    # co-author must survive, not just the first (dc:creator).
+    def handler(request):
+        return httpx.Response(
+            200,
+            json={
+                "abstracts-retrieval-response": {
+                    "coredata": {
+                        "dc:title": "X",
+                        "prism:doi": "10.1/x",
+                        "author": [
+                            {"authname": "Sepp Hochreiter"},
+                            {"authname": "Jürgen Schmidhuber"},
+                        ],
+                    }
+                }
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ScopusProvider(client, {"api_key": "test-key"})
+    try:
+        paper = await provider.get("10.1/x")
+        assert paper.authors == ["Sepp Hochreiter", "Jürgen Schmidhuber"]
+    finally:
+        await client.aclose()
+
+
+async def test_abstract_endpoint_flattens_dict_dc_creator():
+    # Real Elsevier abstract retrieval nests the author list inside a *dict*
+    # dc:creator with ce:-prefixed keys; those names must be flattened, not
+    # leaked as a raw dict.
+    def handler(request):
+        return httpx.Response(
+            200,
+            json={
+                "abstracts-retrieval-response": {
+                    "coredata": {
+                        "dc:title": "X",
+                        "prism:doi": "10.1/x",
+                        "dc:creator": {
+                            "author": [
+                                {
+                                    "ce:given-name": "Zaizhang",
+                                    "ce:surname": "Wu",
+                                    "@auid": "60648216000",
+                                    "preferred-name": {
+                                        "ce:given-name": "Zaizhang",
+                                        "ce:surname": "Wu",
+                                    },
+                                },
+                                {"ce:given-name": "Mei", "ce:surname": "Chen"},
+                            ]
+                        },
+                    }
+                }
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ScopusProvider(client, {"api_key": "test-key"})
+    try:
+        paper = await provider.get("10.1/x")
+        assert paper.authors == ["Zaizhang Wu", "Mei Chen"]
+    finally:
+        await client.aclose()
+
+
+async def test_get_degrades_to_default_view_when_full_is_unauthorized():
+    # ``view=FULL`` carries the abstract but a key without that entitlement
+    # answers 401; get() must fall back to the default view, not error out.
+    views = []
+
+    def handler(request):
+        views.append(request.url.params.get("view"))
+        if request.url.params.get("view") == "FULL":
+            return httpx.Response(
+                401,
+                json={"service-error": {"status": {"statusCode": "AUTHORIZATION_ERROR"}}},
+            )
+        return httpx.Response(
+            200,
+            json={
+                "abstracts-retrieval-response": {
+                    "coredata": {
+                        "dc:title": "Fallback title",
+                        "prism:doi": "10.1/x",
+                        "dc:creator": "Ada Lovelace",
+                    }
+                }
+            },
+        )
+
+    # The real Fetcher is what raises ProviderError on 401 (a raw client
+    # would just return the error body), so drive the provider through it.
+    fetcher = Fetcher(
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)), cache=None
+    )
+    provider = ScopusProvider(fetcher, {"api_key": "test-key"})
+    try:
+        paper = await provider.get("10.1/x")
+        assert views == ["FULL", None]
+        assert paper.title == "Fallback title"
+        assert paper.authors == ["Ada Lovelace"]
+    finally:
+        await fetcher.close()
 
 
 async def test_get_routes_doi_to_doi_endpoint():
@@ -140,5 +266,21 @@ async def test_citations_uses_scopus_id_for_ref_query():
     try:
         await provider.citations("SCOPUS_ID:85012345678", 5)
         assert captured["query"] == "REF(85012345678)"
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_uses_au_clause():
+    captured = {}
+
+    def handler(request):
+        captured["query"] = request.url.params.get("query")
+        return httpx.Response(200, json={"search-results": {"entry": []}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ScopusProvider(client, {"api_key": "test-key"})
+    try:
+        await provider.search_author("Vaswani", 5)
+        assert captured["query"] == "AU(Vaswani)"
     finally:
         await client.aclose()

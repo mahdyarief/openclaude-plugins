@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from ..config import get_semantic_scholar_key
 from ..models import Paper
-from ..utils import normalize_doi
+from ..utils import normalize_doi, parse_year
 from .base import ProviderBase
 
 S2_URL = "https://api.semanticscholar.org/graph/v1"
@@ -19,6 +19,8 @@ _S2_PREFIXES = frozenset(
 class SemanticScholarProvider(ProviderBase):
     name = "semanticscholar"
     supports_search = True
+    supports_citations = True
+    supports_author_search = True
 
     def _headers(self):
         key = get_semantic_scholar_key()
@@ -39,7 +41,7 @@ class SemanticScholarProvider(ProviderBase):
             doi=doi,
             title=item.get("title") or "",
             abstract=item.get("abstract") or (item.get("tldr") or {}).get("text"),
-            year=item.get("year"),
+            year=parse_year(item.get("year")),
             authors=authors,
             venue=item.get("venue") or None,
             citation_count=item.get("citationCount"),
@@ -75,16 +77,55 @@ class SemanticScholarProvider(ProviderBase):
             return value
         return None
 
-    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False) -> List[Paper]:
+    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, offset: int = 0) -> List[Paper]:
         params = {"query": query, "limit": limit, "fields": FIELDS}
-        if year_from or year_to:
-            lo = year_from or ""
-            hi = year_to or ""
-            params["year"] = f"{lo}-{hi}"
+        if offset:
+            params["offset"] = offset
+        year_range = self._year_range(year_from, year_to)
+        if year_range:
+            params["year"] = year_range
         if tech_only:
             params["fieldsOfStudy"] = "Computer Science"
         data = await self._fetch_json(f"{S2_URL}/paper/search", params=params, headers=self._headers())
         return [self._to_paper(i) for i in data.get("data", []) or []]
+
+    @staticmethod
+    def _year_range(year_from, year_to) -> Optional[str]:
+        """S2's ``year=lo-hi`` clause, or ``None`` when no bound was given."""
+        if not (year_from or year_to):
+            return None
+        return f"{year_from or ''}-{year_to or ''}"
+
+    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, offset: int = 0) -> List[Paper]:
+        """Resolve the name to an author id, then list that author's papers.
+
+        Semantic Scholar's paper search has no author filter, so author
+        search is a two-step lookup: ``/author/search`` picks the best
+        match, then ``/author/{id}/papers`` lists their output. The papers
+        endpoint has no server-side year filter, so the bounds are applied
+        to the parsed records.
+        """
+        found = await self._fetch_json(
+            f"{S2_URL}/author/search",
+            params={"query": author, "limit": 1, "fields": "authorId"},
+            headers=self._headers(),
+        )
+        matches = found.get("data") or []
+        author_id = matches[0].get("authorId") if matches else None
+        if not author_id:
+            return []
+        params = {"limit": limit, "fields": FIELDS}
+        if offset:
+            params["offset"] = offset
+        data = await self._fetch_json(
+            f"{S2_URL}/author/{author_id}/papers", params=params, headers=self._headers()
+        )
+        papers = [self._to_paper(p) for p in data.get("data", []) or []]
+        if year_from:
+            papers = [p for p in papers if not p.year or p.year >= year_from]
+        if year_to:
+            papers = [p for p in papers if not p.year or p.year <= year_to]
+        return papers
 
     async def get(self, identifier: str) -> Optional[Paper]:
         ident = self._ident(identifier)

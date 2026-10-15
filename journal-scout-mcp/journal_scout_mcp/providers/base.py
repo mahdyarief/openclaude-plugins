@@ -4,8 +4,21 @@ from ..models import Paper
 
 
 class ProviderBase:
+    """Common interface every journal source implements.
+
+    Each provider advertises what it can do through the ``supports_*`` flags
+    and whether it merely enriches records (``enricher``) instead of acting as
+    a primary source. The aggregator routes requests by reading these flags,
+    so no source name is hard-coded outside the provider registry.
+    """
+
     name: str = ""
     supports_search: bool = True
+    supports_citations: bool = False
+    supports_author_search: bool = False
+    # An enricher is not queried during a normal fan-out; it is only consulted
+    # to augment an already-resolved record (e.g. Unpaywall adds OA links).
+    enricher: bool = False
 
     def __init__(self, fetcher: Any, config: Optional[Dict[str, Any]] = None):
         self.fetcher = fetcher
@@ -32,6 +45,17 @@ class ProviderBase:
         year_from: Optional[int] = None,
         year_to: Optional[int] = None,
         tech_only: bool = False,
+        offset: int = 0,
+    ) -> List[Paper]:
+        return []
+
+    async def search_author(
+        self,
+        author: str,
+        limit: int,
+        year_from: Optional[int] = None,
+        year_to: Optional[int] = None,
+        offset: int = 0,
     ) -> List[Paper]:
         return []
 

@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from ..config import get_polite_email
 from ..models import Paper
-from ..utils import normalize_doi
+from ..utils import normalize_doi, parse_year
 from .base import ProviderBase
 
 OPENALEX_URL = "https://api.openalex.org/works"
@@ -29,6 +29,8 @@ def reconstruct_abstract(inverted_index):
 class OpenAlexProvider(ProviderBase):
     name = "openalex"
     supports_search = True
+    supports_citations = True
+    supports_author_search = True
 
     @staticmethod
     def _to_paper(work):
@@ -44,7 +46,7 @@ class OpenAlexProvider(ProviderBase):
             doi=normalize_doi(work.get("doi")),
             title=work.get("title") or work.get("display_name") or "",
             abstract=reconstruct_abstract(work.get("abstract_inverted_index")),
-            year=work.get("publication_year"),
+            year=parse_year(work.get("publication_year")),
             authors=authors,
             venue=source.get("display_name"),
             citation_count=work.get("cited_by_count"),
@@ -56,8 +58,10 @@ class OpenAlexProvider(ProviderBase):
             ids={"openalex": work.get("id")} if work.get("id") else {},
         )
 
-    def _filters(self, year_from, year_to, tech_only):
+    def _filters(self, year_from, year_to, tech_only, author=None):
         filters = []
+        if author:
+            filters.append(f"raw_author_name.search:{author}")
         if year_from:
             filters.append(f"from_publication_date:{year_from}-01-01")
         if year_to:
@@ -66,13 +70,34 @@ class OpenAlexProvider(ProviderBase):
             filters.append(f"concepts.id:{CS_CONCEPT_ID}")
         return filters
 
-    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False) -> List[Paper]:
+    @staticmethod
+    def _page_for(offset: int, limit: int) -> int:
+        # OpenAlex paginates by page number alongside per-page, so derive the
+        # page that skips ``offset`` records.
+        return offset // max(limit, 1) + 1
+
+    async def _search_filtered(self, filters, limit, offset) -> List[Paper]:
+        params = {"per-page": limit, "mailto": get_polite_email()}
+        if filters:
+            params["filter"] = ",".join(filters)
+        if offset:
+            params["page"] = self._page_for(offset, limit)
+        data = await self._fetch_json(OPENALEX_URL, params=params)
+        return [self._to_paper(w) for w in data.get("results", []) or []]
+
+    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, offset: int = 0) -> List[Paper]:
         params = {"search": query, "per-page": limit, "mailto": get_polite_email()}
         filters = self._filters(year_from, year_to, tech_only)
         if filters:
             params["filter"] = ",".join(filters)
+        if offset:
+            params["page"] = self._page_for(offset, limit)
         data = await self._fetch_json(OPENALEX_URL, params=params)
         return [self._to_paper(w) for w in data.get("results", []) or []]
+
+    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, offset: int = 0) -> List[Paper]:
+        filters = self._filters(year_from, year_to, False, author=author)
+        return await self._search_filtered(filters, limit, offset)
 
     @staticmethod
     def _work_id(identifier: str) -> Optional[str]:

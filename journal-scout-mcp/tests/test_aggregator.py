@@ -7,7 +7,7 @@ class GoodProvider(ProviderBase):
     name = "good"
     supports_search = True
 
-    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False):
+    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False, offset=0):
         return [Paper(doi="10.1/x", title="Shared", citation_count=3, sources=["good"])]
 
 
@@ -15,13 +15,14 @@ class BadProvider(ProviderBase):
     name = "bad"
     supports_search = True
 
-    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False):
+    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False, offset=0):
         raise ProviderError("bad", "boom")
 
 
 class GoodCitationProvider(ProviderBase):
     name = "scopus"
     supports_search = False
+    supports_citations = True
 
     async def citations(self, identifier, limit):
         return [Paper(doi="10.2/y", title="Citing", sources=["scopus"])]

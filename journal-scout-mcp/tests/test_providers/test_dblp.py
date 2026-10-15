@@ -46,3 +46,19 @@ async def test_search_filters_by_year_range():
         assert len(await provider.search("q", 5, year_to=2010)) == 0
     finally:
         await client.aclose()
+
+
+async def test_search_sends_f_for_pagination():
+    captured = {}
+
+    def handler(request):
+        captured["f"] = request.url.params.get("f")
+        return httpx.Response(200, json={"result": {"hits": {"hit": []}}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = DblpProvider(client)
+    try:
+        await provider.search("q", 10, offset=40)
+        assert captured["f"] == "40"
+    finally:
+        await client.aclose()
