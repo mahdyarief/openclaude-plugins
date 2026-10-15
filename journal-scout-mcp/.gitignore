@@ -1,5 +1,32 @@
+# gitignore
+
+## Python
 .venv/
 __pycache__/
 *.pyc
-.cache/
+*.pyo
+*.egg-info/
+.dist-info/
+.mypy_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
+
+## MCP / Claude
 config.json
+.claude-plugin/artifacts/
+mcp_config.json
+
+## Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+## OS / misc
+.DS_Store
+Thumbs.db
+.cache/
+dist/
+build/
+*.log

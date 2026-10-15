@@ -1,12 +1,14 @@
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from .merge import merge_papers
 from .models import Paper, ProviderError
 from .providers.base import ProviderBase
 
 
-async def _gather(calls: Dict[str, Any]) -> "tuple[List[Paper], Dict[str, str], Dict[str, int]]":
+async def _gather(
+    calls: dict[str, Any],
+) -> "tuple[list[Paper], dict[str, str], dict[str, int]]":
     names = list(calls.keys())
     results = await asyncio.gather(*calls.values(), return_exceptions=True)
     papers: List[Paper] = []
