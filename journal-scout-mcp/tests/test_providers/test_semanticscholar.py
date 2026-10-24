@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 import httpx
 
-from journal_scout_mcp.providers.semanticscholar import SemanticScholarProvider
+from josc.providers.semanticscholar import SemanticScholarProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
@@ -50,7 +50,7 @@ async def test_api_key_header_sent_when_configured(monkeypatch):
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     provider = SemanticScholarProvider(client)
     monkeypatch.setattr(
-        "journal_scout_mcp.providers.semanticscholar.get_semantic_scholar_key",
+        "josc.providers.semanticscholar.get_semantic_scholar_key",
         lambda: "secret-key",
     )
     try:

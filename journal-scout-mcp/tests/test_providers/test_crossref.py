@@ -3,7 +3,7 @@ from pathlib import Path
 
 import httpx
 
-from journal_scout_mcp.providers.crossref import CrossrefProvider
+from josc.providers.crossref import CrossrefProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 

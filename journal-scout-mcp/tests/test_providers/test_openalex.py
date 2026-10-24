@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 import httpx
 
-from journal_scout_mcp.providers.openalex import OpenAlexProvider
+from josc.providers.openalex import OpenAlexProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
@@ -56,11 +56,35 @@ async def test_get_normalizes_doi_url_to_same_request_as_bare_doi():
         await client.aclose()
 
 
-async def test_citations_normalizes_doi_url_to_same_request_as_bare_doi():
+async def test_citations_resolves_doi_then_queries_cites_filter():
     captured = []
 
     def handler(request):
-        captured.append(dict(request.url.params))
+        captured.append(request.url)
+        if "/works/doi:" in str(request.url):
+            return httpx.Response(200, json={"id": "https://openalex.org/W123"})
+        return httpx.Response(200, json={"results": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        await provider.citations("10.1/x", 3)
+        assert len(captured) == 2
+        # ``cites:`` only accepts an OpenAlex Work id, so the DOI is resolved
+        # through the work endpoint before the search.
+        assert captured[0].path == "/works/doi:10.1/x"
+        assert captured[1].params["filter"] == "cites:W123"
+    finally:
+        await client.aclose()
+
+
+async def test_citations_treats_doi_url_like_bare_doi():
+    captured = []
+
+    def handler(request):
+        captured.append(request.url)
+        if "/works/doi:" in str(request.url):
+            return httpx.Response(200, json={"id": "https://openalex.org/W123"})
         return httpx.Response(200, json={"results": []})
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
@@ -68,10 +92,9 @@ async def test_citations_normalizes_doi_url_to_same_request_as_bare_doi():
     try:
         await provider.citations("10.1/x", 3)
         await provider.citations("https://doi.org/10.1/x", 3)
-        assert len(captured) == 2
-        bare, url_form = captured
-        assert url_form["filter"] == bare["filter"]
-        assert bare["filter"] == "cites:doi:10.1/x"
+        assert len(captured) == 4
+        assert captured[0].path == captured[2].path
+        assert captured[1].params["filter"] == captured[3].params["filter"]
     finally:
         await client.aclose()
 
@@ -171,5 +194,22 @@ async def test_search_author_sends_raw_author_name_filter():
     try:
         await provider.search_author("Vaswani", 5)
         assert "raw_author_name.search:Vaswani" in captured["filter"]
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_flattens_commas_before_sending_filter():
+    captured = {}
+
+    def handler(request):
+        captured["filter"] = request.url.params.get("filter")
+        return httpx.Response(200, json={"results": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        await provider.search_author("Harzing, Anne-Wil", 5)
+        # A raw comma would be read as a filter separator by the API edge.
+        assert captured["filter"] == "raw_author_name.search:Harzing Anne-Wil"
     finally:
         await client.aclose()

@@ -1,6 +1,6 @@
 import json
 
-import journal_scout_mcp.config as config
+import josc.config as config
 
 
 def _write_config(tmp_path, data):

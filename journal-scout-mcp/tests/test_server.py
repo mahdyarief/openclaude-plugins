@@ -1,8 +1,8 @@
 import json
 
-from journal_scout_mcp.server import TOOL_NAMES, build_json
-from journal_scout_mcp.models import Paper
-from journal_scout_mcp.providers.base import ProviderBase
+from josc.server import TOOL_NAMES, build_json
+from josc.models import Paper
+from josc.providers.base import ProviderBase
 
 
 class SearchProvider(ProviderBase):
@@ -23,11 +23,14 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 18
+    assert len(TOOL_NAMES) == 23
     assert "search_all" in TOOL_NAMES
     assert "search_author" in TOOL_NAMES
     assert "search_openalex" in TOOL_NAMES
     assert "scival_topic_metrics" in TOOL_NAMES
+    assert "get_references" in TOOL_NAMES
+    assert "build_citation_network" in TOOL_NAMES
+    assert "compute_metrics" in TOOL_NAMES
     assert "get_citing_papers" not in TOOL_NAMES
 
 

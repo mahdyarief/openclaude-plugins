@@ -1,10 +1,10 @@
-from journal_scout_mcp.merge import (
+from josc.merge import (
     _merge_authors,
     dedup_key,
     merge_papers,
     merge_two,
 )
-from journal_scout_mcp.models import Paper
+from josc.models import Paper
 
 
 def test_dedup_key_prefers_doi():

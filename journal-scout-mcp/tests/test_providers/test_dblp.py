@@ -3,7 +3,7 @@ from pathlib import Path
 
 import httpx
 
-from journal_scout_mcp.providers.dblp import DblpProvider
+from josc.providers.dblp import DblpProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 

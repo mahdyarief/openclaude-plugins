@@ -1,4 +1,4 @@
-from journal_scout_mcp.providers.base import ProviderBase
+from josc.providers.base import ProviderBase
 
 
 class DummyProvider(ProviderBase):

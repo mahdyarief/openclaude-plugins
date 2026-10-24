@@ -4,8 +4,8 @@ from urllib.parse import unquote
 
 import httpx
 
-from journal_scout_mcp.http import Fetcher
-from journal_scout_mcp.providers.scopus import ScopusProvider
+from josc.http import Fetcher
+from josc.providers.scopus import ScopusProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
@@ -51,7 +51,7 @@ async def test_tech_only_adds_subjarea():
 
 
 def test_scopus_provider_has_detail_helpers():
-    from journal_scout_mcp.providers.scopus import ScopusProvider
+    from josc.providers.scopus import ScopusProvider
     assert hasattr(ScopusProvider, "get_author")
     assert hasattr(ScopusProvider, "get_quota_status")
 
@@ -238,18 +238,47 @@ async def test_get_returns_none_for_unsupported_identifier():
         await client.aclose()
 
 
-async def test_citations_returns_empty_for_doi_without_request():
+async def test_citations_resolves_doi_to_scopus_id_before_ref_query():
     calls = []
 
     def handler(request):
         calls.append(str(request.url))
+        if "/abstract/doi/" in str(request.url):
+            return httpx.Response(
+                200,
+                json={
+                    "abstracts-retrieval-response": {
+                        "coredata": {"dc:identifier": "SCOPUS_ID:85099999999"}
+                    }
+                },
+            )
         return httpx.Response(200, json={"search-results": {"entry": []}})
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     provider = ScopusProvider(client, {"api_key": "test-key"})
     try:
         assert await provider.citations("10.1145/3292500.3330701", 5) == []
-        assert calls == []
+        # ``REF()`` only accepts the numeric id, so a DOI is resolved through
+        # abstract retrieval first.
+        assert "/abstract/doi/10.1145/3292500.3330701" in calls[0]
+        assert "REF(85099999999)" in unquote(calls[1])
+    finally:
+        await client.aclose()
+
+
+async def test_citations_returns_empty_when_doi_cannot_be_resolved():
+    calls = []
+
+    def handler(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, json={"abstracts-retrieval-response": {"coredata": {}}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ScopusProvider(client, {"api_key": "test-key"})
+    try:
+        assert await provider.citations("10.1145/3292500.3330701", 5) == []
+        assert len(calls) == 1
+        assert "/search/scopus" not in calls[0]
     finally:
         await client.aclose()
 
@@ -270,7 +299,7 @@ async def test_citations_uses_scopus_id_for_ref_query():
         await client.aclose()
 
 
-async def test_search_author_uses_au_clause():
+async def test_search_author_uses_auth_clause():
     captured = {}
 
     def handler(request):
@@ -281,6 +310,23 @@ async def test_search_author_uses_au_clause():
     provider = ScopusProvider(client, {"api_key": "test-key"})
     try:
         await provider.search_author("Vaswani", 5)
-        assert captured["query"] == "AU(Vaswani)"
+        # Scopus has no ``AU()`` field; ``AUTH()`` is the author-name clause.
+        assert captured["query"] == "AUTH(Vaswani)"
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_keeps_full_name_inside_auth_clause():
+    captured = {}
+
+    def handler(request):
+        captured["query"] = request.url.params.get("query")
+        return httpx.Response(200, json={"search-results": {"entry": []}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ScopusProvider(client, {"api_key": "test-key"})
+    try:
+        await provider.search_author("Harzing, Anne-Wil", 5)
+        assert captured["query"] == "AUTH(Harzing, Anne-Wil)"
     finally:
         await client.aclose()

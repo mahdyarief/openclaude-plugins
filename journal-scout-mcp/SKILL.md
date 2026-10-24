@@ -1,9 +1,10 @@
 # journal-scout-mcp
 
 Multi-source journal research **MCP server** for Anthropic Claude. Searches
-Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, DBLP, and Unpaywall,
-then merges duplicate results into one entry per paper (DOI-first dedup)
-and reports partial failures.
+Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, and
+Unpaywall, then merges duplicate results into one entry per paper (DOI-first
+dedup) and reports partial failures. Citation links additionally come from
+OpenCitations (free, no key) for any known DOI.
 
 This is a **Claude skill** for using the `journal-scout-mcp` MCP server.
 Configure the MCP server in your Claude Code/plugin setup, then invoke any
@@ -31,9 +32,12 @@ of the available tools.
 
 3. **Enable** the plugin in your Claude session. The tool list includes:
 
-   - **Unified:** `search_all`, `get_paper`, `get_citations`
+   - **Unified:** `search_all`, `search_author`, `get_paper`, `get_citations`,
+     `get_references`, `build_citation_network`, `compute_metrics`,
+     `export_results`
    - **Per-source:** `search_scopus`, `search_arxiv`, `search_openalex`,
-     `search_semanticscholar`, `search_crossref`, `search_dblp`
+     `search_semanticscholar`, `search_crossref`, `search_pubmed`,
+     `search_dblp`
    - **Scopus detail:** `get_abstract_details`, `get_author_profile`,
      `get_quota_status`
    - **SciVal:** `scival_author_metrics`,
@@ -49,8 +53,11 @@ of the available tools.
 - **Author / affiliation research** — `search_author`,
   `get_author_profile`, SciVal metrics.
 - **Paper lookup** — `get_paper` by DOI/arXiv ID.
-- **Citation network** — `get_citations` for a paper.
+- **Citation network** — `get_citations` / `get_references`; OpenCitations
+  fills links for DOIs the other providers miss.
 - **Open-access check** — Unpaywall via `get_paper` / `get_citations`.
+- **Bibliography export** — `export_results(papers, format)` for BibTeX, RIS,
+  EndNote, WoS, CSV, or APA/Chicago/Harvard/Vancouver citations.
 
 ## Usage examples
 

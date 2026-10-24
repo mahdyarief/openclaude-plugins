@@ -2,7 +2,7 @@ from pathlib import Path
 
 import httpx
 
-from journal_scout_mcp.providers.arxiv import ArxivProvider
+from josc.providers.arxiv import ArxivProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 ATOM = "{http://www.w3.org/2005/Atom}"

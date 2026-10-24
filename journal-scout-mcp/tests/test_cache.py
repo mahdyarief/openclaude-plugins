@@ -1,4 +1,4 @@
-from journal_scout_mcp.cache import TTLCache, build_cache
+from josc.cache import TTLCache, build_cache
 
 
 def test_set_then_get_returns_value():

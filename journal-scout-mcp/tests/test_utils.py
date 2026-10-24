@@ -1,4 +1,4 @@
-from journal_scout_mcp.utils import (
+from josc.utils import (
     first_of,
     normalize_doi,
     normalize_title,

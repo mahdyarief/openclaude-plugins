@@ -1,4 +1,4 @@
-from journal_scout_mcp import prompts
+from josc import prompts
 
 
 def test_list_prompts_exposes_registered_templates():

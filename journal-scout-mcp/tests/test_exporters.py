@@ -1,10 +1,10 @@
-"""Tests for journal_scout_mcp.exporters."""
+"""Tests for josc.exporters."""
 
 import json
 
 import pytest
 
-from journal_scout_mcp.exporters import FORMATTERS, format_papers
+from josc.exporters import FORMATTERS, format_papers
 
 
 SAMPLE = [
@@ -42,7 +42,19 @@ SAMPLE = [
 
 
 def test_supported_formats_are_advertised():
-    assert set(FORMATTERS) == {"bibtex", "ris", "csv", "json"}
+    assert set(FORMATTERS) == {
+        "bibtex",
+        "ris",
+        "csv",
+        "json",
+        "endnote",
+        "isi",
+        "csv_header",
+        "apa",
+        "chicago",
+        "harvard",
+        "vancouver",
+    }
 
 
 def test_bibtex_emits_one_entry_per_paper():
@@ -101,6 +113,78 @@ def test_json_round_trips_the_papers_list():
     out = format_papers(SAMPLE, "json")
     parsed = json.loads(out)
     assert parsed == SAMPLE
+
+
+def test_endnote_emits_tagged_records():
+    out = format_papers(SAMPLE, "endnote")
+    # One record per paper, each terminated by a blank line.
+    assert out.count("%0 Journal Article") == 2
+    assert out.endswith("\n\n")
+    assert "%A Sepp Hochreiter" in out
+    assert "%A Jürgen Schmidhuber" in out
+    assert "%T Long Short-Term Memory" in out
+    assert "%J Neural Computation" in out
+    assert "%D 1997" in out
+    assert "%R 10.1109/5.771073" in out
+    assert "%U https://doi.org/10.1109/5.771073" in out
+    # Abstract only appears when the paper carries one.
+    assert out.count("%X ") == 1
+    assert "%X Deep learning allows computational models" in out
+
+
+def test_isi_emits_wos_tagged_records():
+    out = format_papers(SAMPLE, "isi")
+    assert out.count("PT J") == 2
+    assert out.count("ER") == 2
+    assert out.count("AU ") == 5
+    assert "TI Long Short-Term Memory" in out
+    assert "SO Neural Computation" in out
+    assert "PY 1997" in out
+    assert "DI 10.1109/5.771073" in out
+    assert out.endswith("\n\n")
+
+
+def test_csv_header_has_requested_columns():
+    out = format_papers(SAMPLE, "csv_header")
+    rows = out.strip().splitlines()
+    assert rows[0] == (
+        "doi,title,year,authors,venue,citation_count,url,pdf_url,"
+        "is_open_access,type,sources,abstract"
+    )
+    assert len(rows) == 1 + len(SAMPLE)
+    assert "Sepp Hochreiter; Jürgen Schmidhuber" in rows[1]
+
+
+def test_apa_formats_first_author_and_doi():
+    out = format_papers(SAMPLE, "apa")
+    assert "Hochreiter, S. (1997). Long Short-Term Memory. Neural Computation. https://doi.org/10.1109/5.771073" in out
+    assert "LeCun, Y. (2015). Deep learning. Nature. https://doi.org/10.1038/nature14539" in out
+
+
+def test_chicago_formats_first_author_and_title():
+    out = format_papers(SAMPLE, "chicago")
+    assert 'Hochreiter, Sepp. "Long Short-Term Memory." Neural Computation (1997).' in out
+    assert 'LeCun, Yann. "Deep learning." Nature (2015).' in out
+
+
+def test_harvard_formats_first_author_and_venue():
+    out = format_papers(SAMPLE, "harvard")
+    assert "Hochreiter, S. (1997) 'Long Short-Term Memory', Neural Computation." in out
+    assert "LeCun, Y. (2015) 'Deep learning', Nature." in out
+
+
+def test_vancouver_formats_first_author_and_year():
+    out = format_papers(SAMPLE, "vancouver")
+    assert "Hochreiter S. Long Short-Term Memory. Neural Computation. 1997." in out
+    assert "LeCun Y. Deep learning. Nature. 2015." in out
+
+
+def test_citation_styles_survive_missing_author_and_year():
+    papers = [{"title": "Untitled work"}]
+    assert format_papers(papers, "apa") == "Anonymous (n.d.). Untitled work.\n"
+    assert format_papers(papers, "chicago") == 'Anonymous. "Untitled work." (n.d.).\n'
+    assert format_papers(papers, "harvard") == "Anonymous (n.d.) 'Untitled work'.\n"
+    assert format_papers(papers, "vancouver") == "Anonymous. Untitled work.\n"
 
 
 def test_unknown_format_raises_with_supported_list():

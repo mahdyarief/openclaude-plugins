@@ -1,8 +1,8 @@
 import httpx
 import pytest
 
-from journal_scout_mcp.http import Fetcher
-from journal_scout_mcp.models import ProviderError
+from josc.http import Fetcher
+from josc.models import ProviderError
 
 
 def _fetcher(handler):

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import httpx
 
-from journal_scout_mcp.providers.unpaywall import UnpaywallProvider
+from josc.providers.unpaywall import UnpaywallProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
