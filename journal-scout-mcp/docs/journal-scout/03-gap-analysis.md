@@ -55,15 +55,33 @@ permanen. Diverifikasi lewat HTTP: `basic` 16 key dan `extended` 23 key
 
 | | PoP8 | journal-scout (sebelum) | journal-scout (kini) |
 |---|---|---|---|
-| Field | Author, Affiliation, Journal, ISSN, Title, Keywords, Year, ORCID, DOI | `query` + year + tech_only + offset | + `author`, `venue` |
+| Field | Author, Affiliation, Journal, ISSN, Title, Keywords, Year, ORCID, DOI | `query` + year + tech_only + offset | + `author`, `venue`, `affiliation`, `issn`, `orcid`, `doi` |
 | Operator | per-sumber, dengan peringatan | tidak ditangani | tidak ditangani (tetap gap) |
 | Sinyal keterbatasan | ada | tidak ada | `filters_applied` / `filters_ignored` |
 
-`search_all` (`aggregator.py:102-129`) dan `search_author`
-(`aggregator.py:132-157`) meneruskan `author`/`venue` hanya ke provider yang
+`search_all` (`aggregator.py:114-146`) meneruskan filter hanya ke provider yang
 mendeklarasikannya di `supports_filters` (`providers/base.py:20-21`).
-`_route_filters` (`aggregator.py:72-90`) menghasilkan laporan filter yang
-diterapkan dan diabaikan.
+`_route_filters` (`aggregator.py:72-102`) menghasilkan laporan filter yang
+diterapkan dan diabaikan, sedangkan `_filter_kwargs` (`aggregator.py:105-111`)
+membangun kwargs per provider sehingga sumber tak-pendukung tidak pernah
+menerima keyword yang tidak dikenalnya.
+
+Pemetaan field ke query asli tiap API (diverifikasi terhadap dokumentasi
+provider, bukan diasumsikan):
+
+| Provider | affiliation | issn | orcid | doi |
+|---|---|---|---|---|
+| openalex | `raw_affiliation_strings.search:` | `primary_location.source.issn:` | `authorships.author.orcid:` | `doi:` (prefix `https://doi.org/` dibuang) |
+| crossref | `query.affiliation` | `filter=issn:` | — (API tidak punya filter ORCID) | `filter=doi:` |
+| scopus | `AFFIL(...)` | `ISSN(...)` | `ORCID(...)` | `DOI(...)` |
+| pubmed | `"...""[AD]` | `[IS]` | `[AID]` | `[DOI]` |
+| arxiv / dblp / semanticscholar | — | — | — | — |
+
+Dua jebakan yang ditangani eksplisit: OpenAlex memecah `filter` pada koma,
+jadi nilai `affiliation` diratakan dulu (`" ".join(value.replace(",", " ").split())`);
+Crossref menyatukan semua batasan di satu parameter `filter`, sehingga batas
+tahun dan filter field **digabung**, bukan saling menimpa (`_works`,
+`crossref.py:64-78`). Pengujian ada di `tests/test_filters.py` (7 test).
 
 Catatan: `tech_only` **kini punya capability flag** (`supports_tech_only`,
 `providers/base.py:22`), jadi Crossref, DBLP, dan PubMed dilaporkan sebagai
@@ -90,15 +108,31 @@ Catatan: `tech_only` **kini punya capability flag** (`supports_tech_only`,
 
 ---
 
-## E. Persistensi query (P2)
+## E. Persistensi query — ✅ selesai 2026-10-24 (riwayat datar)
 
 PoP8 punya workspace: folder Recent/My/Older/Saved/Trash, duplicate, merge,
-split citations. journal-scout sepenuhnya stateless — setiap tool call
-berdiri sendiri.
+split citations. journal-scout sebelumnya sepenuhnya stateless — setiap tool
+call berdiri sendiri.
 
-**Perbaikan:** tabel `searches` di `TursoStore` (`src/josc/store.py:52`)
-berisi `id, query, sources, filters, created_at, result_json`. Cukup untuk
-"recent searches" tanpa meniru folder berlapis.
+**Perbaikan:** tabel `searches` di `TursoStore` (`store.py:130-149`) berisi
+`id, query, author, sources, filters, result_count, created_at`, plus indeks
+`idx_searches_created` pada `created_at DESC`. Dua method:
+
+- `record_search()` (`store.py:211`) — `INSERT` dengan **bound parameter**;
+  `sources`/`filters` diserialisasi `json.dumps`, `id` dari `uuid4().hex`.
+  Kegagalan ditelan (`try/except`) karena riwayat bukan jalur kritis.
+- `list_searches(limit=20)` (`store.py:252`) — `ORDER BY created_at DESC
+  LIMIT ?`, kolom JSON didekode toleran; `[]` bila query gagal.
+
+`GET /api/searches?limit=N` (`api.py:188-198`) mengembalikan
+`{"searches": [...], "persistent": true}`, atau `{"searches": [],
+"persistent": false}` bila Turso tidak dikonfigurasi. `search()` mencatat
+setiap hasil non-offline lewat `_remember()` (`api.py:164-185`), yang juga
+menyaring filter kosong sebelum disimpan. Pengujian ada di
+`tests/test_searches.py` (6 test, termasuk verifikasi bound parameter).
+
+Folder berlapis dan Trash tetap tidak ditiru — daftar datar sudah menutup
+kebutuhan "recent searches".
 
 ---
 
@@ -167,10 +201,10 @@ sebagai blok `store` (`api.py:165`), `null` bila Turso tidak aktif.
 | ~~P1~~ | Capability flag untuk `tech_only` | Crossref/DBLP mengabaikannya diam-diam | ✅ 2026-10-24 |
 | ~~P2~~ | Aksi Unpaywall di UI | Akses teks penuh | ✅ 2026-10-24 |
 | ~~P2~~ | Metrik cache di `/api/health` | Observability cache | ✅ 2026-10-24 |
-| **P2** | Persistensi query (`searches` + `/api/searches`) | Mendukung alur kerja berulang | terbuka |
+| ~~P2~~ | Persistensi query (`searches` + `/api/searches`) | Mendukung alur kerja berulang | ✅ 2026-10-24 |
 | ~~P2~~ | Mode offline (`offline=true` → `stale: true`) | Ketahanan saat provider down | ✅ 2026-10-24 |
-| **P2** | Filter `affiliation`, `issn`, `orcid`, `doi` | Paritas field filter PoP8 | terbuka |
+| ~~P2~~ | Filter `affiliation`, `issn`, `orcid`, `doi` | Paritas field filter PoP8 | ✅ 2026-10-24 |
 | ~~P2~~ | Telemetri `TursoCache` (server-side) | Hanya `TTLCache` in-process yang terukur | ✅ 2026-10-24 |
 | ~~P1~~ | `mode=extended` belum tersambung ke jawaban publik | Grup "Extended" di UI selalu kosong | ✅ 2026-10-24 |
 | ~~P2~~ | UI: filter & paginasi di form pencarian | Backend mendukung, form hanya `query`+`limit` | ✅ 2026-10-24 |
-| **P2** | UI: ekspor 11 format | Hanya GraphML yang punya tombol | ✅ 2026-10-24 |
+| ~~P2~~ | UI: ekspor 11 format | Hanya GraphML yang punya tombol | ✅ 2026-10-24 |

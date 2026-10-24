@@ -13,7 +13,7 @@ class CrossrefProvider(ProviderBase):
     supports_search = True
     supports_author_search = True
     supports_references = True
-    supports_filters = frozenset({"author", "venue"})
+    supports_filters = frozenset({"author", "venue", "affiliation", "issn", "doi"})
 
     @staticmethod
     def _to_paper(item):
@@ -61,28 +61,49 @@ class CrossrefProvider(ProviderBase):
             bounds.append(f"until-pub-date:{year_to}-12-31")
         return ",".join(bounds)
 
-    async def _works(self, params, year_from, year_to) -> List[Paper]:
-        """Shared GET against ``/works`` used by both search entry points."""
+    async def _works(self, params, year_from, year_to, extra_filters=None) -> List[Paper]:
+        """Shared GET against ``/works`` used by both search entry points.
+
+        Crossref carries every restriction in one comma-joined ``filter``
+        parameter, so the date bounds are merged with the field filters
+        rather than replacing them.
+        """
         year_filter = self._year_filter(year_from, year_to)
-        if year_filter:
-            params["filter"] = year_filter
+        filters = [year_filter] + list(extra_filters or [])
+        merged = ",".join(f for f in filters if f)
+        if merged:
+            params["filter"] = merged
         params["mailto"] = get_polite_email()
         data = await self._fetch_json(CROSSREF_URL, params=params)
         return self._items_to_papers(data)
 
-    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0) -> List[Paper]:
+    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0, affiliation=None, issn=None, doi=None) -> List[Paper]:
         params = {"query": query, "rows": limit, "offset": offset}
         if author:
             params["query.author"] = author
         if venue:
             params["query.container-title"] = venue
-        return await self._works(params, year_from, year_to)
+        if affiliation:
+            params["query.affiliation"] = affiliation
+        extra_filters = []
+        if issn:
+            extra_filters.append(f"issn:{issn}")
+        if doi:
+            extra_filters.append(f"doi:{doi}")
+        return await self._works(params, year_from, year_to, extra_filters)
 
-    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, venue=None, offset: int = 0) -> List[Paper]:
+    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, venue=None, offset: int = 0, affiliation=None, issn=None, doi=None) -> List[Paper]:
         params = {"query.author": author, "rows": limit, "offset": offset}
         if venue:
             params["query.container-title"] = venue
-        return await self._works(params, year_from, year_to)
+        if affiliation:
+            params["query.affiliation"] = affiliation
+        extra_filters = []
+        if issn:
+            extra_filters.append(f"issn:{issn}")
+        if doi:
+            extra_filters.append(f"doi:{doi}")
+        return await self._works(params, year_from, year_to, extra_filters)
 
     async def get(self, identifier: str) -> Optional[Paper]:
         doi = normalize_doi(identifier)

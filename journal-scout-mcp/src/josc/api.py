@@ -115,6 +115,11 @@ def _sources(request: Request) -> Optional[List[str]]:
     return values or None
 
 
+def _text(request: Request, name: str) -> Optional[str]:
+    value = (request.query_params.get(name) or "").strip()
+    return value or None
+
+
 def _identifier(request: Request) -> str:
     value = (request.query_params.get("identifier") or "").strip()
     if not value:
@@ -156,6 +161,43 @@ async def _store_stats() -> Optional[Dict[str, Any]]:
         return None
 
 
+async def _remember(
+    query: Optional[str],
+    sources: Optional[List[str]],
+    filters: Dict[str, Any],
+    payload: Any,
+) -> None:
+    """Record a finished search in the history table, best effort."""
+    store = _state.get("store")
+    record = getattr(store, "record_search", None)
+    if not callable(record):
+        return
+    kept = {name: value for name, value in filters.items() if value}
+    try:
+        await record(
+            query or "",
+            author=None,
+            sources=sources,
+            filters=kept or None,
+            result_count=len((payload or {}).get("results") or []),
+        )
+    except Exception:
+        return
+
+
+async def searches(request: Request) -> JSONResponse:
+    """Return recent searches, newest first."""
+    store = _state.get("store")
+    lister = getattr(store, "list_searches", None)
+    if not callable(lister):
+        return JSONResponse({"searches": [], "persistent": False})
+    try:
+        rows = await lister(limit=_int(request, "limit", 20) or 20)
+    except Exception as exc:  # noqa: BLE001
+        return _error(exc)
+    return JSONResponse({"searches": rows, "persistent": True})
+
+
 async def health(request: Request) -> JSONResponse:
     return JSONResponse(
         {
@@ -187,7 +229,12 @@ async def search(request: Request) -> JSONResponse:
     tech_only = request.query_params.get("tech_only", "").lower() in ("1", "true", "yes")
     sources = _sources(request)
     offset = _int(request, "offset", 0)
-    key = ("search", query, limit_per_source, year_from, year_to, tech_only, sources, offset)
+    affiliation = _text(request, "affiliation")
+    issn = _text(request, "issn")
+    orcid = _text(request, "orcid")
+    doi = _text(request, "doi")
+    key = ("search", query, limit_per_source, year_from, year_to, tech_only, sources,
+           offset, affiliation, issn, orcid, doi)
     offline = _flag(request, "offline")
     try:
         payload = await _cached(
@@ -201,11 +248,19 @@ async def search(request: Request) -> JSONResponse:
                 tech_only=tech_only,
                 sources=sources,
                 offset=offset,
+                affiliation=affiliation,
+                issn=issn,
+                orcid=orcid,
+                doi=doi,
             ),
             offline=offline,
         )
     except Exception as exc:  # noqa: BLE001 - surfaced as a JSON error to the UI
         return _error(exc)
+    if not offline:
+        filters = {"affiliation": affiliation, "issn": issn,
+                   "orcid": orcid, "doi": doi}
+        await _remember(query=query, sources=sources, filters=filters, payload=payload)
     return JSONResponse(payload)
 
 
@@ -367,6 +422,7 @@ routes = [
     Route("/api/references", references),
     Route("/api/network", network),
     Route("/api/metrics", metrics),
+    Route("/api/searches", searches),
     Route("/api/export/graphml", graphml_export),
     Route("/api/export", export, methods=["POST"]),
 ]

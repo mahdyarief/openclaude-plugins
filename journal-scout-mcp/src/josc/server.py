@@ -44,6 +44,10 @@ _SEARCH_FILTERS = {
     "year_to": {"type": "integer", "description": "Latest publication year."},
     "tech_only": {"type": "boolean", "description": "Restrict to tech/computer-science.", "default": False},
     "offset": {"type": "integer", "description": "Number of results to skip (pagination).", "default": 0},
+    "affiliation": {"type": "string", "description": "Restrict to papers with this affiliation."},
+    "issn": {"type": "string", "description": "Restrict to a journal by ISSN."},
+    "orcid": {"type": "string", "description": "Restrict to papers by author ORCID."},
+    "doi": {"type": "string", "description": "Restrict to a specific DOI."},
 }
 
 _SEARCH_ARGUMENTS = {
@@ -56,13 +60,15 @@ _SEARCH_ARGUMENTS = {
     "required": ["query"],
 }
 
-# Author search reuses the year/offset filters but has no ``tech_only``:
+# Author search reuses the year/offset/venue filters but has no ``tech_only``:
 # restricting a person's output to computer science is not a meaningful filter.
 # ``author`` is excluded because the tool takes it as its required argument.
+# The four field filters are excluded because ``aggregator.search_author``
+# only routes ``venue``; advertising them would promise what is not honoured.
 _AUTHOR_FILTERS = {
     key: value
     for key, value in _SEARCH_FILTERS.items()
-    if key not in ("tech_only", "author")
+    if key not in ("tech_only", "author", "affiliation", "issn", "orcid", "doi")
 }
 
 _SCIVAL_METRIC_FILTERS = {
@@ -238,6 +244,10 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             offset=arguments.get("offset", 0),
             author=arguments.get("author"),
             venue=arguments.get("venue"),
+            affiliation=arguments.get("affiliation"),
+            issn=arguments.get("issn"),
+            orcid=arguments.get("orcid"),
+            doi=arguments.get("doi"),
         )
     if name == "get_paper":
         return await aggregator.get_paper(providers, arguments["identifier"])
@@ -299,6 +309,10 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             offset=arguments.get("offset", 0),
             author=arguments.get("author"),
             venue=arguments.get("venue"),
+            affiliation=arguments.get("affiliation"),
+            issn=arguments.get("issn"),
+            orcid=arguments.get("orcid"),
+            doi=arguments.get("doi"),
         )
     if name == "get_abstract_details":
         paper = await scopus_provider.get(arguments["scopus_id"])

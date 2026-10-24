@@ -122,9 +122,14 @@ async def search_all(
     offset: int = 0,
     author: Optional[str] = None,
     venue: Optional[str] = None,
+    affiliation: Optional[str] = None,
+    issn: Optional[str] = None,
+    orcid: Optional[str] = None,
+    doi: Optional[str] = None,
 ) -> Dict[str, Any]:
     active = _select(providers, sources, "supports_search")
-    requested = {"author": author, "venue": venue}
+    requested = {"author": author, "venue": venue, "affiliation": affiliation,
+                 "issn": issn, "orcid": orcid, "doi": doi}
     applied, ignored = _route_filters(active, requested, tech_only=tech_only)
     calls = {
         p.name: p.search(

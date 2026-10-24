@@ -17,7 +17,7 @@ class ScopusProvider(ProviderBase):
     supports_citations = True
     supports_author_search = True
     supports_references = True
-    supports_filters = frozenset({"author", "venue"})
+    supports_filters = frozenset({"author", "venue", "affiliation", "issn", "orcid", "doi"})
     supports_tech_only = True
 
     def __init__(self, fetcher, config=None):
@@ -156,21 +156,37 @@ class ScopusProvider(ProviderBase):
         )
         return self._entries_to_papers(data)
 
-    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0) -> List[Paper]:
+    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0, affiliation=None, issn=None, orcid=None, doi=None) -> List[Paper]:
         if author:
             query = f"({query}) AND AUTH({author})"
         if venue:
             query = f"({query}) AND SRCTITLE({venue})"
+        if affiliation:
+            query = f"({query}) AND AFFIL({affiliation})"
+        if issn:
+            query = f"({query}) AND ISSN({issn})"
+        if orcid:
+            query = f"({query}) AND ORCID({orcid})"
+        if doi:
+            query = f"({query}) AND DOI({doi})"
         if tech_only:
             query = f"({query}) AND SUBJAREA(COMP)"
         return await self._search_query(self._year_clause(query, year_from, year_to), limit, offset)
 
-    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, venue=None, offset: int = 0) -> List[Paper]:
+    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, venue=None, offset: int = 0, affiliation=None, issn=None, orcid=None, doi=None) -> List[Paper]:
         # ``AU()`` is not a valid Scopus field; ``AUTH()`` accepts both a
         # surname and a full name ("Harzing, Anne-Wil").
         query = f"AUTH({author})"
         if venue:
             query = f"{query} AND SRCTITLE({venue})"
+        if affiliation:
+            query = f"{query} AND AFFIL({affiliation})"
+        if issn:
+            query = f"{query} AND ISSN({issn})"
+        if orcid:
+            query = f"{query} AND ORCID({orcid})"
+        if doi:
+            query = f"{query} AND DOI({doi})"
         query = self._year_clause(query, year_from, year_to)
         return await self._search_query(query, limit, offset)
 

@@ -81,10 +81,16 @@ Kriteria selesai: **terpenuhi** — registry 9 provider / 7 searchable,
 
 ---
 
-## Fase 5 — Persistensi dan observability (P2) — sebagian ✅ 2026-10-24
+## Fase 5 — Persistensi dan observability (P2) — ✅ 2026-10-24
 
-1. **Tabel `searches`** di `TursoStore` (`src/josc/store.py:52`).
-2. **Endpoint** `GET /api/searches` (recent) dan `POST /api/searches`.
+1. ~~**Tabel `searches`** di `TursoStore`.~~ ✅ — `setup()` (`store.py:130-149`)
+   membuat tabel `searches` + indeks `idx_searches_created`; `record_search()`
+   (`store.py:211`) menulis dengan bound parameter, `list_searches()`
+   (`store.py:252`) membaca `ORDER BY created_at DESC`.
+2. ~~**Endpoint** `GET /api/searches` (recent).~~ ✅ — `searches()` handler
+   (`api.py:188-198`); pencatatan otomatis lewat `_remember()`
+   (`api.py:164-185`) di akhir setiap `GET /api/search` non-offline, jadi
+   `POST /api/searches` tidak diperlukan.
 3. ~~**Metrik cache** di `GET /api/health` (`src/josc/api.py:122`):
    hit, miss, entri, umur.~~ ✅ — `TTLCache.stats()` (`cache.py:80-92`) dan
    blok `cache` di respons health.
@@ -95,9 +101,9 @@ Kriteria selesai: **terpenuhi** — registry 9 provider / 7 searchable,
 5. ~~**Telemetri `TursoCache`** di blok `store` health.~~ ✅ — `stats()`
    (`store.py:170`) + `_store_stats()` (`api.py:145`), `null` bila Turso mati.
 
-Kriteria selesai: pengguna bisa mengulang pencarian lama tanpa mengetik ulang
-query, dan bisa mendiagnosis cache tanpa membuka log. **Diagnosis cache sudah
-terpenuhi (TTLCache + Turso); persistensi query belum.**
+Kriteria selesai: **terpenuhi** — pengguna bisa mengulang pencarian lama tanpa
+mengetik ulang query (`/api/searches`), dan bisa mendiagnosis cache tanpa
+membuka log (`cache` + `store` di `/api/health`).
 
 **Pelengkap 2026-10-24 (UI ekspor):** hasil pencarian kini punya
 `ExportMenu` (`web/src/components/ExportMenu.tsx`) dengan pilihan 11 format,

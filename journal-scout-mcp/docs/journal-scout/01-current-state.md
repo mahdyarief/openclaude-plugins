@@ -8,7 +8,7 @@ Semua nomor baris merujuk ke repo ini.
 ```
 src/josc/
 ├── server.py       MCP server (stdio), 23 tool
-├── api.py          Starlette HTTP API, 10 route
+├── api.py          Starlette HTTP API, 11 route
 ├── aggregator.py   Orkestrasi lintas provider (fan-out, merge, enrich)
 ├── providers/      9 provider (7 searchable, 1 enricher, 1 citation-only)
 ├── merge.py        Dedup + prioritas sumber
@@ -36,32 +36,41 @@ src/josc/
 
 Skema pencarian (`src/josc/server.py:40-57`) punya:
 `query`, `count`, `author`, `venue`, `year_from`, `year_to`, `tech_only`,
-`offset`.
+`offset`, `affiliation`, `issn`, `orcid`, `doi`. Empat field terakhir
+diteruskan ke provider yang mendeklarasikannya di `supports_filters`; lihat
+`02-provider-matrix.md`.
 
 Prompt template (`src/josc/prompts.py:62-89`): `literature_review`,
 `author_overview`, `citation_trace`.
 
 ## HTTP API
 
-Route di `src/josc/api.py:361-372`:
+Route di `src/josc/api.py:416-428`:
 
 | Route | Handler |
 |---|---|
-| `GET /api/health` | `health` (`api.py:159`) |
-| `GET /api/search` | `search` (`api.py:180`) |
-| `GET /api/search-author` | `search_author` (`api.py:212`) |
-| `GET /api/paper` | `paper` (`api.py:242`) |
-| `GET /api/citations` | `citations` (`api.py:250`) |
-| `GET /api/references` | `references` (`api.py:260`) |
-| `GET /api/network` | `network` (`api.py:270`) |
-| `GET /api/metrics` | `metrics` (`api.py:305`) |
-| `GET /api/export/graphml` | `graphml_export` (`api.py:337`) |
-| `POST /api/export` | `export` (`api.py:341`) |
+| `GET /api/health` | `health` (`api.py:201`) |
+| `GET /api/search` | `search` (`api.py:222`) |
+| `GET /api/search-author` | `search_author` (`api.py:267`) |
+| `GET /api/paper` | `paper` (`api.py:297`) |
+| `GET /api/citations` | `citations` (`api.py:305`) |
+| `GET /api/references` | `references` (`api.py:315`) |
+| `GET /api/network` | `network` (`api.py:325`) |
+| `GET /api/metrics` | `metrics` (`api.py:360`) |
+| `GET /api/searches` | `searches` (`api.py:188`) |
+| `GET /api/export/graphml` | `graphml_export` (`api.py:392`) |
+| `POST /api/export` | `export` (`api.py:396`) |
 
 Semua endpoint baca memakai cache lewat `_cached` (`api.py:76`). Empat di
 antaranya — `search`, `search-author`, `network`, `metrics` — menerima
 `?offline=true`: payload disajikan dari cache Turso dengan `stale: true`, dan
 bila tidak ada entri hasilnya `503` `{"offline": true, "error": ...}`.
+
+`GET /api/search` juga menerima empat filter field — `affiliation`, `issn`,
+`orcid`, `doi` — dan setiap hasil non-offline dicatat ke tabel `searches`
+lewat `_remember()` (`api.py:164-185`). `GET /api/searches?limit=N` membaca
+kembali riwayat itu; responsnya `{"searches": [...], "persistent": true}`,
+atau `{"searches": [], "persistent": false}` bila Turso tidak aktif.
 
 ### Bentuk respons `/api/health`
 
@@ -155,8 +164,13 @@ judul ternormalisasi. `to_graphml` (`graph.py:517`) mengubahnya jadi GraphML.
 - `TTLCache` (`src/josc/cache.py:15`) — in-memory, TTL 300 s, maks 1024 entri.
 - `TursoStore` (`src/josc/store.py:52`) — cache respons HTTP persisten lewat
   Turso `/v2/pipeline`. Opsional; gagal → fallback ke in-memory.
-
-Tidak ada persistensi objek query (tidak ada tabel `searches`).
+- Tabel `searches` (`store.py:130-149`) — riwayat pencarian datar:
+  `id, query, author, sources, filters, result_count, created_at` + indeks
+  `idx_searches_created` pada `created_at DESC`. Ditulis `record_search()`
+  (`store.py:211`, bound parameter) dan dibaca `list_searches()`
+  (`store.py:252`), diekspos sebagai `GET /api/searches` (`api.py:188`).
+  `id` dari `uuid4().hex`; `sources`/`filters` disimpan sebagai JSON.
+  Kegagalan tulis ditelan — riwayat bukan jalur kritis.
 
 ## Dedup dan prioritas sumber
 

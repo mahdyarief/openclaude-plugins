@@ -24,6 +24,9 @@ class PubMedProvider(ProviderBase):
     supports_author_search = True
     supports_citations = False
     supports_references = False
+    # ``author``/``venue`` have dedicated entry points here, so they are not
+    # advertised as search filters (that would double up).
+    supports_filters = frozenset({"affiliation", "issn", "orcid", "doi"})
 
     def _common_params(self) -> dict:
         params = {"tool": self.config.get("tool") or DEFAULT_TOOL}
@@ -41,9 +44,19 @@ class PubMedProvider(ProviderBase):
         return f'AND ("{lower}"[PDAT] : "{upper}"[PDAT])'
 
     @classmethod
-    def _build_term(cls, term: str, year_from, year_to) -> str:
+    def _build_term(cls, term: str, year_from, year_to, affiliation=None, issn=None, orcid=None, doi=None) -> str:
+        parts = [term]
+        if affiliation:
+            parts.append(f'"{affiliation}"[AD]')
+        if issn:
+            parts.append(f'"{issn}"[IS]')
+        if orcid:
+            parts.append(f'"{orcid}"[AID]')
+        if doi:
+            parts.append(f'"{doi}"[DOI]')
         year_filter = cls._year_filter(year_from, year_to)
-        return f"{term} {year_filter}".strip() if year_filter else term
+        parts.append(year_filter)
+        return " ".join(p for p in parts if p)
 
     async def _esearch_ids(self, term: str, limit: int, offset: int) -> List[str]:
         params = {
@@ -147,13 +160,19 @@ class PubMedProvider(ProviderBase):
                 papers.append(paper)
         return papers
 
-    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, offset: int = 0) -> List[Paper]:
-        term = self._build_term(query, year_from, year_to)
+    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, offset: int = 0, affiliation=None, issn=None, orcid=None, doi=None) -> List[Paper]:
+        term = self._build_term(
+            query, year_from, year_to,
+            affiliation=affiliation, issn=issn, orcid=orcid, doi=doi,
+        )
         ids = await self._esearch_ids(term, limit, offset)
         return await self._efetch(ids)
 
-    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, offset: int = 0) -> List[Paper]:
-        term = self._build_term(f'"{author}"[Author]', year_from, year_to)
+    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, offset: int = 0, affiliation=None, issn=None, orcid=None, doi=None) -> List[Paper]:
+        term = self._build_term(
+            f'"{author}"[Author]', year_from, year_to,
+            affiliation=affiliation, issn=issn, orcid=orcid, doi=doi,
+        )
         ids = await self._esearch_ids(term, limit, offset)
         return await self._efetch(ids)
 

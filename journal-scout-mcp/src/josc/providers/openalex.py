@@ -32,7 +32,7 @@ class OpenAlexProvider(ProviderBase):
     supports_citations = True
     supports_author_search = True
     supports_references = True
-    supports_filters = frozenset({"author", "venue"})
+    supports_filters = frozenset({"author", "venue", "affiliation", "issn", "orcid", "doi"})
     supports_tech_only = True
 
     @staticmethod
@@ -61,7 +61,8 @@ class OpenAlexProvider(ProviderBase):
             ids={"openalex": work.get("id")} if work.get("id") else {},
         )
 
-    def _filters(self, year_from, year_to, tech_only, author=None, venue=None):
+    def _filters(self, year_from, year_to, tech_only, author=None, venue=None,
+                 affiliation=None, issn=None, orcid=None, doi=None):
         filters = []
         if author:
             # A comma separates filters in OpenAlex, so a name like
@@ -72,6 +73,19 @@ class OpenAlexProvider(ProviderBase):
             # Same comma constraint as author: a comma would split filters.
             name = " ".join(venue.replace(",", " ").split())
             filters.append(f"primary_location.source.display_name.search:{name}")
+        if affiliation:
+            # Comma constraint applies here too: flatten the string first.
+            value = " ".join(affiliation.replace(",", " ").split())
+            filters.append(f"raw_affiliation_strings.search:{value}")
+        if issn:
+            filters.append(f"primary_location.source.issn:{issn.strip()}")
+        if orcid:
+            filters.append(f"authorships.author.orcid:{orcid.strip()}")
+        if doi:
+            value = doi.strip()
+            if value.startswith("https://doi.org/"):
+                value = value[len("https://doi.org/"):]
+            filters.append(f"doi:{value}")
         if year_from:
             filters.append(f"from_publication_date:{year_from}-01-01")
         if year_to:
@@ -95,9 +109,12 @@ class OpenAlexProvider(ProviderBase):
         data = await self._fetch_json(OPENALEX_URL, params=params)
         return [self._to_paper(w) for w in data.get("results", []) or []]
 
-    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0) -> List[Paper]:
+    async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0, affiliation=None, issn=None, orcid=None, doi=None) -> List[Paper]:
         params = {"search": query, "per-page": limit, "mailto": get_polite_email()}
-        filters = self._filters(year_from, year_to, tech_only, author=author, venue=venue)
+        filters = self._filters(
+            year_from, year_to, tech_only, author=author, venue=venue,
+            affiliation=affiliation, issn=issn, orcid=orcid, doi=doi,
+        )
         if filters:
             params["filter"] = ",".join(filters)
         if offset:
@@ -105,8 +122,11 @@ class OpenAlexProvider(ProviderBase):
         data = await self._fetch_json(OPENALEX_URL, params=params)
         return [self._to_paper(w) for w in data.get("results", []) or []]
 
-    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, venue=None, offset: int = 0) -> List[Paper]:
-        filters = self._filters(year_from, year_to, False, author=author, venue=venue)
+    async def search_author(self, author: str, limit: int, year_from=None, year_to=None, venue=None, offset: int = 0, affiliation=None, issn=None, orcid=None, doi=None) -> List[Paper]:
+        filters = self._filters(
+            year_from, year_to, False, author=author, venue=venue,
+            affiliation=affiliation, issn=issn, orcid=orcid, doi=doi,
+        )
         return await self._search_filtered(filters, limit, offset)
 
     @staticmethod

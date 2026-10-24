@@ -58,22 +58,46 @@ Empat setter di atas adalah satu-satunya provider yang punya cabang
 `tech_only` hanya bila pemanggil benar-benar menyetelnya `True` — kalau tidak,
 setiap respons default akan menyebutnya sebagai filter yang diabaikan.
 
-## Filter terstruktur (`supports_filters`)
+## Filter terstruktur (`supports_filters`) — ✅ diperluas 2026-10-24
 
 `ProviderBase.supports_filters` (`providers/base.py:20-21`) mendeklarasikan
 field yang benar-benar dipakai di query provider. `aggregator._route_filters`
-(`aggregator.py:72-90`) hanya mengirim field ke provider yang mendeklarasikannya
-dan mengembalikan `filters_applied` / `filters_ignored` di respons.
+(`aggregator.py:72-102`) hanya mengirim field ke provider yang
+mendeklarasikannya dan mengembalikan `filters_applied` / `filters_ignored` di
+respons; `_filter_kwargs` (`aggregator.py:105-111`) yang membangun kwargs.
 
-| Provider | `author` | `venue` | Bukti |
-|---|---|---|---|
-| `scopus` | ya | ya | `AUTH(...)`, `SRCTITLE(...)` |
-| `openalex` | ya | ya | `_filters(...)` |
-| `crossref` | ya | ya | `query.author`, `query.container-title` |
-| `semanticscholar` | — | ya | `params["venue"]` |
-| `arxiv` | ya | — | `au:"..."` |
-| `dblp` | ya | — | parameter `author` |
-| `pubmed` | — | — | belum mendeklarasikan filter |
+| Provider | `author` | `venue` | `affiliation` | `issn` | `orcid` | `doi` |
+|---|---|---|---|---|---|---|
+| `scopus` | ya | ya | ya | ya | ya | ya |
+| `openalex` | ya | ya | ya | ya | ya | ya |
+| `crossref` | ya | ya | ya | ya | — | ya |
+| `pubmed` | — | — | ya | ya | ya | ya |
+| `semanticscholar` | — | ya | — | — | — | — |
+| `arxiv` | ya | — | — | — | — | — |
+| `dblp` | ya | — | — | — | — | — |
+
+Bukti per provider:
+
+- `scopus` — `providers/scopus.py:20`; klausa `AFFIL(...)`/`ISSN(...)`/
+  `ORCID(...)`/`DOI(...)` di `search()` (baris 165/167/169/171) dan
+  `search_author()` (baris 183/185/187/189).
+- `openalex` — `providers/openalex.py:35`; `_filters()` (baris 64-119)
+  memakai `raw_affiliation_strings.search:`, `primary_location.source.issn:`,
+  `authorships.author.orcid:`, dan `doi:` (prefix `https://doi.org/` dibuang).
+  Nilai `affiliation` diratakan dulu karena OpenAlex memecah `filter` pada koma.
+- `crossref` — `providers/crossref.py:16`; `query.affiliation` sebagai
+  parameter, `issn:`/`doi:` masuk `filter` yang **digabung** dengan batas
+  tahun di `_works()` (baris 64-78). Tidak ada filter ORCID di API Crossref,
+  jadi kolomnya sengaja kosong.
+- `pubmed` — `providers/pubmed.py:29`; `_build_term()` (baris 47-56)
+  menambahkan `[AD]`, `[IS]`, `[AID]`, `[DOI]`. `author`/`venue` sengaja tidak
+  dideklarasikan karena keduanya punya entry point sendiri.
+- `semanticscholar`/`arxiv`/`dblp` — hanya field lama; API-nya tidak punya
+  padanan untuk empat filter baru.
+
+Pengujian: `tests/test_filters.py` (7 test) mencakup routing ke provider
+pendukung, pelaporan `filters_ignored`, pembagian sebagian, dan string query
+tiap provider.
 
 ## Sumber yang ada di PoP8 tapi belum ada di sini
 

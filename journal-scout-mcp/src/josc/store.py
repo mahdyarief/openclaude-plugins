@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import time
+import uuid
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import httpx
@@ -133,6 +134,19 @@ class TursoCache:
             "value TEXT NOT NULL, "
             "expires_at REAL NOT NULL)"
         )
+        await self.store.execute(
+            "CREATE TABLE IF NOT EXISTS searches ("
+            "id TEXT PRIMARY KEY, "
+            "query TEXT NOT NULL, "
+            "author TEXT, "
+            "sources TEXT, "
+            "filters TEXT, "
+            "result_count INTEGER NOT NULL DEFAULT 0, "
+            "created_at REAL NOT NULL)"
+        )
+        await self.store.execute(
+            "CREATE INDEX IF NOT EXISTS idx_searches_created ON searches(created_at DESC)"
+        )
 
     @staticmethod
     def _key(key: Any) -> str:
@@ -193,6 +207,70 @@ class TursoCache:
         await self.store.execute(
             "DELETE FROM query_cache WHERE expires_at <= ?", [time.time()]
         )
+
+    async def record_search(
+        self,
+        query: str,
+        author: Optional[str] = None,
+        sources: Optional[List[str]] = None,
+        filters: Optional[Dict[str, Any]] = None,
+        result_count: int = 0,
+    ) -> None:
+        """Append one search to the history, best-effort.
+
+        A Turso hiccup must never break a search, so every failure is swallowed
+        just as the module docstring promises.
+        """
+        try:
+            await self.store.execute(
+                "INSERT INTO searches "
+                "(id, query, author, sources, filters, result_count, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [
+                    uuid.uuid4().hex,
+                    query,
+                    author,
+                    json.dumps(sources) if sources else None,
+                    json.dumps(filters) if filters else None,
+                    result_count,
+                    time.time(),
+                ],
+            )
+        except Exception:
+            return
+
+    @staticmethod
+    def _maybe_json(value: Any) -> Any:
+        """Decode a JSON column, leaving unparseable text untouched."""
+        if value is None:
+            return None
+        try:
+            return json.loads(value)
+        except (TypeError, ValueError):
+            return value
+
+    async def list_searches(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Return the most recent searches, newest first."""
+        try:
+            _, rows = await self.store.execute(
+                "SELECT id, query, author, sources, filters, result_count, created_at "
+                "FROM searches ORDER BY created_at DESC LIMIT ?",
+                [limit],
+            )
+        except Exception:
+            return []
+        return [
+            {
+                "id": row[0],
+                "query": row[1],
+                "author": row[2],
+                "sources": self._maybe_json(row[3]),
+                "filters": self._maybe_json(row[4]),
+                "result_count": row[5],
+                "created_at": row[6],
+            }
+            for row in rows or []
+        ]
 
 
 def build_store(ttl: float) -> Optional[TursoCache]:
