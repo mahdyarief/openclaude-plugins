@@ -61,6 +61,21 @@ export type NetworkResponse = {
   format?: string;
 };
 
+export type SearchHistoryRow = {
+  id: string;
+  query: string;
+  author: string | null;
+  sources: string[] | null;
+  filters: Record<string, unknown> | null;
+  result_count: number;
+  created_at: number;
+};
+
+export type SearchHistoryResponse = {
+  searches: SearchHistoryRow[];
+  persistent: boolean;
+};
+
 export type MetricsResponse = {
   papers: number;
   total_citations: number;

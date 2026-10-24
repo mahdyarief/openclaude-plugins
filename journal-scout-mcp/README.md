@@ -12,7 +12,7 @@ Citation links come from OpenCitations as well: 300M+ DOI-to-DOI links, free,
 no API key, no approval. It is not a searchable source — it only answers
 citation and reference queries for a known DOI or OpenCitations id.
 
-## Tools (23)
+## Tools (24)
 
 | Unified | Per-source | Scopus detail |
 |---|---|---|
@@ -21,10 +21,10 @@ citation and reference queries for a known DOI or OpenCitations id.
 | `get_paper` | `search_openalex` | `get_quota_status` |
 | `get_citations` | `search_semanticscholar` | SciVal |
 | `get_references` | `search_crossref` | `scival_author_metrics` |
-| `build_citation_network` | `search_pubmed` | `scival_institution_metrics` |
-| `compute_metrics` | `search_dblp` | `scival_author_lookup` |
-| `export_results` | | `scival_institution_lookup` |
-| | | `scival_topic_metrics` |
+| `get_related_works` | `search_pubmed` | `scival_institution_metrics` |
+| `build_citation_network` | `search_dblp` | `scival_author_lookup` |
+| `compute_metrics` | | `scival_institution_lookup` |
+| `export_results` | | `scival_topic_metrics` |
 
 ### Export
 
@@ -95,10 +95,15 @@ For UI development, run `npm run dev` inside `web/` (Vite proxies `/api` to
 | `GET /api/paper?identifier=` | Resolve one paper |
 | `GET /api/citations?identifier=` | Citing papers |
 | `GET /api/references?identifier=` | Reference list |
+| `GET /api/related?identifier=` | Related works (OpenAlex) |
 | `GET /api/network?identifier=&format=json\|graphml` | Citation network |
 | `GET /api/metrics?author=\|query=&mode=basic\|extended` | Bibliometric summary |
+| `GET /api/searches?limit=` | Recorded search history |
 | `GET /api/export/graphml?identifier=` | GraphML download |
 | `POST /api/export` | Bibliography export (JSON body: `papers`, `format`) |
+
+The UI has four routes: `/` (search), `/graph`, `/metrics`, and `/history`
+(the recorded search list, with a button that re-runs a past query).
 
 ## Objectives
 

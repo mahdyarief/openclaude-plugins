@@ -241,6 +241,17 @@ async def get_references(
     return await _fan_out(calls)
 
 
+async def get_related(
+    providers: List[ProviderBase],
+    identifier: str,
+    limit: int = 20,
+) -> Dict[str, Any]:
+    """Collect the related-works list of one paper from every capable source."""
+    active = _select(providers, None, "supports_related")
+    calls = {p.name: p.related(identifier, limit) for p in active}
+    return await _fan_out(calls)
+
+
 async def _fetch_papers(
     providers: List[ProviderBase],
     identifier: str,

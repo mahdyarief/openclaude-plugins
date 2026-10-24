@@ -23,12 +23,13 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 23
+    assert len(TOOL_NAMES) == 24
     assert "search_all" in TOOL_NAMES
     assert "search_author" in TOOL_NAMES
     assert "search_openalex" in TOOL_NAMES
     assert "scival_topic_metrics" in TOOL_NAMES
     assert "get_references" in TOOL_NAMES
+    assert "get_related_works" in TOOL_NAMES
     assert "build_citation_network" in TOOL_NAMES
     assert "compute_metrics" in TOOL_NAMES
     assert "get_citing_papers" not in TOOL_NAMES

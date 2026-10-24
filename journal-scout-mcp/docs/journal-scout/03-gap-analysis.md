@@ -142,7 +142,7 @@ kebutuhan "recent searches".
 |---|---|
 | Open Article / Full Text | ada link `url`/`pdf_url` di `PaperCard.tsx` |
 | Find Article with Unpaywall | **✅ tombol "Find open-access copy"** di `PaperCard.tsx:89-104` |
-| Open Citing / Related Works | `get_citations` ada, "related" belum |
+| Open Citing / Related Works | **✅ related works selesai 2026-10-24** (lihat di bawah) |
 | Retrieve Citing Works ke search baru | `get_citations` mengembalikan daftar, belum tersimpan |
 
 Tombol OA muncul hanya bila paper punya identifier (`doi` atau salah satu
@@ -150,6 +150,18 @@ Tombol OA muncul hanya bila paper punya identifier (`doi` atau salah satu
 diperbarui, tombol hilang), tidak ditemukan (`No open-access copy found`), dan
 gagal (`Lookup failed`). `try/finally` memastikan state loading tidak pernah
 macet.
+
+**Related works — ✅ selesai 2026-10-24.** Flag `supports_related`
+(`providers/base.py:20`, default `False`), hanya `True` di OpenAlex
+(`openalex.py:35`). Method `related()` (`openalex.py:189`) menyelesaikan
+paper ke work OpenAlex, membaca daftar `related_works`, lalu menghidrasinya
+dengan satu request batch `filter=openalex_id:W1|W2|W3`. Aggregator
+`get_related()` (`aggregator.py:244`) merutekan per flag, sama seperti
+`get_citations`/`get_references`. Terekspos sebagai tool MCP
+`get_related_works` (`server.py`, UNIFIED), route `GET /api/related`
+(`api.py:325`), dan blok `capabilities.related` di `/api/health`
+(`api.py:213`). Test: `tests/test_related.py` (6 test — routing per flag,
+limit, missing/empty field).
 
 ---
 
@@ -208,3 +220,5 @@ sebagai blok `store` (`api.py:165`), `null` bila Turso tidak aktif.
 | ~~P1~~ | `mode=extended` belum tersambung ke jawaban publik | Grup "Extended" di UI selalu kosong | ✅ 2026-10-24 |
 | ~~P2~~ | UI: filter & paginasi di form pencarian | Backend mendukung, form hanya `query`+`limit` | ✅ 2026-10-24 |
 | ~~P2~~ | UI: ekspor 11 format | Hanya GraphML yang punya tombol | ✅ 2026-10-24 |
+| ~~P2~~ | Related works (`supports_related` + `GET /api/related`) | Melengkapi aksi artikel PoP8 | ✅ 2026-10-24 |
+| ~~P2~~ | UI: riwayat pencarian (`/history`) | Backend `/api/searches` ada, UI belum | ✅ 2026-10-24 |

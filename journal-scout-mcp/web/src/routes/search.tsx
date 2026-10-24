@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { ExportMenu } from "../components/ExportMenu";
 import { PaperCard } from "../components/PaperCard";
-import { searchPapers } from "../lib/api";
+import { searchPapers, type SearchOptions } from "../lib/api";
 import type { SearchResponse } from "../lib/types";
 import {
   ALERT_ERROR,
@@ -27,14 +28,30 @@ const PROVIDERS = [
   "dblp",
 ];
 
+function splitSources(value: string | undefined): string[] {
+  return value
+    ? value
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item !== "")
+    : [];
+}
+
 export function SearchPage() {
-  const [query, setQuery] = useState("");
+  const params = useSearch({ from: "/" });
+  const [query, setQuery] = useState(params.q ?? "");
   const [limit, setLimit] = useState(10);
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
   const [techOnly, setTechOnly] = useState(false);
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>(
+    splitSources(params.sources),
+  );
   const [offset, setOffset] = useState("");
+  const [affiliation, setAffiliation] = useState(params.affiliation ?? "");
+  const [issn, setIssn] = useState(params.issn ?? "");
+  const [orcid, setOrcid] = useState(params.orcid ?? "");
+  const [doi, setDoi] = useState(params.doi ?? "");
   const [data, setData] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,23 +64,12 @@ export function SearchPage() {
     );
   }
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed) return;
+  async function run(term: string, options: SearchOptions) {
+    if (!term) return;
     setLoading(true);
     setError(null);
     try {
-      setData(
-        await searchPapers(trimmed, {
-          limitPerSource: limit,
-          yearFrom: yearFrom ? Number(yearFrom) : undefined,
-          yearTo: yearTo ? Number(yearTo) : undefined,
-          techOnly: techOnly || undefined,
-          offset: offset ? Number(offset) : undefined,
-          sources: selectedSources,
-        }),
-      );
+      setData(await searchPapers(term, options));
     } catch (exc) {
       setError(exc instanceof Error ? exc.message : String(exc));
       setData(null);
@@ -71,6 +77,49 @@ export function SearchPage() {
       setLoading(false);
     }
   }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    await run(query.trim(), {
+      limitPerSource: limit,
+      yearFrom: yearFrom ? Number(yearFrom) : undefined,
+      yearTo: yearTo ? Number(yearTo) : undefined,
+      techOnly: techOnly || undefined,
+      offset: offset ? Number(offset) : undefined,
+      sources: selectedSources,
+      affiliation: affiliation.trim() || undefined,
+      issn: issn.trim() || undefined,
+      orcid: orcid.trim() || undefined,
+      doi: doi.trim() || undefined,
+    });
+  }
+
+  const paramQuery = params.q ?? "";
+  const paramSources = params.sources ?? "";
+  const paramAffiliation = params.affiliation ?? "";
+  const paramIssn = params.issn ?? "";
+  const paramOrcid = params.orcid ?? "";
+  const paramDoi = params.doi ?? "";
+
+  useEffect(() => {
+    if (!paramQuery.trim()) return;
+    setQuery(paramQuery);
+    setSelectedSources(splitSources(paramSources));
+    setAffiliation(paramAffiliation);
+    setIssn(paramIssn);
+    setOrcid(paramOrcid);
+    setDoi(paramDoi);
+    void run(paramQuery, {
+      limitPerSource: 10,
+      sources: splitSources(paramSources),
+      affiliation: paramAffiliation || undefined,
+      issn: paramIssn || undefined,
+      orcid: paramOrcid || undefined,
+      doi: paramDoi || undefined,
+    });
+    // Re-run only when the URL-carried search changes (e.g. a history Reload).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramQuery, paramSources, paramAffiliation, paramIssn, paramOrcid, paramDoi]);
 
   return (
     <div className={PAGE}>
@@ -154,6 +203,46 @@ export function SearchPage() {
               className="h-4 w-4 accent-sky-500"
             />
             tech only
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 border-t border-slate-800/70 pt-4 text-xs text-slate-400">
+          <span className="text-slate-500">Filters</span>
+          <label className="flex items-center gap-2">
+            affiliation
+            <input
+              value={affiliation}
+              onChange={(event) => setAffiliation(event.target.value)}
+              placeholder="—"
+              className={`${FIELD_SM} h-9 w-40`}
+            />
+          </label>
+          <label className="flex items-center gap-2">
+            issn
+            <input
+              value={issn}
+              onChange={(event) => setIssn(event.target.value)}
+              placeholder="—"
+              className={`${FIELD_SM} h-9 w-28`}
+            />
+          </label>
+          <label className="flex items-center gap-2">
+            orcid
+            <input
+              value={orcid}
+              onChange={(event) => setOrcid(event.target.value)}
+              placeholder="—"
+              className={`${FIELD_SM} h-9 w-40`}
+            />
+          </label>
+          <label className="flex items-center gap-2">
+            doi
+            <input
+              value={doi}
+              onChange={(event) => setDoi(event.target.value)}
+              placeholder="—"
+              className={`${FIELD_SM} h-9 w-40`}
+            />
           </label>
         </div>
 

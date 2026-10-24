@@ -210,6 +210,7 @@ async def health(request: Request) -> JSONResponse:
                     "search": getattr(p, "supports_search", False),
                     "citations": getattr(p, "supports_citations", False),
                     "references": getattr(p, "supports_references", False),
+                    "related": getattr(p, "supports_related", False),
                     "author_search": getattr(p, "supports_author_search", False),
                     "tech_only": getattr(p, "supports_tech_only", False),
                 }
@@ -322,6 +323,16 @@ async def references(request: Request) -> JSONResponse:
     return JSONResponse(payload)
 
 
+async def related(request: Request) -> JSONResponse:
+    try:
+        payload = await aggregator.get_related(
+            _providers(), _identifier(request), limit=_int(request, "limit", 20)
+        )
+    except Exception as exc:  # noqa: BLE001
+        return _error(exc)
+    return JSONResponse(payload)
+
+
 async def network(request: Request) -> Response:
     identifier = _identifier(request)
     limit = _int(request, "limit", 20)
@@ -420,6 +431,7 @@ routes = [
     Route("/api/paper", paper),
     Route("/api/citations", citations),
     Route("/api/references", references),
+    Route("/api/related", related),
     Route("/api/network", network),
     Route("/api/metrics", metrics),
     Route("/api/searches", searches),

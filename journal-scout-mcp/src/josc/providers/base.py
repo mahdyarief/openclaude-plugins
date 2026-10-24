@@ -17,6 +17,7 @@ class ProviderBase:
     supports_citations: bool = False
     supports_author_search: bool = False
     supports_references: bool = False
+    supports_related: bool = False
     # True only when search() actually applies the tech/CS restriction.
     supports_tech_only: bool = False
     # Field names this provider can actually honour in search().
@@ -74,4 +75,7 @@ class ProviderBase:
         return []
 
     async def references(self, identifier: str, limit: int) -> List[Paper]:
+        return []
+
+    async def related(self, identifier: str, limit: int) -> List[Paper]:
         return []

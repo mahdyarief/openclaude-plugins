@@ -32,6 +32,7 @@ class OpenAlexProvider(ProviderBase):
     supports_citations = True
     supports_author_search = True
     supports_references = True
+    supports_related = True
     supports_filters = frozenset({"author", "venue", "affiliation", "issn", "orcid", "doi"})
     supports_tech_only = True
 
@@ -180,6 +181,24 @@ class OpenAlexProvider(ProviderBase):
         params = {
             "filter": f"cites:{self._short_id(work['id'])}",
             "per-page": limit,
+            "mailto": get_polite_email(),
+        }
+        data = await self._fetch_json(OPENALEX_URL, params=params)
+        return [self._to_paper(w) for w in data.get("results", []) or []]
+
+    async def related(self, identifier: str, limit: int) -> List[Paper]:
+        work = await self._resolve_work(identifier)
+        if not work:
+            return []
+        related_ids = [self._short_id(u) for u in work.get("related_works") or []]
+        related_ids = [rid for rid in related_ids if rid][: max(limit, 0)]
+        if not related_ids:
+            return []
+        # ``openalex_id:`` takes a pipe-separated OR of Work ids and returns
+        # full work objects, so one request hydrates the whole list.
+        params = {
+            "filter": f"openalex_id:{'|'.join(related_ids)}",
+            "per-page": min(len(related_ids), 50),
             "mailto": get_polite_email(),
         }
         data = await self._fetch_json(OPENALEX_URL, params=params)

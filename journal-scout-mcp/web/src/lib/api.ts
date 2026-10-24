@@ -2,6 +2,7 @@ import type {
   MetricsResponse,
   NetworkResponse,
   Paper,
+  SearchHistoryResponse,
   SearchResponse,
 } from "./types";
 
@@ -29,6 +30,10 @@ export type SearchOptions = {
   techOnly?: boolean;
   offset?: number;
   sources?: string[];
+  affiliation?: string;
+  issn?: string;
+  orcid?: string;
+  doi?: string;
 };
 
 export function searchPapers(query: string, options: SearchOptions = {}): Promise<SearchResponse> {
@@ -41,7 +46,15 @@ export function searchPapers(query: string, options: SearchOptions = {}): Promis
     tech_only: options.techOnly ? "true" : undefined,
     offset: options.offset,
     source: sources.length > 0 ? sources.join(",") : undefined,
+    affiliation: options.affiliation,
+    issn: options.issn,
+    orcid: options.orcid,
+    doi: options.doi,
   });
+}
+
+export function fetchSearches(limit = 20): Promise<SearchHistoryResponse> {
+  return getJson<SearchHistoryResponse>("/api/searches", { limit });
 }
 
 export function fetchPaper(identifier: string): Promise<{ paper: Paper | null; errors?: Record<string, string> }> {

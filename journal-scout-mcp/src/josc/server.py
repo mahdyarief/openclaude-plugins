@@ -20,6 +20,7 @@ UNIFIED_TOOLS = [
     "get_paper",
     "get_citations",
     "get_references",
+    "get_related_works",
     "build_citation_network",
     "compute_metrics",
     "export_results",
@@ -161,6 +162,18 @@ def _tool_list() -> List[types.Tool]:
             },
         ),
         types.Tool(
+            name="get_related_works",
+            description="List the works OpenAlex considers related to one paper (Publish or Perish 'Related Works'), merged and deduped.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "identifier": {"type": "string"},
+                    "limit": {"type": "integer", "default": 20},
+                },
+                "required": ["identifier"],
+            },
+        ),
+        types.Tool(
             name="build_citation_network",
             description="Build a Connected-Papers-style network around one paper: direct citations, bibliographic coupling and co-citation edges. Use graph_format='graphml' to get a Gephi/VOSviewer file.",
             inputSchema={
@@ -268,6 +281,10 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         )
     if name == "get_references":
         return await aggregator.get_references(
+            providers, arguments["identifier"], limit=arguments.get("limit", 20)
+        )
+    if name == "get_related_works":
+        return await aggregator.get_related(
             providers, arguments["identifier"], limit=arguments.get("limit", 20)
         )
     if name == "build_citation_network":

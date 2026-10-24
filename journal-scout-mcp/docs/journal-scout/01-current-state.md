@@ -7,8 +7,8 @@ Semua nomor baris merujuk ke repo ini.
 
 ```
 src/josc/
-├── server.py       MCP server (stdio), 23 tool
-├── api.py          Starlette HTTP API, 11 route
+├── server.py       MCP server (stdio), 24 tool
+├── api.py          Starlette HTTP API, 12 route
 ├── aggregator.py   Orkestrasi lintas provider (fan-out, merge, enrich)
 ├── providers/      9 provider (7 searchable, 1 enricher, 1 citation-only)
 ├── merge.py        Dedup + prioritas sumber
@@ -29,7 +29,7 @@ src/josc/
 
 | Kelompok | Tool |
 |---|---|
-| Unified (8) | `search_all`, `search_author`, `get_paper`, `get_citations`, `get_references`, `build_citation_network`, `compute_metrics`, `export_results` |
+| Unified (9) | `search_all`, `search_author`, `get_paper`, `get_citations`, `get_references`, `get_related_works`, `build_citation_network`, `compute_metrics`, `export_results` |
 | Per-source (7) | `search_scopus`, `search_arxiv`, `search_openalex`, `search_semanticscholar`, `search_crossref`, `search_pubmed`, `search_dblp` |
 | Scopus detail (3) | `get_abstract_details`, `get_author_profile`, `get_quota_status` |
 | SciVal (5) | `scival_author_metrics`, `scival_institution_metrics`, `scival_author_lookup`, `scival_institution_lookup`, `scival_topic_metrics` |
@@ -45,7 +45,7 @@ Prompt template (`src/josc/prompts.py:62-89`): `literature_review`,
 
 ## HTTP API
 
-Route di `src/josc/api.py:416-428`:
+Route di `src/josc/api.py:427-438`:
 
 | Route | Handler |
 |---|---|
@@ -55,11 +55,12 @@ Route di `src/josc/api.py:416-428`:
 | `GET /api/paper` | `paper` (`api.py:297`) |
 | `GET /api/citations` | `citations` (`api.py:305`) |
 | `GET /api/references` | `references` (`api.py:315`) |
-| `GET /api/network` | `network` (`api.py:325`) |
-| `GET /api/metrics` | `metrics` (`api.py:360`) |
+| `GET /api/related` | `related` (`api.py:325`) |
+| `GET /api/network` | `network` (`api.py:335`) |
+| `GET /api/metrics` | `metrics` (`api.py:370`) |
 | `GET /api/searches` | `searches` (`api.py:188`) |
-| `GET /api/export/graphml` | `graphml_export` (`api.py:392`) |
-| `POST /api/export` | `export` (`api.py:396`) |
+| `GET /api/export/graphml` | `graphml_export` (`api.py:402`) |
+| `POST /api/export` | `export` (`api.py:406`) |
 
 Semua endpoint baca memakai cache lewat `_cached` (`api.py:76`). Empat di
 antaranya — `search`, `search-author`, `network`, `metrics` — menerima
@@ -91,8 +92,8 @@ atau `{"searches": [], "persistent": false}` bila Turso tidak aktif.
   "capabilities": {
     "<provider>": {
       "search": true, "citations": false,
-      "references": false, "author_search": false,
-      "tech_only": false
+      "references": false, "related": false,
+      "author_search": false, "tech_only": false
     }
   }
 }
@@ -106,13 +107,19 @@ semua provider — tidak ada instance cache kedua dan tidak ada global state.
 
 ## Web UI
 
-Tiga route (`web/src/router.tsx:63-86`):
+Empat route (`web/src/router.tsx:65-112`):
 
 | Path | File | Isi |
 |---|---|---|
 | `/` | `web/src/routes/search.tsx` | form pencarian + daftar hasil |
 | `/graph` | `web/src/routes/graph.tsx` | visualisasi force-directed |
 | `/metrics` | `web/src/routes/metrics.tsx` | kartu metrik + tabel sitasi per tahun |
+| `/history` | `web/src/routes/history.tsx` | riwayat pencarian dari `/api/searches` + tombol Reload |
+
+`/` dan `/history` memakai `validateSearch`, jadi state form pencarian hidup di
+URL dan bisa dibagikan sebagai tautan. Route `/history` membedakan tiga
+keadaan kosong: `persistent: false` (Turso tidak aktif), riwayat kosong, dan
+gagal memuat.
 
 Komponen: `ForceGraph.tsx` (d3-force), `PaperCard.tsx` (kartu hasil).
 

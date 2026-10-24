@@ -1,22 +1,22 @@
 # 02 — Matriks Kapabilitas Provider
 
-Sumber: flag di `src/josc/providers/base.py:16-22` dan deklarasi per provider.
+Sumber: flag di `src/josc/providers/base.py:15-27` dan deklarasi per provider.
 Angka terverifikasi dengan menjalankan `provider_names()` dan
 `search_provider_names()`.
 
 ## Matriks
 
-| Provider | search | citations | author search | references | peran lain |
-|---|---|---|---|---|---|
-| `scopus` | ya | ya | ya | ya | abstract details, author profile, quota, SciVal |
-| `openalex` | ya | ya | ya | ya | — |
-| `semanticscholar` | ya | ya | ya | ya | — |
-| `crossref` | ya | — | ya | ya | — |
-| `pubmed` | ya | — | ya | — | E-utilities dua tahap |
-| `arxiv` | ya | — | ya | — | — |
-| `dblp` | ya | — | — | — | — |
-| `opencitations` | **tidak** | ya | — | ya | citation/reference only |
-| `unpaywall` | **tidak** | — | — | — | `enricher = True` |
+| Provider | search | citations | author search | references | related | peran lain |
+|---|---|---|---|---|---|---|
+| `scopus` | ya | ya | ya | ya | — | abstract details, author profile, quota, SciVal |
+| `openalex` | ya | ya | ya | ya | **ya** | satu-satunya sumber related works |
+| `semanticscholar` | ya | ya | ya | ya | — | — |
+| `crossref` | ya | — | ya | ya | — | — |
+| `pubmed` | ya | — | ya | — | — | E-utilities dua tahap |
+| `arxiv` | ya | — | ya | — | — | — |
+| `dblp` | ya | — | — | — | — | — |
+| `opencitations` | **tidak** | ya | — | ya | — | citation/reference only |
+| `unpaywall` | **tidak** | — | — | — | — | `enricher = True` |
 
 ## Implikasi operasional
 
@@ -35,6 +35,15 @@ Scholar, Crossref. Dipakai `get_references` (`aggregator.py:216`) dan
 **OpenCitations tidak bisa search.** `supports_search = False`
 (`providers/opencitations.py:33`) — hanya bisa dijadikan sumber edge sitasi
 jika ada DOI.
+
+**Hanya OpenAlex yang punya related works.** `supports_related = True`
+(`providers/openalex.py:35`), dan `related()` (`openalex.py:189`) mengambil
+daftar `related_works` milik satu work lalu menghidrasinya sekaligus lewat
+`GET /works?filter=openalex_id:W1|W2|W3` — satu request, bukan N. Provider
+lain mewarisi default `False` (`providers/base.py:20`), jadi
+`aggregator.get_related` (`aggregator.py:244`) hanya memanggil OpenAlex.
+Ini disengaja: setiap sumber punya algoritma "related" yang berbeda dan
+hanya OpenAlex yang mengeksposnya sebagai API publik tanpa key.
 
 ## Catatan tentang `tech_only` — ✅ selesai 2026-10-24
 

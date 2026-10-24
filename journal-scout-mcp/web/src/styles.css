@@ -39,6 +39,14 @@ body {
   background: rgba(56, 189, 248, 0.3);
 }
 
+.history-row {
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.history-row:hover {
+  border-color: #334155;
+}
+
 .scroll-thin::-webkit-scrollbar {
   width: 8px;
   height: 8px;

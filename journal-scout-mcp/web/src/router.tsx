@@ -6,6 +6,7 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { GraphPage } from "./routes/graph";
+import { HistoryPage } from "./routes/history";
 import { MetricsPage } from "./routes/metrics";
 import { SearchPage } from "./routes/search";
 
@@ -13,6 +14,7 @@ const NAV = [
   { to: "/", label: "Search" },
   { to: "/graph", label: "Citation graph" },
   { to: "/metrics", label: "Metrics" },
+  { to: "/history", label: "History" },
 ] as const;
 
 function RootLayout() {
@@ -20,7 +22,7 @@ function RootLayout() {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-20 border-b border-slate-800/70 bg-[#070b14]/85 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-[1180px] flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:px-12">
-          <Link to="/" className="group flex flex-col no-underline">
+          <Link to="/" search={{}} className="group flex flex-col no-underline">
             <span className="text-lg font-semibold tracking-tight text-slate-50">
               Journal <span className="text-sky-400">Scout</span>
             </span>
@@ -63,6 +65,27 @@ const rootRoute = createRootRoute({ component: RootLayout });
 const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    q?: string;
+    sources?: string;
+    affiliation?: string;
+    issn?: string;
+    orcid?: string;
+    doi?: string;
+  } => {
+    const text = (value: unknown): string | undefined =>
+      typeof value === "string" ? value : undefined;
+    return {
+      q: text(search.q),
+      sources: text(search.sources),
+      affiliation: text(search.affiliation),
+      issn: text(search.issn),
+      orcid: text(search.orcid),
+      doi: text(search.doi),
+    };
+  },
   component: SearchPage,
 });
 
@@ -81,7 +104,13 @@ const metricsRoute = createRoute({
   component: MetricsPage,
 });
 
-const routeTree = rootRoute.addChildren([searchRoute, graphRoute, metricsRoute]);
+const historyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/history",
+  component: HistoryPage,
+});
+
+const routeTree = rootRoute.addChildren([searchRoute, graphRoute, metricsRoute, historyRoute]);
 
 export const router = createRouter({ routeTree });
 

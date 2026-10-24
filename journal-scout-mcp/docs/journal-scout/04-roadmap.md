@@ -114,6 +114,73 @@ dari server.
 
 ---
 
+## Fase 6 — Related works + riwayat di UI (P2) — ✅ 2026-10-24
+
+1. ~~**`supports_related`** di `ProviderBase` (`providers/base.py:20`),
+   `True` hanya di OpenAlex (`providers/openalex.py:35`).~~ ✅
+2. ~~**`OpenAlexProvider.related()`** (`openalex.py:189`) — baca
+   `related_works`, lalu hidrasi batch
+   `GET /works?filter=openalex_id:W1|W2|W3`.~~ ✅
+3. ~~**`aggregator.get_related()`** (`aggregator.py:244`) + tool MCP
+   `get_related_works` + `GET /api/related` (`api.py:325`) + flag
+   `capabilities.related` di `/api/health` (`api.py:213`).~~ ✅
+4. ~~**`/history`** (`web/src/routes/history.tsx`) membaca `GET /api/searches`
+   dan menyediakan tombol Reload yang mengirim ulang query+sources+filters
+   ke route `/`.~~ ✅
+
+Kriteria selesai: **terpenuhi** — 24 tool MCP, 12 route HTTP, 4 route web UI,
+242 test hijau, `uvx ruff check .` bersih, `npm run build` hijau.
+
+---
+
+## Fase 7 — Seleksi hasil dan laporan (P2)
+
+Fokus: mengubah hasil pencarian dari daftar pasif menjadi bahan kerja.
+
+1. **Seleksi hasil di `/`.** Checkbox per baris + "select all", tombol
+   "Uncheck 0 Cites" (buang paper tanpa sitasi), dan ekspor hanya baris
+   terpilih. `ExportMenu` (`web/src/components/ExportMenu.tsx`) menerima
+   `papers` dari state seleksi, bukan dari `results` penuh.
+2. **Formatter `metrics_csv`** di `exporters.py` — satu baris per metrik,
+   kolom `metric,value`, supaya laporan basic/extended bisa dibuka di Excel.
+   Tambahkan ke `FORMATTERS` (12 kunci) dan ke `EXPORT_FORMATS` di `api.ts`.
+3. **Tabel sitasi per tahun** di `/metrics` — baris tahun, kolom
+   `papers, citations, cumulative`, dirender dari data yang sudah dikirim
+   `compute_metrics`. Butuh field `by_year` di respons `graph.py`.
+
+Kriteria selesai: ekspor menghormati seleksi; `metrics_csv` bisa diunduh dan
+dibuka di Excel; tabel per-tahun muncul tanpa request tambahan.
+
+---
+
+## Fase 8 — Gabung dan arsip pencarian (P2)
+
+Fokus: alur kerja berulang di atas tabel `searches` yang sudah ada.
+
+1. **`POST /api/merge`** — body `{"paper_lists": [[...], [...]]}` → dedup
+   DOI-first lewat `merge_papers`, balas `{"papers": [...], "removed": N}`.
+   Tombol "Merge" di `/history` untuk menggabungkan dua pencarian lama.
+2. **`GET /api/searches/{id}/export`** — bundel arsip: query asli, filter,
+   sumber, dan hasil tersimpan dalam satu JSON. Butuh kolom `results` (JSON)
+   di tabel `searches`, diisi `record_search()` saat hasilnya masih di tangan.
+3. **Impor arsip** — `POST /api/searches/import` menerima bundel tadi dan
+   menyimpannya kembali sebagai entri riwayat.
+
+Kriteria selesai: dua pencarian bisa digabung tanpa duplikat; satu pencarian
+lama bisa diunduh sebagai arsip mandiri dan dimuat kembali di mesin lain.
+
+---
+
+## Sisa gap setelah Fase 8
+
+| Gap | Sifat |
+|---|---|
+| Terjemahan operator AND/OR/NOT per provider | keputusan produk — tiap API punya sintaksis berbeda dan sebagian tidak mendukungnya sama sekali |
+| Sumber berlangganan (Web of Science, Scopus penuh) | keputusan bisnis — butuh lisensi institusi |
+| Folder/trash berlapis | sengaja ditolak, lihat tabel di bawah |
+
+---
+
 ## Yang tidak masuk roadmap
 
 | Item | Alasan |
