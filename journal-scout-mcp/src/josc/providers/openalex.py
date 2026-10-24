@@ -33,6 +33,7 @@ class OpenAlexProvider(ProviderBase):
     supports_author_search = True
     supports_references = True
     supports_filters = frozenset({"author", "venue"})
+    supports_tech_only = True
 
     @staticmethod
     def _to_paper(work):

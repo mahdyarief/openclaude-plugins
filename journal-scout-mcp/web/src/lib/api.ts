@@ -22,10 +22,25 @@ async function getJson<T>(path: string, params: Record<string, string | number |
   return payload as T;
 }
 
-export function searchPapers(query: string, limitPerSource = 10): Promise<SearchResponse> {
+export type SearchOptions = {
+  limitPerSource?: number;
+  yearFrom?: number;
+  yearTo?: number;
+  techOnly?: boolean;
+  offset?: number;
+  sources?: string[];
+};
+
+export function searchPapers(query: string, options: SearchOptions = {}): Promise<SearchResponse> {
+  const sources = options.sources?.filter((source) => source.trim() !== "") ?? [];
   return getJson<SearchResponse>("/api/search", {
     query,
-    limit_per_source: limitPerSource,
+    limit_per_source: options.limitPerSource,
+    year_from: options.yearFrom,
+    year_to: options.yearTo,
+    tech_only: options.techOnly ? "true" : undefined,
+    offset: options.offset,
+    source: sources.length > 0 ? sources.join(",") : undefined,
   });
 }
 
@@ -53,6 +68,7 @@ export function fetchMetrics(params: {
   limitPerSource?: number;
   yearFrom?: number;
   yearTo?: number;
+  mode?: "basic" | "extended";
 }): Promise<MetricsResponse> {
   return getJson<MetricsResponse>("/api/metrics", {
     author: params.author,
@@ -60,6 +76,7 @@ export function fetchMetrics(params: {
     limit_per_source: params.limitPerSource,
     year_from: params.yearFrom,
     year_to: params.yearTo,
+    mode: params.mode,
   });
 }
 

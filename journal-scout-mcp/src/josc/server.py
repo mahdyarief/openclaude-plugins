@@ -181,6 +181,7 @@ def _tool_list() -> List[types.Tool]:
                     "sources": {"type": "array", "items": {"type": "string"}},
                     "year_from": {"type": "integer", "description": "Earliest publication year."},
                     "year_to": {"type": "integer", "description": "Latest publication year."},
+                    "mode": {"type": "string", "enum": ["basic", "extended"], "default": "basic", "description": "basic returns the classic indicators; extended adds hc/hI/hI_norm/AWCR/AW-index/AWCRpA/hm."},
                 },
             },
         ),
@@ -277,6 +278,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             year_from=arguments.get("year_from"),
             year_to=arguments.get("year_to"),
             sources=arguments.get("sources"),
+            mode=arguments.get("mode", "basic"),
         )
     if name == "export_results":
         fmt = arguments["format"]

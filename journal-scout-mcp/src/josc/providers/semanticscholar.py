@@ -28,6 +28,7 @@ class SemanticScholarProvider(ProviderBase):
     # ``/paper/search`` has a ``venue`` parameter; it has no author filter, so
     # only ``venue`` is advertised.
     supports_filters = frozenset({"venue"})
+    supports_tech_only = True
 
     def _headers(self):
         key = get_semantic_scholar_key()

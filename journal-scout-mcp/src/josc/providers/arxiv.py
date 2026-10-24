@@ -50,6 +50,7 @@ class ArxivProvider(ProviderBase):
     supports_search = True
     supports_author_search = True
     supports_filters = frozenset({"author"})
+    supports_tech_only = True
 
     @staticmethod
     def _to_paper(entry):

@@ -69,7 +69,11 @@ def _supported_filters(provider: ProviderBase) -> frozenset:
     return getattr(provider, "supports_filters", frozenset())
 
 
-def _route_filters(active: List[ProviderBase], requested: Dict[str, Any]):
+def _route_filters(
+    active: List[ProviderBase],
+    requested: Dict[str, Any],
+    tech_only: bool = False,
+):
     """Split requested field filters into per-provider kwargs and a report.
 
     Only providers that declare a field in ``supports_filters`` receive it, so
@@ -87,6 +91,14 @@ def _route_filters(active: List[ProviderBase], requested: Dict[str, Any]):
             ignored.append(field)
         for provider in supporting:
             applied.setdefault(provider.name, []).append(field)
+    # ``tech_only`` is boolean, so it is only reported when explicitly asked
+    # for; otherwise every default response would list it as ignored.
+    if tech_only:
+        supporting = [p for p in active if getattr(p, "supports_tech_only", False)]
+        if not supporting:
+            ignored.append("tech_only")
+        for provider in supporting:
+            applied.setdefault(provider.name, []).append("tech_only")
     return applied, ignored
 
 
@@ -113,7 +125,7 @@ async def search_all(
 ) -> Dict[str, Any]:
     active = _select(providers, sources, "supports_search")
     requested = {"author": author, "venue": venue}
-    applied, ignored = _route_filters(active, requested)
+    applied, ignored = _route_filters(active, requested, tech_only=tech_only)
     calls = {
         p.name: p.search(
             query=query,
@@ -333,6 +345,7 @@ async def compute_metrics(
     year_from: Optional[int] = None,
     year_to: Optional[int] = None,
     sources: Optional[List[str]] = None,
+    mode: str = "basic",
 ) -> Dict[str, Any]:
     """Compute Publish-or-Perish style metrics for an author or a query."""
     if author:
@@ -357,7 +370,7 @@ async def compute_metrics(
         raise ValueError("compute_metrics needs either 'author' or 'query'.")
 
     papers = [Paper(**item) for item in result["results"]]
-    metrics = _compute_metrics(papers)
+    metrics = _compute_metrics(papers, mode=mode)
     metrics["errors"] = result["errors"]
     metrics["counts"] = result["counts"]
     return metrics

@@ -35,6 +35,13 @@ route HTTP.
 Kriteria selesai: **terpenuhi** — 22 test metrik lulus, termasuk pemisahan
 tegas `hI_index` (Batista), `hI_norm`, dan `hm_index` (Schreiber).
 
+**Pelengkap 2026-10-24:** `mode` kini tersambung ke jalur publik —
+`aggregator.compute_metrics(mode=...)` (`aggregator.py:348`), query param
+`mode` di `GET /api/metrics` (`api.py:270`), schema tool MCP
+(`server.py:184`), dan toggle Basic/Extended di `/metrics` yang memanggil
+`fetchMetrics({ mode })` (`api.ts:71`). Test baru:
+`tests/test_metrics_mode.py` (5 test, termasuk seam HTTP via TestClient).
+
 ---
 
 ## Fase 3 — Filter terstruktur (P1) — ✅ 2026-10-24
@@ -48,7 +55,17 @@ tegas `hI_index` (Batista), `hI_norm`, dan `hm_index` (Schreiber).
    di respons.~~ ✅
 
 Kriteria selesai: **terpenuhi** — `filters_applied` / `filters_ignored`
-dikembalikan di respons. Catatan: `tech_only` belum punya capability flag.
+dikembalikan di respons. `tech_only` menyusul punya capability flag sendiri
+(`supports_tech_only`) pada 2026-10-24 — lihat Fase 5.
+
+**Pelengkap 2026-10-24 (UI):** form pencarian di `web/src/routes/search.tsx`
+kini mengekspos semua filter backend — `yearFrom`, `techOnly`, pemilihan
+`selectedSources` lewat `toggleSource()`, dan `offset` untuk paginasi
+(`search.tsx:32-45`, submit di `:59-63`). Respons filter ditampilkan sebagai
+banner: `filters_ignored` di `:202-209` dan `filters_applied` per provider di
+`:210-213`. `searchPapers` (`api.ts:26-44`) mengirim `tech_only` hanya saat
+aktif, sehingga provider tanpa dukungan dilaporkan `ignored` alih-alih
+menerima flag yang tidak dipahami.
 
 ---
 
@@ -64,16 +81,18 @@ Kriteria selesai: **terpenuhi** — registry 9 provider / 7 searchable,
 
 ---
 
-## Fase 5 — Persistensi dan observability (P2)
+## Fase 5 — Persistensi dan observability (P2) — sebagian ✅ 2026-10-24
 
 1. **Tabel `searches`** di `TursoStore` (`src/josc/store.py:52`).
 2. **Endpoint** `GET /api/searches` (recent) dan `POST /api/searches`.
-3. **Metrik cache** di `GET /api/health` (`src/josc/api.py:109`):
-   hit, miss, entri, umur.
+3. ~~**Metrik cache** di `GET /api/health` (`src/josc/api.py:122`):
+   hit, miss, entri, umur.~~ ✅ — `TTLCache.stats()` (`cache.py:80-92`) dan
+   blok `cache` di respons health.
 4. **Mode offline** `offline=true` → sajikan cache dengan `stale: true`.
 
 Kriteria selesai: pengguna bisa mengulang pencarian lama tanpa mengetik ulang
-query, dan bisa mendiagnosis cache tanpa membuka log.
+query, dan bisa mendiagnosis cache tanpa membuka log. **Diagnosis cache sudah
+terpenuhi; persistensi query belum.**
 
 ---
 

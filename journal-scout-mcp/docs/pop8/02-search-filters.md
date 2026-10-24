@@ -56,5 +56,7 @@ Yang masih terbuka:
 1. **Field lain** (affiliation, ISSN, ORCID, DOI) belum didukung.
 2. **Translasi operator per sumber** — tidak ada layer yang mengubah query
    kanonik menjadi sintaks masing-masing API.
-3. **`tech_only` belum punya capability flag** — Crossref dan DBLP masih
-   mengabaikannya diam-diam.
+3. ~~**`tech_only` belum punya capability flag**~~ — **✅ selesai
+   2026-10-24.** `supports_tech_only` (`providers/base.py:22`) membuat
+   Crossref, DBLP, dan PubMed dilaporkan di `filters_ignored` alih-alih
+   diabaikan diam-diam.

@@ -35,12 +35,24 @@ const BASIC_CARDS: MetricCard[] = [
 
 const EXTENDED_CARDS: MetricCard[] = [
   { key: "hc_index", label: "hc-index", hint: "h-index over recent years" },
-  { key: "hI_index", label: "hI-index", hint: "h-index weighted by author share" },
-  { key: "hI_norm", label: "hI norm", hint: "hI divided by mean authors" },
+  {
+    key: "hI_index",
+    label: "hI-index",
+    hint: "Batista's individual h-index: h divided by the mean number of authors of the papers in the h-core",
+  },
+  {
+    key: "hI_norm",
+    label: "hI norm",
+    hint: "h-index over per-paper citations divided by author count (Publish or Perish)",
+  },
   { key: "AWCR", label: "AWCR", hint: "age-weighted citation rate" },
   { key: "AW_index", label: "AW-index", hint: "sqrt of AWCR" },
   { key: "AWCRpA", label: "AWCR per author", hint: "AWCR divided by authors" },
-  { key: "hm_index", label: "hm-index", hint: "h-index weighted by first-author share" },
+  {
+    key: "hm_index",
+    label: "hm-index",
+    hint: "Schreiber's hm-index: each paper counts 1/a of an effective rank; largest rank still supported by citations",
+  },
 ];
 
 function MetricGroup({
@@ -78,7 +90,8 @@ function MetricGroup({
 }
 
 export function MetricsPage() {
-  const [mode, setMode] = useState<"author" | "query">("author");
+  const [searchBy, setSearchBy] = useState<"author" | "query">("author");
+  const [metricMode, setMetricMode] = useState<"basic" | "extended">("extended");
   const [value, setValue] = useState("");
   const [limit, setLimit] = useState(50);
   const [yearFrom, setYearFrom] = useState("");
@@ -96,10 +109,11 @@ export function MetricsPage() {
     try {
       setData(
         await fetchMetrics({
-          [mode]: trimmed,
+          [searchBy]: trimmed,
           limitPerSource: limit,
           yearFrom: yearFrom ? Number(yearFrom) : undefined,
           yearTo: yearTo ? Number(yearTo) : undefined,
+          mode: metricMode,
         }),
       );
     } catch (exc) {
@@ -128,9 +142,9 @@ export function MetricsPage() {
               <button
                 key={option}
                 type="button"
-                onClick={() => setMode(option)}
+                onClick={() => setSearchBy(option)}
                 className={`rounded-lg px-3 py-2 transition-colors ${
-                  mode === option
+                  searchBy === option
                     ? "bg-slate-800 text-slate-50"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
@@ -140,10 +154,27 @@ export function MetricsPage() {
             ))}
           </div>
 
+          <div className="flex shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 p-1 text-xs">
+            {(["basic", "extended"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setMetricMode(option)}
+                className={`rounded-lg px-3 py-2 transition-colors ${
+                  metricMode === option
+                    ? "bg-slate-800 text-slate-50"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {option === "basic" ? "Basic" : "Extended"}
+              </button>
+            ))}
+          </div>
+
           <input
             value={value}
             onChange={(event) => setValue(event.target.value)}
-            placeholder={mode === "author" ? "e.g. Harzing, Anne-Wil" : "e.g. bibliometric analysis"}
+            placeholder={searchBy === "author" ? "e.g. Harzing, Anne-Wil" : "e.g. bibliometric analysis"}
             className={`${FIELD} h-11 min-w-0 flex-1`}
           />
 

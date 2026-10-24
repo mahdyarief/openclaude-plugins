@@ -17,6 +17,8 @@ class ProviderBase:
     supports_citations: bool = False
     supports_author_search: bool = False
     supports_references: bool = False
+    # True only when search() actually applies the tech/CS restriction.
+    supports_tech_only: bool = False
     # Field names this provider can actually honour in search().
     supports_filters: frozenset[str] = frozenset()
     # An enricher is not queried during a normal fan-out; it is only consulted

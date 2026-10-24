@@ -43,22 +43,47 @@ Prompt template (`src/josc/prompts.py:62-89`): `literature_review`,
 
 ## HTTP API
 
-Route di `src/josc/api.py:300-309`:
+Route di `src/josc/api.py:312-323`:
 
 | Route | Handler |
 |---|---|
-| `GET /api/health` | `health` (`api.py:110`) |
-| `GET /api/search` | `search` (`api.py:128`) |
-| `GET /api/search-author` | `search_author` (`api.py:158`) |
-| `GET /api/paper` | `paper` (`api.py:186`) |
-| `GET /api/citations` | `citations` (`api.py:194`) |
-| `GET /api/references` | `references` (`api.py:204`) |
-| `GET /api/network` | `network` (`api.py:214`) |
-| `GET /api/metrics` | `metrics` (`api.py:247`) |
-| `GET /api/export/graphml` | `graphml_export` (`api.py:275`) |
-| `POST /api/export` | `export` (`api.py:279`) |
+| `GET /api/health` | `health` (`api.py:122`) |
+| `GET /api/search` | `search` (`api.py:142`) |
+| `GET /api/search-author` | `search_author` (`api.py:172`) |
+| `GET /api/paper` | `paper` (`api.py:200`) |
+| `GET /api/citations` | `citations` (`api.py:208`) |
+| `GET /api/references` | `references` (`api.py:218`) |
+| `GET /api/network` | `network` (`api.py:228`) |
+| `GET /api/metrics` | `metrics` (`api.py:261`) |
+| `GET /api/export/graphml` | `graphml_export` (`api.py:291`) |
+| `POST /api/export` | `export` (`api.py:295`) |
 
 Semua route memakai cache in-memory lewat `_cached` (`api.py:72`).
+
+### Bentuk respons `/api/health`
+
+```json
+{
+  "status": "ok",
+  "sources": ["scopus", "arxiv", "..."],
+  "cache": {
+    "ttl": 300.0, "entries": 0, "max_entries": 1024,
+    "hits": 0, "misses": 0, "sets": 0,
+    "evictions": 0, "expired": 0, "hit_rate": 0.0
+  },
+  "capabilities": {
+    "<provider>": {
+      "search": true, "citations": false,
+      "references": false, "author_search": false,
+      "tech_only": false
+    }
+  }
+}
+```
+
+`cache` bernilai `null` bila caching dimatikan. Blok ini dibangun oleh
+`_cache_stats()` (`api.py:110-119`) dari satu `fetcher` bersama yang dipakai
+semua provider — tidak ada instance cache kedua dan tidak ada global state.
 
 ## Web UI
 
@@ -82,6 +107,11 @@ Komponen: `ForceGraph.tsx` (d3-force), `PaperCard.tsx` (kartu hasil).
   `papers_author`, `authors_paper`.
 - `mode="extended"` — superset, menambah `hc_index`, `hI_index`, `hI_norm`,
   `AWCR`, `AW_index`, `AWCRpA`, `hm_index`.
+
+`mode` diteruskan utuh ke jalur publik: `aggregator.compute_metrics(mode=...)`
+(`aggregator.py:348`) → `GET /api/metrics?mode=extended` (`api.py:270`) dan
+tool MCP `compute_metrics` (`server.py:184`). Nilai selain `basic`/`extended`
+ditolak dengan `ValueError`.
 
 Implementasi indeks: `h_index` (`graph.py:56`), `i10_index` (`graph.py:68`),
 `g_index` (`graph.py:73`), `citation_velocity` (`graph.py:85`), `e_index`

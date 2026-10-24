@@ -53,3 +53,69 @@ def test_build_cache_is_on_when_ttl_positive():
     cache = build_cache(30)
     assert isinstance(cache, TTLCache)
     assert cache.ttl == 30
+
+
+def test_fresh_cache_reports_zero_activity():
+    stats = TTLCache(ttl=10).stats()
+    assert stats["hits"] == 0
+    assert stats["misses"] == 0
+    assert stats["hit_rate"] == 0.0
+
+
+def test_live_get_counts_one_hit():
+    cache = TTLCache(ttl=10, clock=lambda: 0.0)
+    cache.set("k", 1)
+    assert cache.get("k") == 1
+    stats = cache.stats()
+    assert stats["hits"] == 1
+    assert stats["misses"] == 0
+    assert stats["sets"] == 1
+    assert stats["hit_rate"] == 1.0
+
+
+def test_absent_key_counts_one_miss():
+    cache = TTLCache(ttl=10, clock=lambda: 0.0)
+    assert cache.get("absent") is None
+    stats = cache.stats()
+    assert stats["misses"] == 1
+    assert stats["hits"] == 0
+
+
+def test_expired_get_counts_miss_and_expiration():
+    clock = [0.0]
+    cache = TTLCache(ttl=10, clock=lambda: clock[0])
+    cache.set("k", 1)
+    clock[0] = 10.0
+    assert cache.get("k") is None
+    stats = cache.stats()
+    assert stats["misses"] == 1
+    assert stats["hits"] == 0
+    assert stats["expired"] == 1
+
+
+def test_eviction_increments_eviction_counter():
+    clock = [0.0]
+    cache = TTLCache(ttl=100, max_entries=1, clock=lambda: clock[0])
+    cache.set("a", 1)
+    clock[0] = 1.0
+    cache.set("b", 2)  # over capacity -> "a" evicted
+    stats = cache.stats()
+    assert stats["evictions"] == 1
+    assert stats["entries"] == 1
+
+
+def test_stats_values_are_json_serializable_primitives():
+    import json
+
+    clock = [0.0]
+    cache = TTLCache(ttl=10, max_entries=8, clock=lambda: clock[0])
+    cache.set("a", 1)
+    clock[0] = 20.0
+    cache.get("a")  # expired: miss + expiration
+    cache.get("missing")  # miss
+    stats = cache.stats()
+    encoded = json.dumps(stats)
+    decoded = json.loads(encoded)
+    assert decoded == stats
+    for value in stats.values():
+        assert isinstance(value, (int, float, str, bool, type(None)))

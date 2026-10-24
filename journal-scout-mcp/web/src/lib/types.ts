@@ -18,6 +18,8 @@ export type SearchResponse = {
   results: Paper[];
   errors: Record<string, string>;
   counts: Record<string, number>;
+  filters_applied?: Record<string, string[]>;
+  filters_ignored?: string[];
 };
 
 export type GraphNode = {
@@ -70,4 +72,12 @@ export type MetricsResponse = {
   citation_velocity: number | null;
   errors?: Record<string, string>;
   counts?: Record<string, number>;
+  mode?: "basic" | "extended";
+  hc_index?: number;
+  hI_index?: number;
+  hI_norm?: number;
+  AWCR?: number;
+  AW_index?: number;
+  AWCRpA?: number;
+  hm_index?: number;
 };

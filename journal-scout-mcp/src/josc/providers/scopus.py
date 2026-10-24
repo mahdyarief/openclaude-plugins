@@ -18,6 +18,7 @@ class ScopusProvider(ProviderBase):
     supports_author_search = True
     supports_references = True
     supports_filters = frozenset({"author", "venue"})
+    supports_tech_only = True
 
     def __init__(self, fetcher, config=None):
         super().__init__(fetcher, config)

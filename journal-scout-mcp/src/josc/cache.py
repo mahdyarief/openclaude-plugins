@@ -25,6 +25,11 @@ class TTLCache:
         self._max_entries = max_entries
         self._clock = clock
         self._store: Dict[Any, Tuple[float, Any]] = {}
+        self._hits = 0
+        self._misses = 0
+        self._sets = 0
+        self._evictions = 0
+        self._expired = 0
 
     @property
     def ttl(self) -> float:
@@ -33,17 +38,22 @@ class TTLCache:
     def get(self, key: Any) -> Optional[Any]:
         entry = self._store.get(key)
         if entry is None:
+            self._misses += 1
             return None
         expires_at, value = entry
         if self._clock() >= expires_at:
             del self._store[key]
+            self._expired += 1
+            self._misses += 1
             return None
+        self._hits += 1
         return value
 
     def set(self, key: Any, value: Any) -> None:
         if self._max_entries and len(self._store) >= self._max_entries:
             self._evict()
         self._store[key] = (self._clock() + self._ttl, value)
+        self._sets += 1
 
     def _evict(self) -> None:
         # Prefer dropping already-expired entries; otherwise drop the one
@@ -53,15 +63,33 @@ class TTLCache:
         if expired:
             for key in expired:
                 del self._store[key]
+            self._evictions += len(expired)
             return
         soonest = min(self._store, key=lambda k: self._store[k][0])
         del self._store[soonest]
+        self._evictions += 1
 
     def clear(self) -> None:
+        # Counters are deliberately left intact so stats() keeps describing the
+        # whole process lifetime rather than the current store contents.
         self._store.clear()
 
     def __len__(self) -> int:
         return len(self._store)
+
+    def stats(self) -> Dict[str, Any]:
+        lookups = self._hits + self._misses
+        return {
+            "ttl": self._ttl,
+            "entries": len(self._store),
+            "max_entries": self._max_entries,
+            "hits": self._hits,
+            "misses": self._misses,
+            "sets": self._sets,
+            "evictions": self._evictions,
+            "expired": self._expired,
+            "hit_rate": round(self._hits / lookups, 3) if lookups else 0.0,
+        }
 
 
 def build_cache(ttl: Optional[float]) -> Optional[TTLCache]:

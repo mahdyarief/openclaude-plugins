@@ -107,17 +107,31 @@ def _error(exc: Exception, status: int = 400) -> JSONResponse:
     return JSONResponse({"error": str(exc)}, status_code=status)
 
 
+def _cache_stats() -> Optional[Dict[str, Any]]:
+    """Report stats from the one fetcher every provider shares, if caching is on."""
+    providers = _providers()
+    if not providers:
+        return None
+    cache = getattr(getattr(providers[0], "fetcher", None), "cache", None)
+    stats = getattr(cache, "stats", None)
+    if not callable(stats):
+        return None
+    return stats()
+
+
 async def health(request: Request) -> JSONResponse:
     return JSONResponse(
         {
             "status": "ok",
             "sources": provider_names(),
+            "cache": _cache_stats(),
             "capabilities": {
                 p.name: {
                     "search": getattr(p, "supports_search", False),
                     "citations": getattr(p, "supports_citations", False),
                     "references": getattr(p, "supports_references", False),
                     "author_search": getattr(p, "supports_author_search", False),
+                    "tech_only": getattr(p, "supports_tech_only", False),
                 }
                 for p in _providers()
             },
@@ -253,7 +267,8 @@ async def metrics(request: Request) -> JSONResponse:
     year_from = _int(request, "year_from")
     year_to = _int(request, "year_to")
     sources = _sources(request)
-    key = ("metrics", author, query, limit_per_source, year_from, year_to, sources)
+    mode = request.query_params.get("mode") or "basic"
+    key = ("metrics", author, query, limit_per_source, year_from, year_to, sources, mode)
     try:
         payload = await _cached(
             key,
@@ -265,6 +280,7 @@ async def metrics(request: Request) -> JSONResponse:
                 year_from=year_from,
                 year_to=year_to,
                 sources=sources,
+                mode=mode,
             ),
         )
     except Exception as exc:  # noqa: BLE001

@@ -299,3 +299,56 @@ async def test_search_author_forwards_venue_when_supported():
     assert provider.calls == [{"author": "Ada", "venue": "JML"}]
     assert result["filters_applied"] == {"authvenue": ["venue"]}
     assert result["filters_ignored"] == []
+
+
+class TechOnlyProvider(ProviderBase):
+    name = "tech"
+    supports_search = True
+    supports_tech_only = True
+
+    def __init__(self, fetcher):
+        super().__init__(fetcher)
+        self.calls = []
+
+    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False, offset=0):
+        self.calls.append({"tech_only": tech_only})
+        return [Paper(doi="10.1/t", title="Tech", sources=["tech"])]
+
+
+async def test_search_all_forwards_tech_only_to_declaring_providers():
+    provider = TechOnlyProvider(None)
+
+    result = await search_all([provider], "q", tech_only=True)
+
+    assert provider.calls == [{"tech_only": True}]
+    assert result["filters_applied"] == {"tech": ["tech_only"]}
+    assert result["filters_ignored"] == []
+
+
+async def test_search_all_reports_tech_only_ignored_when_unsupported():
+    plain = NoFilterProvider(None)
+
+    result = await search_all([plain], "q", tech_only=True)
+
+    assert result["filters_applied"] == {}
+    assert result["filters_ignored"] == ["tech_only"]
+
+
+async def test_search_all_omits_tech_only_from_report_when_not_requested():
+    provider = TechOnlyProvider(None)
+
+    result = await search_all([provider], "q")
+
+    assert result["filters_applied"] == {}
+    assert result["filters_ignored"] == []
+    assert provider.calls == [{"tech_only": False}]
+
+
+async def test_search_all_reports_tech_only_alongside_field_filters():
+    tech = TechOnlyProvider(None)
+    aware = FilterAwareProvider(None)
+
+    result = await search_all([tech, aware], "q", author="Ada", tech_only=True)
+
+    assert result["filters_applied"] == {"tech": ["tech_only"], "filtered": ["author"]}
+    assert result["filters_ignored"] == []

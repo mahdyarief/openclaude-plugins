@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { fetchPaper } from "../lib/api";
 import type { Paper } from "../lib/types";
 
 function identifierFor(paper: Paper): string | null {
@@ -10,8 +12,33 @@ function identifierFor(paper: Paper): string | null {
   return null;
 }
 
-export function PaperCard({ paper }: { paper: Paper }) {
+export function PaperCard({ paper: initialPaper }: { paper: Paper }) {
+  const [paper, setPaper] = useState(initialPaper);
+  const [lookupState, setLookupState] = useState<"idle" | "loading" | "not-found" | "error">("idle");
   const identifier = identifierFor(paper);
+  const canLookup = identifier !== null && !paper.pdf_url;
+
+  async function handleFindOpenAccess() {
+    if (!identifier) return;
+    setLookupState("loading");
+    try {
+      const { paper: resolved } = await fetchPaper(identifier);
+      if (resolved && (resolved.pdf_url || resolved.is_open_access === true)) {
+        setPaper((prev) => ({
+          ...prev,
+          pdf_url: resolved.pdf_url ?? prev.pdf_url,
+          is_open_access: resolved.is_open_access ?? prev.is_open_access,
+        }));
+        setLookupState("idle");
+      } else {
+        setLookupState("not-found");
+      }
+    } catch {
+      setLookupState("error");
+    } finally {
+      setLookupState((state) => (state === "loading" ? "idle" : state));
+    }
+  }
   const authors =
     paper.authors.length > 4
       ? `${paper.authors.slice(0, 4).join(", ")} +${paper.authors.length - 4}`
@@ -58,6 +85,23 @@ export function PaperCard({ paper }: { paper: Paper }) {
         )}
 
         <span className="flex-1" />
+
+        {canLookup && (
+          <button
+            type="button"
+            onClick={handleFindOpenAccess}
+            disabled={lookupState === "loading"}
+            className="rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[11px] text-sky-300 no-underline hover:bg-sky-500/20 disabled:cursor-default disabled:opacity-60"
+          >
+            {lookupState === "loading" ? "Looking…" : "Find open-access copy"}
+          </button>
+        )}
+        {lookupState === "not-found" && (
+          <span className="text-[11px] text-slate-500">No open-access copy found</span>
+        )}
+        {lookupState === "error" && (
+          <span className="text-[11px] text-rose-400">Lookup failed</span>
+        )}
 
         {paper.pdf_url && (
           <a

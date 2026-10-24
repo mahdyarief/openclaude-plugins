@@ -36,23 +36,27 @@ Scholar, Crossref. Dipakai `get_references` (`aggregator.py:216`) dan
 (`providers/opencitations.py:33`) — hanya bisa dijadikan sumber edge sitasi
 jika ada DOI.
 
-## Catatan tentang `tech_only`
+## Catatan tentang `tech_only` — ✅ selesai 2026-10-24
 
-`tech_only` ada di skema (`server.py:41`) dan dioper ke `search_all`. Yang
-benar-benar memakainya:
+`tech_only` ada di skema (`server.py:41`) dan dioper ke `search_all`.
+Sejak 2026-10-24 ia punya capability flag sendiri, `supports_tech_only`
+(`providers/base.py:22`), sehingga pemanggil mendapat sinyal eksplisit lewat
+`filters_applied` / `filters_ignored`.
 
-| Provider | Memakai `tech_only`? | Bukti |
+| Provider | `supports_tech_only` | Bukti |
 |---|---|---|
-| `arxiv` | ya | `providers/arxiv.py:105` |
-| `openalex` | ya | `providers/openalex.py:73` |
-| `scopus` | ya | `providers/scopus.py:158` |
-| `semanticscholar` | ya | `providers/semanticscholar.py:91` |
-| `crossref` | **tidak** | hanya menerima parameter, tidak dipakai |
-| `dblp` | **tidak** | hanya menerima parameter, tidak dipakai |
+| `arxiv` | **ya** | `providers/arxiv.py:105` |
+| `openalex` | **ya** | `providers/openalex.py:73` |
+| `scopus` | **ya** | `providers/scopus.py:158` |
+| `semanticscholar` | **ya** | `providers/semanticscholar.py:91` |
+| `crossref` | tidak | hanya menerima parameter, tidak dipakai |
+| `dblp` | tidak | hanya menerima parameter, tidak dipakai |
+| `pubmed` | tidak | hanya menerima parameter, tidak dipakai |
 
-Jadi `tech_only` bukan fitur mati, tapi juga tidak seragam. `supports_filters`
-hanya mendeklarasikan `author`/`venue`, bukan `tech_only`, sehingga pemanggil
-belum mendapat sinyal bahwa Crossref dan DBLP mengabaikan `tech_only`.
+Empat setter di atas adalah satu-satunya provider yang punya cabang
+`tech_only` sungguhan. `_route_filters` (`aggregator.py:94-101`) melaporkan
+`tech_only` hanya bila pemanggil benar-benar menyetelnya `True` — kalau tidak,
+setiap respons default akan menyebutnya sebagai filter yang diabaikan.
 
 ## Filter terstruktur (`supports_filters`)
 

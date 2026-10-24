@@ -41,6 +41,14 @@ Tiga metrik individual-h diimplementasikan terpisah sesuai definisi aslinya:
 `hI_index` (Batista: `h / rata-rata penulis h-core`), `hI_norm` (h-index dari
 `citations / jumlah_penulis`), `hm_index` (Schreiber: rank efektif `Σ 1/a`).
 
+`mode` kini bisa diminta dari luar: `GET /api/metrics?mode=extended`
+(`api.py:270`), tool MCP `compute_metrics` (`server.py:184`), dan toggle
+Basic/Extended di `/metrics` (`web/src/routes/metrics.tsx`). Sebelumnya
+`aggregator.compute_metrics` memanggil engine tanpa `mode`, sehingga jalur
+publik selalu mengembalikan 14 metrik basic dan grup "Extended" di UI kosong
+permanen. Diverifikasi lewat HTTP: `basic` 16 key dan `extended` 23 key
+(selisih 7 metrik extended, ditambah `counts`/`errors` dari envelope API).
+
 ---
 
 ## C. Filter pencarian — ✅ selesai 2026-10-24
@@ -57,8 +65,9 @@ mendeklarasikannya di `supports_filters` (`providers/base.py:20-21`).
 `_route_filters` (`aggregator.py:72-90`) menghasilkan laporan filter yang
 diterapkan dan diabaikan.
 
-Catatan: `tech_only` belum punya capability flag, jadi Crossref dan DBLP
-masih diam-diam mengabaikannya. Lihat `02-provider-matrix.md`.
+Catatan: `tech_only` **kini punya capability flag** (`supports_tech_only`,
+`providers/base.py:22`), jadi Crossref, DBLP, dan PubMed dilaporkan sebagai
+`filters_ignored` alih-alih diabaikan diam-diam. Lihat `02-provider-matrix.md`.
 
 ---
 
@@ -93,30 +102,37 @@ berisi `id, query, sources, filters, created_at, result_json`. Cukup untuk
 
 ---
 
-## F. Aksi artikel (P2)
+## F. Aksi artikel (P2) — sebagian selesai 2026-10-24
 
 | Aksi PoP8 | Status di journal-scout |
 |---|---|
 | Open Article / Full Text | ada link `url`/`pdf_url` di `PaperCard.tsx` |
-| Find Article with Unpaywall | enricher sudah ada (`providers/unpaywall.py`), belum ada aksi eksplisit |
+| Find Article with Unpaywall | **✅ tombol "Find open-access copy"** di `PaperCard.tsx:89-104` |
 | Open Citing / Related Works | `get_citations` ada, "related" belum |
 | Retrieve Citing Works ke search baru | `get_citations` mengembalikan daftar, belum tersimpan |
 
-**Perbaikan:** tombol "Find OA copy" di `PaperCard.tsx` yang memanggil
-`get_paper` dengan enrich Unpaywall. Murah karena endpoint-nya sudah ada.
+Tombol OA muncul hanya bila paper punya identifier (`doi` atau salah satu
+`ids`) dan belum punya `pdf_url`. Tiga keadaan hasil: ditemukan (state paper
+diperbarui, tombol hilang), tidak ditemukan (`No open-access copy found`), dan
+gagal (`Lookup failed`). `try/finally` memastikan state loading tidak pernah
+macet.
 
 ---
 
-## G. Infrastruktur (P2)
+## G. Infrastruktur (P2) — sebagian selesai 2026-10-24
 
 Lihat tabel lengkap di `../pop8/06-infrastructure.md`. Tiga yang layak:
 
-1. **Metrik cache** (hit/miss/umur) diekspos di `GET /api/health`
-   (`src/josc/api.py:109`). Saat ini cache tidak bisa diinspeksi.
+1. **Metrik cache** — **✅ selesai.** `TTLCache.stats()` (`cache.py:80-92`)
+   mengembalikan `ttl, entries, max_entries, hits, misses, sets, evictions,
+   expired, hit_rate`. `_cache_stats()` (`api.py:110-119`) membacanya dari
+   satu `fetcher` bersama yang dipakai semua provider, lalu `health()`
+   menyisipkannya sebagai blok `cache` (`api.py:127`). Bernilai `null` bila
+   caching dimatikan.
 2. **Mode offline eksplisit** — flag `offline=true` yang mengembalikan
-   `stale: true` alih-alih `ProviderError`.
+   `stale: true` alih-alih `ProviderError`. Belum dikerjakan.
 3. **Diagnostik kuota seragam** — `get_quota_status` hanya Scopus; Semantic
-   Scholar dan OpenAlex juga punya limit.
+   Scholar dan OpenAlex juga punya limit. Belum dikerjakan.
 
 ---
 
@@ -139,8 +155,13 @@ Lihat tabel lengkap di `../pop8/06-infrastructure.md`. Tiga yang layak:
 | ~~P1~~ | Metrik tambahan (e-index, AWCR, hm-index, dll.) | Paritas laporan bibliometrik | ✅ 2026-10-24 |
 | ~~P1~~ | Filter terstruktur + capability flag | Hasil antar sumber jadi sebanding | ✅ 2026-10-24 |
 | ~~P1~~ | Provider PubMed | Menutup gap biomedis dengan biaya rendah | ✅ 2026-10-24 |
-| **P1** | Capability flag untuk `tech_only` | Crossref/DBLP masih mengabaikannya diam-diam | terbuka |
-| **P2** | Persistensi query | Mendukung alur kerja berulang | terbuka |
-| **P2** | Aksi Unpaywall di UI | Akses teks penuh | terbuka |
-| **P2** | Metrik cache + mode offline | Observability dan ketahanan | terbuka |
+| ~~P1~~ | Capability flag untuk `tech_only` | Crossref/DBLP mengabaikannya diam-diam | ✅ 2026-10-24 |
+| ~~P2~~ | Aksi Unpaywall di UI | Akses teks penuh | ✅ 2026-10-24 |
+| ~~P2~~ | Metrik cache di `/api/health` | Observability cache | ✅ 2026-10-24 |
+| **P2** | Persistensi query (`searches` + `/api/searches`) | Mendukung alur kerja berulang | terbuka |
+| **P2** | Mode offline (`offline=true` → `stale: true`) | Ketahanan saat provider down | terbuka |
 | **P2** | Filter `affiliation`, `issn`, `orcid`, `doi` | Paritas field filter PoP8 | terbuka |
+| **P2** | Telemetri `TursoCache` (server-side) | Hanya `TTLCache` in-process yang terukur | terbuka |
+| ~~P1~~ | `mode=extended` belum tersambung ke jawaban publik | Grup "Extended" di UI selalu kosong | ✅ 2026-10-24 |
+| ~~P2~~ | UI: filter & paginasi di form pencarian | Backend mendukung, form hanya `query`+`limit` | ✅ 2026-10-24 |
+| **P2** | UI: ekspor 11 format | Hanya GraphML yang punya tombol | terbuka |
