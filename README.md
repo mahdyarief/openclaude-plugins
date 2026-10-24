@@ -39,6 +39,7 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 | [scispace](./scispace) | `search_papers`, `scispace_login`, `scispace_status` | `playwright` (npm) | SciSpace literature search via headless Playwright using a logged-in premium session |
 | [oh-my-claudecode](./oh-my-claudecode/INSTALL.md) | 36 skills (autopilot, team, ralplan, ultragoal, wiki, dll.), 19 agents, hooks, MCP server | `oh-my-claude-sisyphus` (npm, global) | Multi-agent orchestration (OMC v5.3.0). Install manual — lihat [INSTALL.md](./oh-my-claudecode/INSTALL.md); statusline gabungan OMC+graft: [HUD.md](./oh-my-claudecode/HUD.md) |
 | [navigating-docs](./navigating-docs) | skill `navigating-docs` + `nv-index.sh`, `nv-search.sh` | `rg` (ripgrep); optional `pdftotext`, `pandoc` | INDEX-first navigation folder dokumen lokal — search md/PDF/DOCX cepat tanpa vector DB, zero RAM |
+| [academic-research-skills](./academic-research-skills) | 5 skills (`deep-research`, `academic-paper`, `academic-paper-reviewer`, `academic-pipeline`, `sr-screener`) + 16 slash command `/ars-*` + 4 agent | none (Python 3 untuk sebagian script opsional) | Pipeline riset akademik contract-audited: research → write → integrity check → review → revise → finalize. 35 mode, review simulasi, screening PRISMA, cek sitasi. Skill-only, no MCP server |
 
 ## Install
 

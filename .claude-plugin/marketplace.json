@@ -95,6 +95,12 @@
       "source": "./pr-slop-guard",
       "description": "PR slop detection — static AST/grep scan + LLM judgment for AI-generated low-quality code before a PR is opened. Verdicts SLOP / SUSPECT / CLEAN with P1/P2/P3 findings. Skill + /slop-check command, no MCP server.",
       "category": "development"
+    },
+    {
+      "name": "academic-research-skills",
+      "source": "./academic-research-skills",
+      "description": "Contract-audited academic research pipeline: research → write → review → revise → finalize. 5 skills (deep-research, academic-paper, academic-paper-reviewer, academic-pipeline, sr-screener), 35 modes, 16 slash commands (/ars-*), 4 agents. Skill-only, no MCP server.",
+      "category": "research"
     }
   ]
 }
