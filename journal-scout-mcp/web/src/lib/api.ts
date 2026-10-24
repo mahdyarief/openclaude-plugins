@@ -80,6 +80,33 @@ export function fetchMetrics(params: {
   });
 }
 
+export const EXPORT_FORMATS = [
+  "bibtex", "ris", "csv", "json", "endnote",
+  "isi", "csv_header", "apa", "chicago", "harvard", "vancouver",
+] as const;
+
+export type ExportFormat = (typeof EXPORT_FORMATS)[number];
+
+export async function exportPapers(papers: Paper[], format: ExportFormat): Promise<string> {
+  const response = await fetch("/api/export", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ papers, format }),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    let message = `Export failed (${response.status})`;
+    try {
+      const payload = JSON.parse(text) as { error?: string };
+      if (payload.error) message = payload.error;
+    } catch {
+      // Non-JSON error body; keep the status message.
+    }
+    throw new Error(message);
+  }
+  return text;
+}
+
 export function graphmlUrl(identifier: string, limit: number, citingLimit: number): string {
   const search = new URLSearchParams({
     identifier,

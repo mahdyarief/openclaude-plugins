@@ -129,10 +129,19 @@ Lihat tabel lengkap di `../pop8/06-infrastructure.md`. Tiga yang layak:
    satu `fetcher` bersama yang dipakai semua provider, lalu `health()`
    menyisipkannya sebagai blok `cache` (`api.py:127`). Bernilai `null` bila
    caching dimatikan.
-2. **Mode offline eksplisit** — flag `offline=true` yang mengembalikan
-   `stale: true` alih-alih `ProviderError`. Belum dikerjakan.
+2. **Mode offline eksplisit** — **✅ selesai.** `offline=true` di keempat
+   endpoint baca (`search`, `search-author`, `network`, `metrics`) menyajikan
+   payload dari cache Turso dengan `stale: true` dan tidak pernah menyentuh
+   jaringan. Cache kosong atau Turso tidak dikonfigurasi → `503` dengan
+   `{"offline": true, "error": ...}` (`OfflineMiss`, `api.py:39`).
 3. **Diagnostik kuota seragam** — `get_quota_status` hanya Scopus; Semantic
    Scholar dan OpenAlex juga punya limit. Belum dikerjakan.
+
+**Telemetri `TursoCache`** — **✅ selesai.** `stats()` (`store.py:170`)
+mengembalikan `backend, ttl, entries, expired, hits, misses, sets, hit_rate`,
+dengan counter hit/miss/set sepanjang umur proses dan `entries`/`expired`
+dihitung dari tabel `query_cache` di database. `health()` menyisipkannya
+sebagai blok `store` (`api.py:165`), `null` bila Turso tidak aktif.
 
 ---
 
@@ -159,9 +168,9 @@ Lihat tabel lengkap di `../pop8/06-infrastructure.md`. Tiga yang layak:
 | ~~P2~~ | Aksi Unpaywall di UI | Akses teks penuh | ✅ 2026-10-24 |
 | ~~P2~~ | Metrik cache di `/api/health` | Observability cache | ✅ 2026-10-24 |
 | **P2** | Persistensi query (`searches` + `/api/searches`) | Mendukung alur kerja berulang | terbuka |
-| **P2** | Mode offline (`offline=true` → `stale: true`) | Ketahanan saat provider down | terbuka |
+| ~~P2~~ | Mode offline (`offline=true` → `stale: true`) | Ketahanan saat provider down | ✅ 2026-10-24 |
 | **P2** | Filter `affiliation`, `issn`, `orcid`, `doi` | Paritas field filter PoP8 | terbuka |
-| **P2** | Telemetri `TursoCache` (server-side) | Hanya `TTLCache` in-process yang terukur | terbuka |
+| ~~P2~~ | Telemetri `TursoCache` (server-side) | Hanya `TTLCache` in-process yang terukur | ✅ 2026-10-24 |
 | ~~P1~~ | `mode=extended` belum tersambung ke jawaban publik | Grup "Extended" di UI selalu kosong | ✅ 2026-10-24 |
 | ~~P2~~ | UI: filter & paginasi di form pencarian | Backend mendukung, form hanya `query`+`limit` | ✅ 2026-10-24 |
-| **P2** | UI: ekspor 11 format | Hanya GraphML yang punya tombol | terbuka |
+| **P2** | UI: ekspor 11 format | Hanya GraphML yang punya tombol | ✅ 2026-10-24 |

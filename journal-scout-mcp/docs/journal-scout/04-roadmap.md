@@ -88,11 +88,23 @@ Kriteria selesai: **terpenuhi** — registry 9 provider / 7 searchable,
 3. ~~**Metrik cache** di `GET /api/health` (`src/josc/api.py:122`):
    hit, miss, entri, umur.~~ ✅ — `TTLCache.stats()` (`cache.py:80-92`) dan
    blok `cache` di respons health.
-4. **Mode offline** `offline=true` → sajikan cache dengan `stale: true`.
+4. ~~**Mode offline** `offline=true` → sajikan cache dengan `stale: true`.~~ ✅
+   — `OfflineMiss` (`api.py:39`), `_flag()` (`api.py:94`), `_cached(offline=)`
+   (`api.py:76`) dipakai keempat endpoint baca; miss → `503` dengan
+   `{"offline": true}`.
+5. ~~**Telemetri `TursoCache`** di blok `store` health.~~ ✅ — `stats()`
+   (`store.py:170`) + `_store_stats()` (`api.py:145`), `null` bila Turso mati.
 
 Kriteria selesai: pengguna bisa mengulang pencarian lama tanpa mengetik ulang
 query, dan bisa mendiagnosis cache tanpa membuka log. **Diagnosis cache sudah
-terpenuhi; persistensi query belum.**
+terpenuhi (TTLCache + Turso); persistensi query belum.**
+
+**Pelengkap 2026-10-24 (UI ekspor):** hasil pencarian kini punya
+`ExportMenu` (`web/src/components/ExportMenu.tsx`) dengan pilihan 11 format,
+tombol Download (Blob + object URL) dan Copy (clipboard), dirender di
+`search.tsx:201`. `exportPapers()`/`EXPORT_FORMATS` di `web/src/lib/api.ts:83-100`
+memanggil `POST /api/export`; format tak dikenal → 400 dengan pesan error
+dari server.
 
 ---
 

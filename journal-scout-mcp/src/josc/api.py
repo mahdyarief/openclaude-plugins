@@ -36,6 +36,10 @@ WEB_DIST = Path(__file__).resolve().parents[2] / "web" / "dist"
 _state: Dict[str, Any] = {}
 
 
+class OfflineMiss(Exception):
+    """offline=true and the requested key is not in the persistent cache."""
+
+
 @asynccontextmanager
 async def lifespan(app: Starlette):
     ttl = config.get_cache_ttl()
@@ -69,9 +73,26 @@ def _providers():
     return _state.get("providers") or []
 
 
-async def _cached(key: Any, factory: Any) -> Any:
+async def _cached(key: Any, factory: Any, offline: bool = False) -> Any:
     """Memoize a finished aggregator response in Turso (one round-trip)."""
-    return await cached_call(_state.get("store"), key, factory)
+    store = _state.get("store")
+    if offline:
+        if store is None:
+            raise OfflineMiss("Offline mode requested but no persistent cache is configured.")
+        try:
+            hit = await store.get(key)
+        except Exception:
+            hit = None
+        if hit is None:
+            raise OfflineMiss("No cached response for this request; offline mode cannot reach the network.")
+        if isinstance(hit, dict):
+            return {**hit, "stale": True}
+        return hit
+    return await cached_call(store, key, factory)
+
+
+def _flag(request: Request, name: str) -> bool:
+    return request.query_params.get(name, "").lower() in ("1", "true", "yes")
 
 
 def _int(request: Request, name: str, default: Optional[int] = None) -> Optional[int]:
@@ -102,6 +123,8 @@ def _identifier(request: Request) -> str:
 
 
 def _error(exc: Exception, status: int = 400) -> JSONResponse:
+    if isinstance(exc, OfflineMiss):
+        return JSONResponse({"error": str(exc), "offline": True}, status_code=503)
     if isinstance(exc, ProviderError):
         return JSONResponse({"error": exc.message, "provider": exc.provider}, status_code=502)
     return JSONResponse({"error": str(exc)}, status_code=status)
@@ -119,12 +142,27 @@ def _cache_stats() -> Optional[Dict[str, Any]]:
     return stats()
 
 
+async def _store_stats() -> Optional[Dict[str, Any]]:
+    """Report the persistent cache, if Turso is configured."""
+    store = _state.get("store")
+    if store is None:
+        return None
+    stats = getattr(store, "stats", None)
+    if not callable(stats):
+        return None
+    try:
+        return await stats()
+    except Exception:
+        return None
+
+
 async def health(request: Request) -> JSONResponse:
     return JSONResponse(
         {
             "status": "ok",
             "sources": provider_names(),
             "cache": _cache_stats(),
+            "store": await _store_stats(),
             "capabilities": {
                 p.name: {
                     "search": getattr(p, "supports_search", False),
@@ -150,6 +188,7 @@ async def search(request: Request) -> JSONResponse:
     sources = _sources(request)
     offset = _int(request, "offset", 0)
     key = ("search", query, limit_per_source, year_from, year_to, tech_only, sources, offset)
+    offline = _flag(request, "offline")
     try:
         payload = await _cached(
             key,
@@ -163,6 +202,7 @@ async def search(request: Request) -> JSONResponse:
                 sources=sources,
                 offset=offset,
             ),
+            offline=offline,
         )
     except Exception as exc:  # noqa: BLE001 - surfaced as a JSON error to the UI
         return _error(exc)
@@ -179,6 +219,7 @@ async def search_author(request: Request) -> JSONResponse:
     sources = _sources(request)
     offset = _int(request, "offset", 0)
     key = ("search_author", author, limit_per_source, year_from, year_to, sources, offset)
+    offline = _flag(request, "offline")
     try:
         payload = await _cached(
             key,
@@ -191,6 +232,7 @@ async def search_author(request: Request) -> JSONResponse:
                 sources=sources,
                 offset=offset,
             ),
+            offline=offline,
         )
     except Exception as exc:  # noqa: BLE001
         return _error(exc)
@@ -232,6 +274,7 @@ async def network(request: Request) -> Response:
     max_nodes = _int(request, "max_nodes", 200)
     graph_format = request.query_params.get("format", "json")
     key = ("network", identifier, limit, citing_limit, max_nodes, graph_format)
+    offline = _flag(request, "offline")
     try:
         payload = await _cached(
             key,
@@ -243,6 +286,7 @@ async def network(request: Request) -> Response:
                 max_nodes=max_nodes,
                 graph_format=graph_format,
             ),
+            offline=offline,
         )
     except Exception as exc:  # noqa: BLE001
         return _error(exc)
@@ -269,6 +313,7 @@ async def metrics(request: Request) -> JSONResponse:
     sources = _sources(request)
     mode = request.query_params.get("mode") or "basic"
     key = ("metrics", author, query, limit_per_source, year_from, year_to, sources, mode)
+    offline = _flag(request, "offline")
     try:
         payload = await _cached(
             key,
@@ -282,6 +327,7 @@ async def metrics(request: Request) -> JSONResponse:
                 sources=sources,
                 mode=mode,
             ),
+            offline=offline,
         )
     except Exception as exc:  # noqa: BLE001
         return _error(exc)

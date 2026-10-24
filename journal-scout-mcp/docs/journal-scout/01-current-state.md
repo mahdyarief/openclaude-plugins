@@ -43,22 +43,25 @@ Prompt template (`src/josc/prompts.py:62-89`): `literature_review`,
 
 ## HTTP API
 
-Route di `src/josc/api.py:312-323`:
+Route di `src/josc/api.py:361-372`:
 
 | Route | Handler |
 |---|---|
-| `GET /api/health` | `health` (`api.py:122`) |
-| `GET /api/search` | `search` (`api.py:142`) |
-| `GET /api/search-author` | `search_author` (`api.py:172`) |
-| `GET /api/paper` | `paper` (`api.py:200`) |
-| `GET /api/citations` | `citations` (`api.py:208`) |
-| `GET /api/references` | `references` (`api.py:218`) |
-| `GET /api/network` | `network` (`api.py:228`) |
-| `GET /api/metrics` | `metrics` (`api.py:261`) |
-| `GET /api/export/graphml` | `graphml_export` (`api.py:291`) |
-| `POST /api/export` | `export` (`api.py:295`) |
+| `GET /api/health` | `health` (`api.py:159`) |
+| `GET /api/search` | `search` (`api.py:180`) |
+| `GET /api/search-author` | `search_author` (`api.py:212`) |
+| `GET /api/paper` | `paper` (`api.py:242`) |
+| `GET /api/citations` | `citations` (`api.py:250`) |
+| `GET /api/references` | `references` (`api.py:260`) |
+| `GET /api/network` | `network` (`api.py:270`) |
+| `GET /api/metrics` | `metrics` (`api.py:305`) |
+| `GET /api/export/graphml` | `graphml_export` (`api.py:337`) |
+| `POST /api/export` | `export` (`api.py:341`) |
 
-Semua route memakai cache in-memory lewat `_cached` (`api.py:72`).
+Semua endpoint baca memakai cache lewat `_cached` (`api.py:76`). Empat di
+antaranya — `search`, `search-author`, `network`, `metrics` — menerima
+`?offline=true`: payload disajikan dari cache Turso dengan `stale: true`, dan
+bila tidak ada entri hasilnya `503` `{"offline": true, "error": ...}`.
 
 ### Bentuk respons `/api/health`
 
@@ -71,6 +74,11 @@ Semua route memakai cache in-memory lewat `_cached` (`api.py:72`).
     "hits": 0, "misses": 0, "sets": 0,
     "evictions": 0, "expired": 0, "hit_rate": 0.0
   },
+  "store": {
+    "backend": "turso", "ttl": 300.0,
+    "entries": 0, "expired": 0,
+    "hits": 0, "misses": 0, "sets": 0, "hit_rate": 0.0
+  },
   "capabilities": {
     "<provider>": {
       "search": true, "citations": false,
@@ -82,8 +90,10 @@ Semua route memakai cache in-memory lewat `_cached` (`api.py:72`).
 ```
 
 `cache` bernilai `null` bila caching dimatikan. Blok ini dibangun oleh
-`_cache_stats()` (`api.py:110-119`) dari satu `fetcher` bersama yang dipakai
+`_cache_stats()` (`api.py`) dari satu `fetcher` bersama yang dipakai
 semua provider — tidak ada instance cache kedua dan tidak ada global state.
+`store` bernilai `null` bila Turso tidak dikonfigurasi; dibangun oleh
+`_store_stats()` (`api.py:145`) dari `TursoCache.stats()` (`store.py:170`).
 
 ## Web UI
 

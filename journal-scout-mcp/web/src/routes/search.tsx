@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ExportMenu } from "../components/ExportMenu";
 import { PaperCard } from "../components/PaperCard";
 import { searchPapers } from "../lib/api";
 import type { SearchResponse } from "../lib/types";
@@ -197,6 +198,7 @@ export function SearchPage() {
                 {source}: {count}
               </span>
             ))}
+            {data.results.length > 0 && <ExportMenu papers={data.results} />}
           </div>
 
           {(data.filters_ignored?.length ?? 0) > 0 && (

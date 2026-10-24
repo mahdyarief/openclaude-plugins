@@ -122,6 +122,9 @@ class TursoCache:
     def __init__(self, store: TursoStore, ttl: float):
         self.store = store
         self.ttl = float(ttl)
+        self.hits = 0
+        self.misses = 0
+        self.sets = 0
 
     async def setup(self) -> None:
         await self.store.execute(
@@ -141,14 +144,19 @@ class TursoCache:
             [self._key(key)],
         )
         if not rows:
+            self.misses += 1
             return None
         value, expires_at = rows[0][0], rows[0][1]
         if expires_at is not None and float(expires_at) <= time.time():
+            self.misses += 1
             return None
         try:
-            return json.loads(value)
+            result = json.loads(value)
         except (TypeError, ValueError):
+            self.misses += 1
             return None
+        self.hits += 1
+        return result
 
     async def set(self, key: Any, value: Any) -> None:
         await self.store.execute(
@@ -157,6 +165,29 @@ class TursoCache:
             "value = excluded.value, expires_at = excluded.expires_at",
             [self._key(key), json.dumps(value), time.time() + self.ttl],
         )
+        self.sets += 1
+
+    async def stats(self) -> Dict[str, Any]:
+        """Database-backed counts plus process-lifetime hit/miss/set counters."""
+        columns, rows = await self.store.execute(
+            "SELECT COUNT(*), "
+            "SUM(CASE WHEN expires_at <= ? THEN 1 ELSE 0 END) "
+            "FROM query_cache",
+            [time.time()],
+        )
+        entries = int(rows[0][0] or 0) if rows and rows[0] else 0
+        expired = int(rows[0][1] or 0) if rows and rows[0] else 0
+        lookups = self.hits + self.misses
+        return {
+            "backend": "turso",
+            "ttl": self.ttl,
+            "entries": entries,
+            "expired": expired,
+            "hits": self.hits,
+            "misses": self.misses,
+            "sets": self.sets,
+            "hit_rate": round(self.hits / lookups, 3) if lookups else 0.0,
+        }
 
     async def purge_expired(self) -> None:
         await self.store.execute(
