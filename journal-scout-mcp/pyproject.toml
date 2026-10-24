@@ -1,6 +1,6 @@
 [project]
 name = "journal-scout-mcp"
-version = "2.0.0"
+version = "2.3.0"
 description = "MCP server for multi-source journal research (Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, DBLP, Unpaywall)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.8"]
 web = ["starlette>=0.37", "uvicorn>=0.30"]
 
 [project.scripts]
@@ -28,3 +28,9 @@ packages = ["src/josc"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
+
+# Pyflakes plus the small pycodestyle subsets every Python project agrees on.
+# Deliberately not ruff's full default set: this codebase predates it, and
+# turning on the pyupgrade rules would rewrite 400+ annotations in one go.
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

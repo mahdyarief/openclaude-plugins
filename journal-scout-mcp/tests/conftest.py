@@ -1,8 +1,6 @@
 import httpx
 import pytest
 
-from josc.config import get_polite_email
-
 
 @pytest.fixture
 def polite_email():

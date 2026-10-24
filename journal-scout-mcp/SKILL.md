@@ -20,7 +20,7 @@ of the available tools.
    {
      "journal-scout-mcp": {
        "command": "uv",
-       "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "python", "-m", "journal_scout_mcp.server"]
+       "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "python", "-m", "josc.server"]
      }
    }
    ```
