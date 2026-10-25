@@ -46,19 +46,24 @@ citation rate`, `Total citations`, `Hirsch h-index`, `Egghe g-index`.
 
 ## Implikasi untuk journal-scout
 
-`src/josc/graph.py:102-117` baru menghitung 8 angka: `papers`,
-`total_citations`, `h_index`, `i10_index`, `g_index`, `max_citations`,
-`mean_citations`, `citation_velocity`. Yang belum ada:
+**Status 2026-10-25: sudah ditutup.** `compute_metrics` (`graph.py:236`)
+sekarang punya `mode="basic"` dan `mode="extended"`. Semua indeks di tabel
+atas diimplementasikan sebagai fungsi terpisah:
 
-- `hc_index`, `hI_index`, `hI_norm`, `AWCR`, `AW_index`, `AWCRpA`,
-  `e_index`, `hm_index` — semuanya deterministik dari daftar
-  `(citation_count, year, authors)`, tidak butuh data tambahan.
-- `i10_index` justru **tidak** ada di PoP8 (itu metrik Google Scholar), jadi
-  journal-scout sudah unggul di sini.
-- Report dua mode (basic/extended) belum ada; `compute_metrics` selalu
-  mengembalikan satu bentuk.
+| Metrik | Implementasi |
+|---|---|
+| `e_index` | `graph.py:103` |
+| `AWCR` | `graph.py:119` (`awcr`) |
+| `hc_index` | `graph.py:140` |
+| `hI_index` | `graph.py:156` |
+| `hI_norm` | `graph.py:170` |
+| `hm_index` | `graph.py:183` |
+| Tabel sitasi per tahun | `citations_by_year` (`graph.py:204`) |
 
-Prioritas: `e_index` dan `AWCR` paling murah karena hanya butuh
-`citation_count` dan `year` yang sudah ada di `Paper`. `hm_index` butuh
-jumlah penulis dan urutan penulis, yang juga sudah tersimpan di
-`Paper.authors`.
+Mode bisa diminta dari luar: `GET /api/metrics?mode=extended`
+(`api.py:403`) dan tool MCP `compute_metrics` (`server.py:300-308`, dengan
+`mode=arguments.get("mode", "basic")`). UI metrik memakai keduanya
+(`web/src/routes/metrics.tsx`).
+
+Satu metrik yang tetap **tidak** ada di PoP8: `i10_index` — itu metrik Google
+Scholar, jadi journal-scout unggul di sini.

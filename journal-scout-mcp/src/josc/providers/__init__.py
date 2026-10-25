@@ -19,6 +19,7 @@ def _provider_classes() -> List[type]:
         from .dblp import DblpProvider
         from .unpaywall import UnpaywallProvider
         from .opencitations import OpenCitationsProvider
+        from .garuda import GarudaProvider
 
         _CLASSES = [
             ScopusProvider,
@@ -30,6 +31,7 @@ def _provider_classes() -> List[type]:
             DblpProvider,
             UnpaywallProvider,
             OpenCitationsProvider,
+            GarudaProvider,
         ]
     return _CLASSES
 

@@ -25,12 +25,13 @@ kebenaran tentang repo ini sendiri**.
 
 | Metrik | Nilai |
 |---|---|
-| Provider terdaftar | 9 (`scopus, arxiv, openalex, semanticscholar, crossref, pubmed, dblp, unpaywall, opencitations`) |
-| Provider bisa search | 7 (tanpa `unpaywall`, `opencitations`) |
-| Tool MCP | 23 |
-| Route HTTP API | 10 |
-| Route web UI | 3 (`/`, `/graph`, `/metrics`) |
-| Format ekspor terdaftar | 11 (`apa, bibtex, chicago, csv, csv_header, endnote, harvard, isi, json, ris, vancouver`) |
+| Provider terdaftar | 10 (`scopus, arxiv, openalex, semanticscholar, crossref, pubmed, dblp, unpaywall, opencitations, garuda`) |
+| Provider bisa search | 8 (tanpa `unpaywall`, `opencitations`) |
+| Tool MCP | 25 |
+| Route HTTP API | 27 |
+| Route web UI | 4 (`/`, `/graph`, `/metrics`, `/history`) |
+| Format ekspor terdaftar | 17 (`apa, bibtex, chicago, csiro, csv, csv_bom, csv_header, csv_plain, endnote, harvard, isi, json, mla, ris, vancouver, xls, xls_plain`) |
+| Test | 395 |
 
 Diverifikasi dengan menjalankan `TOOL_NAMES`, `provider_names()`,
 `search_provider_names()`, dan `FORMATTERS` dari `src/josc`.

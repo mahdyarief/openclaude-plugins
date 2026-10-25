@@ -142,6 +142,18 @@ def _csv_field(text: Any) -> str:
     return str(text)
 
 
+def _xml_escape(text: Any) -> str:
+    """Escape a cell value for SpreadsheetML 2003 XML."""
+    value = _csv_field(text)
+    return (
+        value.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
+
+
 # Crossref/Scopus use lowercase work-type codes; RIS expects uppercase single-
 # or two-letter ones. Keep the mapping local so a new paper type only needs
 # touching this dict.
@@ -229,10 +241,7 @@ def _to_ris(papers: List[Dict[str, Any]]) -> str:
     return "\n\n".join(chunks) + "\n"
 
 
-@_register("csv")
-def _to_csv(papers: List[Dict[str, Any]]) -> str:
-    if not papers:
-        return ""
+def _build_csv(papers: List[Dict[str, Any]], header: bool = True) -> str:
     fieldnames = [
         "title",
         "authors",
@@ -248,10 +257,32 @@ def _to_csv(papers: List[Dict[str, Any]]) -> str:
     ]
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=fieldnames, quoting=csv.QUOTE_MINIMAL)
-    writer.writeheader()
+    if header:
+        writer.writeheader()
     for paper in papers:
         writer.writerow({k: _csv_field(paper.get(k)) for k in fieldnames})
     return buf.getvalue()
+
+
+@_register("csv")
+def _to_csv(papers: List[Dict[str, Any]]) -> str:
+    if not papers:
+        return ""
+    return _build_csv(papers)
+
+
+@_register("csv_plain")
+def _to_csv_plain(papers: List[Dict[str, Any]]) -> str:
+    if not papers:
+        return ""
+    return _build_csv(papers, header=False)
+
+
+@_register("csv_bom")
+def _to_csv_bom(papers: List[Dict[str, Any]]) -> str:
+    if not papers:
+        return ""
+    return "\ufeff" + _build_csv(papers)
 
 
 @_register("json")
@@ -332,6 +363,77 @@ def _to_csv_header(papers: List[Dict[str, Any]]) -> str:
     for paper in papers:
         writer.writerow({k: _csv_field(paper.get(k)) for k in fieldnames})
     return buf.getvalue()
+
+
+_XLS_COLUMNS = ("Title", "Authors", "Year", "Venue", "DOI", "Citations", "URL")
+
+
+def _xls_row(values: Iterable[Any]) -> str:
+    cells = "".join(
+        f'<Cell><Data ss:Type="String">{_xml_escape(value)}</Data></Cell>'
+        for value in values
+    )
+    return f"<Row>{cells}</Row>"
+
+
+@_register("xls")
+def _to_xls(papers: List[Dict[str, Any]]) -> str:
+    if not papers:
+        return ""
+    rows = [_xls_row(_XLS_COLUMNS)]
+    for paper in papers:
+        rows.append(
+            _xls_row(
+                (
+                    paper.get("title"),
+                    paper.get("authors"),
+                    paper.get("year"),
+                    paper.get("venue"),
+                    paper.get("doi"),
+                    paper.get("citation_count"),
+                    paper.get("url"),
+                )
+            )
+        )
+    return (
+        '<?xml version="1.0"?>\n'
+        '<?mso-application progid="Excel.Sheet"?>\n'
+        '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n'
+        ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n'
+        '<Worksheet ss:Name="Papers">\n<Table>\n'
+        + "\n".join(rows)
+        + "\n</Table>\n</Worksheet>\n</Workbook>\n"
+    )
+
+
+@_register("xls_plain")
+def _to_xls_plain(papers: List[Dict[str, Any]]) -> str:
+    if not papers:
+        return ""
+    rows: List[str] = []
+    for paper in papers:
+        rows.append(
+            _xls_row(
+                (
+                    paper.get("title"),
+                    paper.get("authors"),
+                    paper.get("year"),
+                    paper.get("venue"),
+                    paper.get("doi"),
+                    paper.get("citation_count"),
+                    paper.get("url"),
+                )
+            )
+        )
+    return (
+        '<?xml version="1.0"?>\n'
+        '<?mso-application progid="Excel.Sheet"?>\n'
+        '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n'
+        ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n'
+        '<Worksheet ss:Name="Papers">\n<Table>\n'
+        + "\n".join(rows)
+        + "\n</Table>\n</Worksheet>\n</Workbook>\n"
+    )
 
 
 # --- citation styles ---------------------------------------------------------
@@ -432,6 +534,77 @@ def _to_vancouver(papers: List[Dict[str, Any]]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _mla_authors(paper: Dict[str, Any]) -> str:
+    authors = paper.get("authors") or []
+    if not authors:
+        return "Anonymous"
+    last, given = _citation_author(paper)
+    first = f"{last}, {given}" if given else last
+    if len(authors) == 1:
+        return first
+    if len(authors) == 2:
+        second_last, second_given = _name_parts(authors[1])
+        second = f"{second_given} {second_last}".strip()
+        return f"{first}, and {second}"
+    return f"{first}, et al."
+
+
+@_register("mla")
+def _to_mla(papers: List[Dict[str, Any]]) -> str:
+    if not papers:
+        return ""
+    lines: List[str] = []
+    for paper in papers:
+        parts: List[str] = [f"{_mla_authors(paper)}."]
+        title = _clean_title(paper)
+        if title:
+            parts.append(f'"{title}."')
+        venue = paper.get("venue")
+        year = _year_or_nd(paper)
+        if venue:
+            parts.append(f"{venue}, {year}.")
+        else:
+            parts.append(f"{year}.")
+        if paper.get("doi"):
+            parts.append(f"https://doi.org/{paper['doi']}")
+        lines.append(" ".join(parts))
+    return "\n".join(lines) + "\n"
+
+
+def _csiro_author(name: str) -> str:
+    last, given = _name_parts(name)
+    initials = _initials(given)
+    return f"{last}, {initials}" if initials else last
+
+
+def _csiro_authors(paper: Dict[str, Any]) -> str:
+    authors = paper.get("authors") or []
+    if not authors:
+        return "Anonymous"
+    formatted = [_csiro_author(author) for author in authors]
+    if len(formatted) == 1:
+        return formatted[0]
+    return ", ".join(formatted[:-1]) + " & " + formatted[-1]
+
+
+@_register("csiro")
+def _to_csiro(papers: List[Dict[str, Any]]) -> str:
+    if not papers:
+        return ""
+    lines: List[str] = []
+    for paper in papers:
+        parts: List[str] = [f"{_csiro_authors(paper)} ({_year_or_nd(paper)})."]
+        title = _clean_title(paper)
+        if title:
+            parts.append(f"{title}.")
+        if paper.get("venue"):
+            parts.append(f"{paper['venue']}.")
+        if paper.get("doi"):
+            parts.append(f"doi:{paper['doi']}")
+        lines.append(" ".join(parts))
+    return "\n".join(lines) + "\n"
+
+
 # --- public entry point -----------------------------------------------------
 
 
@@ -448,3 +621,147 @@ def format_papers(papers: Iterable[Dict[str, Any]], fmt: str) -> str:
             f"Unknown export format: {fmt!r}. Supported: {sorted(FORMATTERS)}"
         )
     return FORMATTERS[key](list(papers))
+
+
+# --- metrics report ----------------------------------------------------------
+
+# Order matters: this is the row order in the exported sheet, matching the
+# sequence Publish or Perish prints in its metrics report.
+_METRIC_LABELS: Tuple[Tuple[str, str], ...] = (
+    ("papers", "Papers"),
+    ("total_citations", "Total citations"),
+    ("h_index", "h-index"),
+    ("i10_index", "i10-index"),
+    ("g_index", "g-index"),
+    ("e_index", "e-index"),
+    ("hc_index", "Contemporary h-index"),
+    ("hI_index", "hI-index"),
+    ("hI_norm", "hI-norm"),
+    ("hm_index", "hm-index"),
+    ("AWCR", "AWCR"),
+    ("AW_index", "AW-index"),
+    ("AWCRpA", "AWCR per author"),
+    ("max_citations", "Max citations"),
+    ("mean_citations", "Mean citations per paper"),
+    ("citation_velocity", "Citation velocity"),
+    ("cites_year", "Citations per year"),
+    ("cites_paper", "Citations per paper"),
+    ("cites_author", "Citations per author"),
+    ("papers_author", "Papers per author"),
+    ("authors_paper", "Authors per paper"),
+)
+
+
+def format_metrics_csv(metrics: Dict[str, Any]) -> str:
+    """Render a metrics payload as a two-section CSV report.
+
+    Section 1 is one ``Metric,Value`` row per scalar indicator; section 2 is
+    the ``by_year`` table (papers, citations, cumulative citations). This is
+    the shape Publish or Perish produces when exporting its metrics report and
+    it opens cleanly in Excel/LibreOffice.
+    """
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\n")
+
+    writer.writerow(["Metric", "Value"])
+    for key, label in _METRIC_LABELS:
+        if key in metrics:
+            value = metrics[key]
+            writer.writerow([label, "" if value is None else value])
+
+    by_year = metrics.get("by_year") or []
+    if by_year:
+        writer.writerow([])
+        writer.writerow(["Year", "Papers", "Citations", "Cumulative citations"])
+        for row in by_year:
+            writer.writerow(
+                [
+                    row.get("year", ""),
+                    row.get("papers", ""),
+                    row.get("citations", ""),
+                    row.get("cumulative_citations", ""),
+                ]
+            )
+
+    return buf.getvalue()
+
+
+# --- search report -----------------------------------------------------------
+
+_EXTENDED_METRIC_LABELS: Tuple[Tuple[str, str], ...] = (
+    ("hc_index", "Contemporary h-index"),
+    ("hI_index", "hI-index"),
+    ("hI_norm", "hI-norm"),
+    ("hm_index", "hm-index"),
+    ("AWCR", "AWCR"),
+    ("AW_index", "AW-index"),
+    ("AWCRpA", "AWCR per author"),
+    ("awcr", "AWCR"),
+)
+
+_EXTENDED_METRIC_KEYS = {key for key, _ in _EXTENDED_METRIC_LABELS}
+
+
+def _report_value(value: Any) -> str:
+    return "" if value is None else str(value)
+
+
+def format_search_report(payload: Dict[str, Any], mode: str = "basic") -> str:
+    """Render a metrics payload as a deterministic one-page text report."""
+    if not payload:
+        return ""
+    if mode not in ("basic", "extended"):
+        mode = "basic"
+
+    metrics = payload.get("metrics")
+    if not isinstance(metrics, dict):
+        metrics = payload
+
+    title = "Search Report"
+    lines: List[str] = [title, "=" * len(title)]
+    printed: set[str] = set()
+    for key, value in payload.items():
+        if isinstance(value, (dict, list)):
+            continue
+        lines.append(f"{key}: {_report_value(value)}")
+        printed.add(key)
+
+    for key, label in _METRIC_LABELS:
+        if key in metrics and key not in printed:
+            if mode == "basic" and key in _EXTENDED_METRIC_KEYS:
+                continue
+            lines.append(f"{label}: {_report_value(metrics[key])}")
+            printed.add(key)
+
+    by_year = (
+        payload.get("citations_by_year")
+        or payload.get("by_year")
+        or metrics.get("citations_by_year")
+        or metrics.get("by_year")
+        or []
+    )
+    if by_year:
+        lines.append("")
+        lines.append("Citations by year")
+        lines.append("Year  Papers  Citations  Cumulative")
+        for row in by_year:
+            lines.append(
+                f"{row.get('year', '')}  {row.get('papers', '')}  "
+                f"{row.get('citations', '')}  {row.get('cumulative_citations', '')}"
+            )
+
+    if mode == "extended":
+        for key, label in _EXTENDED_METRIC_LABELS:
+            if key in metrics and key not in printed:
+                lines.append(f"{label}: {_report_value(metrics[key])}")
+                printed.add(key)
+        authors = payload.get("authors")
+        if authors is None:
+            authors = metrics.get("authors")
+        if authors:
+            lines.append("")
+            lines.append("Authors")
+            for author in authors:
+                lines.append(f"- {author}")
+
+    return "\n".join(lines) + "\n"

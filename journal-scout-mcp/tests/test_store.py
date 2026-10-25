@@ -152,3 +152,353 @@ def test_cached_call_without_a_store_just_runs_the_factory():
         return {"ok": True}
 
     assert asyncio.run(cached_call(None, ("k",), factory)) == {"ok": True}
+
+
+def _count_pipeline(count):
+    return _pipeline(
+        rows=[[{"type": "integer", "value": str(count)}]], columns=["COUNT(*)"]
+    )
+
+
+def test_cache_clear_deletes_everything_and_returns_count():
+    import asyncio
+
+    seen = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        seen.append(body["requests"][0]["stmt"])
+        if "COUNT(*)" in seen[-1]["sql"]:
+            return httpx.Response(200, json=_count_pipeline(3))
+        return httpx.Response(200, json=_pipeline())
+
+    cache = TursoCache(_store(handler), ttl=60)
+    assert asyncio.run(cache.clear()) == 3
+    assert seen[0]["sql"] == "SELECT COUNT(*) FROM query_cache"
+    assert seen[1]["sql"] == "DELETE FROM query_cache"
+
+
+def test_cache_clear_with_prefix_uses_a_parameterised_like_delete():
+    import asyncio
+
+    seen = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        seen.append(body["requests"][0]["stmt"])
+        if "COUNT(*)" in seen[-1]["sql"]:
+            return httpx.Response(200, json=_count_pipeline(2))
+        return httpx.Response(200, json=_pipeline())
+
+    cache = TursoCache(_store(handler), ttl=60)
+    assert asyncio.run(cache.clear("abc")) == 2
+    for stmt in seen:
+        assert "LIKE ?" in stmt["sql"]
+        assert stmt["args"] == [{"type": "text", "value": "abc%"}]
+
+
+def _search_row(results):
+    return [
+        {"type": "text", "value": "old"},
+        {"type": "text", "value": "quantum"},
+        {"type": "text", "value": "smith"},
+        {"type": "text", "value": '["crossref"]'},
+        {"type": "text", "value": '{"year": 2024}'},
+        {"type": "integer", "value": str(len(results))},
+        {"type": "float", "value": 1700000000.0},
+        {"type": "text", "value": json.dumps(results)},
+    ]
+
+
+def test_split_search_chunks_results_and_inserts_each_chunk():
+    import asyncio
+
+    results = [{"title": f"p{i}"} for i in range(5)]
+    inserts = []
+
+    def handler(request):
+        stmt = json.loads(request.content)["requests"][0]["stmt"]
+        if stmt["sql"].startswith("SELECT id"):
+            return httpx.Response(
+                200,
+                json=_pipeline(
+                    rows=[_search_row(results)],
+                    columns=[
+                        "id",
+                        "query",
+                        "author",
+                        "sources",
+                        "filters",
+                        "result_count",
+                        "created_at",
+                        "results",
+                    ],
+                ),
+            )
+        inserts.append(stmt)
+        return httpx.Response(200, json=_pipeline())
+
+    cache = TursoCache(_store(handler), ttl=60)
+    ids = asyncio.run(cache.split_search("old", 2))
+
+    assert len(ids) == 3
+    assert len(set(ids)) == 3
+    assert len(inserts) == 3
+    chunk_sizes = [int(stmt["args"][5]["value"]) for stmt in inserts]
+    assert chunk_sizes == [2, 2, 1]
+    labels = [stmt["args"][1]["value"] for stmt in inserts]
+    assert labels == [
+        "quantum (split 1/3)",
+        "quantum (split 2/3)",
+        "quantum (split 3/3)",
+    ]
+
+
+def test_split_search_returns_empty_list_for_missing_row():
+    import asyncio
+
+    def handler(request):
+        return httpx.Response(200, json=_pipeline())
+
+    cache = TursoCache(_store(handler), ttl=60)
+    assert asyncio.run(cache.split_search("missing", 2)) == []
+
+
+def test_split_search_rejects_size_below_one():
+    import asyncio
+
+    import pytest
+
+    def handler(request):
+        return httpx.Response(
+            200,
+            json=_pipeline(
+                rows=[_search_row([{"title": "p0"}])],
+                columns=[
+                    "id",
+                    "query",
+                    "author",
+                    "sources",
+                    "filters",
+                    "result_count",
+                    "created_at",
+                    "results",
+                ],
+            ),
+        )
+
+    cache = TursoCache(_store(handler), ttl=60)
+    with pytest.raises(ValueError):
+        asyncio.run(cache.split_search("old", 0))
+
+
+def _search_columns():
+    return [
+        "id",
+        "query",
+        "author",
+        "sources",
+        "filters",
+        "result_count",
+        "created_at",
+        "results",
+    ]
+
+
+def test_duplicate_search_clones_fields_under_a_new_id():
+    import asyncio
+
+    results = [{"title": "p0"}]
+    inserts = []
+
+    def handler(request):
+        stmt = json.loads(request.content)["requests"][0]["stmt"]
+        if stmt["sql"].startswith("SELECT id"):
+            return httpx.Response(
+                200,
+                json=_pipeline(rows=[_search_row(results)], columns=_search_columns()),
+            )
+        inserts.append(stmt)
+        return httpx.Response(200, json=_pipeline())
+
+    cache = TursoCache(_store(handler), ttl=60)
+    new_id = asyncio.run(cache.duplicate_search("old"))
+
+    assert new_id is not None
+    assert new_id != "old"
+    assert len(inserts) == 1
+    args = inserts[0]["args"]
+    assert args[0]["value"] == new_id
+    assert args[1]["value"] == "quantum (copy)"
+    assert args[2]["value"] == "smith"
+    assert json.loads(args[3]["value"]) == ["crossref"]
+    assert json.loads(args[4]["value"]) == {"year": 2024}
+    assert int(args[5]["value"]) == 1
+    assert json.loads(args[7]["value"]) == results
+
+
+def test_duplicate_search_returns_none_for_unknown_id():
+    import asyncio
+
+    def handler(request):
+        return httpx.Response(200, json=_pipeline())
+
+    cache = TursoCache(_store(handler), ttl=60)
+    assert asyncio.run(cache.duplicate_search("missing")) is None
+
+
+def test_export_workspace_returns_rows_with_results_newest_first():
+    import asyncio
+
+    older = [{"title": "old"}]
+    newer = [{"title": "new"}]
+
+    def handler(request):
+        stmt = json.loads(request.content)["requests"][0]["stmt"]
+        assert "ORDER BY created_at DESC" in stmt["sql"]
+        return httpx.Response(
+            200,
+            json=_pipeline(
+                rows=[_search_row(newer), _search_row(older)],
+                columns=_search_columns(),
+            ),
+        )
+
+    cache = TursoCache(_store(handler), ttl=60)
+    rows = asyncio.run(cache.export_workspace(limit=5))
+
+    assert [row["results"] for row in rows] == [newer, older]
+    assert rows[0]["sources"] == ["crossref"]
+    assert rows[0]["filters"] == {"year": 2024}
+
+
+def test_import_workspace_inserts_every_entry():
+    import asyncio
+
+    inserts = []
+
+    def handler(request):
+        stmt = json.loads(request.content)["requests"][0]["stmt"]
+        inserts.append(stmt)
+        return httpx.Response(200, json=_pipeline())
+
+    cache = TursoCache(_store(handler), ttl=60)
+    archive = {
+        "searches": [
+            {"query": "quantum", "author": "smith", "results": [{"title": "p0"}]},
+            {"query": "gravity", "result_count": 2, "results": [{"title": "p1"}]},
+        ]
+    }
+    ids = asyncio.run(cache.import_workspace(archive))
+
+    assert len(ids) == 2
+    assert len(set(ids)) == 2
+    assert len(inserts) == 2
+    assert inserts[0]["args"][1]["value"] == "quantum"
+    assert inserts[1]["args"][1]["value"] == "gravity"
+
+
+def test_replay_search_returns_stored_results_as_stale():
+    import asyncio
+
+    results = [{"title": "p0"}]
+
+    def handler(request):
+        return httpx.Response(
+            200,
+            json=_pipeline(rows=[_search_row(results)], columns=_search_columns()),
+        )
+
+    cache = TursoCache(_store(handler), ttl=60)
+    payload = asyncio.run(cache.replay_search("old"))
+
+    assert payload["id"] == "old"
+    assert payload["results"] == results
+    assert payload["stale"] is True
+
+
+def test_replay_search_returns_none_when_results_are_empty():
+    import asyncio
+
+    def handler(request):
+        return httpx.Response(
+            200,
+            json=_pipeline(rows=[_search_row([])], columns=_search_columns()),
+        )
+
+    cache = TursoCache(_store(handler), ttl=60)
+    assert asyncio.run(cache.replay_search("old")) is None
+
+
+def test_info_reports_size_and_expiry_and_honours_prefix():
+    import asyncio
+    import time
+
+    seen = []
+
+    def handler(request):
+        stmt = json.loads(request.content)["requests"][0]["stmt"]
+        seen.append(stmt)
+        return httpx.Response(
+            200,
+            json=_pipeline(
+                rows=[
+                    [
+                        {"type": "text", "value": "abc:1"},
+                        {"type": "integer", "value": "42"},
+                        {"type": "float", "value": time.time() - 60},
+                    ],
+                    [
+                        {"type": "text", "value": "abc:2"},
+                        {"type": "integer", "value": "7"},
+                        {"type": "float", "value": time.time() + 60},
+                    ],
+                ],
+                columns=["key", "LENGTH(value)", "expires_at"],
+            ),
+        )
+
+    cache = TursoCache(_store(handler), ttl=60)
+    entries = asyncio.run(cache.info("abc", limit=10))
+
+    assert "WHERE key LIKE ?" in seen[0]["sql"]
+    assert seen[0]["args"] == [
+        {"type": "text", "value": "abc%"},
+        {"type": "integer", "value": "10"},
+    ]
+    assert entries[0]["key"] == "abc:1"
+    assert entries[0]["size_bytes"] == 42
+    assert entries[0]["expired"] is True
+    assert entries[1]["expired"] is False
+
+
+def test_list_searches_includes_size_and_age():
+    import asyncio
+
+    def handler(request):
+        return httpx.Response(
+            200,
+            json=_pipeline(
+                rows=[
+                    _search_row([{"title": "p0"}])[:7]
+                    + [{"type": "integer", "value": "12"}]
+                ],
+                columns=[
+                    "id",
+                    "query",
+                    "author",
+                    "sources",
+                    "filters",
+                    "result_count",
+                    "created_at",
+                    "size_bytes",
+                ],
+            ),
+        )
+
+    cache = TursoCache(_store(handler), ttl=60)
+    rows = asyncio.run(cache.list_searches())
+
+    assert rows[0]["size_bytes"] == 12
+    assert "age_seconds" in rows[0]
+    assert rows[0]["age_seconds"] > 0

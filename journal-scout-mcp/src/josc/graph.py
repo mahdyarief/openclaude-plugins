@@ -201,6 +201,38 @@ def hm_index(papers: Iterable[Paper]) -> float:
     return round(hm, 3)
 
 
+def citations_by_year(papers: Iterable[Paper]) -> List[Dict[str, Any]]:
+    """Per-year publication and citation table, newest year last.
+
+    Mirrors Publish or Perish's "citations per year" table: one row per year
+    that has at least one paper, with the number of papers published that
+    year, the citations those papers have collected, and a running cumulative
+    citation total.
+    """
+    buckets: Dict[int, Dict[str, int]] = {}
+    for paper in papers:
+        if not paper.year:
+            continue
+        row = buckets.setdefault(paper.year, {"papers": 0, "citations": 0})
+        row["papers"] += 1
+        row["citations"] += paper.citation_count or 0
+
+    table: List[Dict[str, Any]] = []
+    cumulative = 0
+    for year in sorted(buckets):
+        row = buckets[year]
+        cumulative += row["citations"]
+        table.append(
+            {
+                "year": year,
+                "papers": row["papers"],
+                "citations": row["citations"],
+                "cumulative_citations": cumulative,
+            }
+        )
+    return table
+
+
 def compute_metrics(
     papers: Iterable[Paper],
     current_year: Optional[int] = None,
@@ -240,6 +272,7 @@ def compute_metrics(
         "cites_author": round(total_citations / max(1, total_authors), 3),
         "papers_author": round(paper_count / max(1, len(unique_authors)), 3),
         "authors_paper": round(total_authors / max(1, paper_count), 3),
+        "by_year": citations_by_year(papers),
     }
 
     if mode == "extended":

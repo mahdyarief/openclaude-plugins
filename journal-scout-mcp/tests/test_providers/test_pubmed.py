@@ -146,3 +146,38 @@ async def test_empty_idlist_returns_empty(make_fetcher):
         assert await provider.search("nothing matches", 5) == []
     finally:
         await fetcher.close()
+
+
+PLACEHOLDER_TITLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID>999</PMID>
+      <Article>
+        <ArticleTitle>[Not Available].</ArticleTitle>
+        <VernacularTitle>Utilisation des données probantes</VernacularTitle>
+        <Journal>
+          <JournalIssue>
+            <PubDate>
+              <Year>2024</Year>
+            </PubDate>
+          </JournalIssue>
+          <Title>Revue Example</Title>
+        </Journal>
+      </Article>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>
+"""
+
+
+async def test_search_falls_back_to_vernacular_title(make_fetcher):
+    fetcher = make_fetcher(
+        _router({"esearchresult": {"idlist": ["999"]}}, efetch_xml=PLACEHOLDER_TITLE_XML)
+    )
+    provider = PubMedProvider(fetcher)
+    try:
+        papers = await provider.search("data quality", 5)
+        assert papers[0].title == "Utilisation des données probantes"
+    finally:
+        await fetcher.close()

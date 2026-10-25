@@ -5,8 +5,9 @@ a while, so caching them cuts latency and — more importantly — conserves
 metered quotas such as the Elsevier weekly limit. The cache is deliberately
 dependency-free and clock-injectable so it can be unit-tested.
 """
+import json
 import time
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 DEFAULT_TTL_SECONDS = 300.0
 DEFAULT_MAX_ENTRIES = 1024
@@ -69,10 +70,17 @@ class TTLCache:
         del self._store[soonest]
         self._evictions += 1
 
-    def clear(self) -> None:
+    def clear(self, prefix: Optional[str] = None) -> int:
         # Counters are deliberately left intact so stats() keeps describing the
         # whole process lifetime rather than the current store contents.
-        self._store.clear()
+        if prefix is None:
+            removed = len(self._store)
+            self._store.clear()
+            return removed
+        keys = [key for key in self._store if str(key).startswith(prefix)]
+        for key in keys:
+            del self._store[key]
+        return len(keys)
 
     def __len__(self) -> int:
         return len(self._store)
@@ -90,6 +98,33 @@ class TTLCache:
             "expired": self._expired,
             "hit_rate": round(self._hits / lookups, 3) if lookups else 0.0,
         }
+
+    def info(self, prefix: Optional[str] = None, limit: int = 200) -> List[Dict[str, Any]]:
+        """Return read-only metadata for stored entries, soonest-expiring first."""
+        now = self._clock()
+        entries = []
+        for key, (expires_at, value) in self._store.items():
+            if prefix is not None and not str(key).startswith(prefix):
+                continue
+            ttl_remaining = round(expires_at - now, 1)
+            try:
+                size_bytes = len(json.dumps(value, default=str))
+            except Exception:
+                size_bytes = 0
+            entries.append(
+                (
+                    expires_at,
+                    {
+                        "key": str(key),
+                        "size_bytes": size_bytes,
+                        "age_seconds": round(self._ttl - ttl_remaining, 1),
+                        "ttl_remaining": ttl_remaining,
+                        "expired": ttl_remaining <= 0,
+                    },
+                )
+            )
+        entries.sort(key=lambda item: item[0])
+        return [entry for _, entry in entries[:limit]]
 
 
 def build_cache(ttl: Optional[float]) -> Optional[TTLCache]:

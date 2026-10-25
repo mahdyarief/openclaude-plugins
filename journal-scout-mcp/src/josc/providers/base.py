@@ -25,6 +25,9 @@ class ProviderBase:
     # An enricher is not queried during a normal fan-out; it is only consulted
     # to augment an already-resolved record (e.g. Unpaywall adds OA links).
     enricher: bool = False
+    # A source opted out of the default fan-out (e.g. one behind a bot
+    # challenge). It is still reachable when the caller names it explicitly.
+    opt_out: bool = False
 
     def __init__(self, fetcher: Any, config: Optional[Dict[str, Any]] = None):
         self.fetcher = fetcher

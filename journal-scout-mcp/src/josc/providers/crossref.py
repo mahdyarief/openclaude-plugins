@@ -45,7 +45,10 @@ class CrossrefProvider(ProviderBase):
 
     def _items_to_papers(self, data) -> List[Paper]:
         items = (data.get("message") or {}).get("items") or []
-        return [self._to_paper(i) for i in items]
+        papers = [self._to_paper(i) for i in items]
+        # Crossref returns container records (journal-issue, proceedings, ...)
+        # for broad queries. They carry no title and cannot be cited as works.
+        return [paper for paper in papers if (paper.title or "").strip()]
 
     @staticmethod
     def _year_filter(year_from, year_to) -> str:

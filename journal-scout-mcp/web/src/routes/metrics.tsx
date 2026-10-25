@@ -1,20 +1,27 @@
 import { useState } from "react";
-import { fetchMetrics } from "../lib/api";
+import { fetchMetrics, metricsCsvUrl, metricsReportUrl } from "../lib/api";
 import type { MetricsResponse } from "../lib/types";
 import {
-  ALERT_ERROR,
-  ALERT_WARN,
-  CARD,
-  EYEBROW,
-  FIELD,
-  FIELD_SM,
-  H1,
-  LEDE,
-  PAGE,
-  PRIMARY_BTN,
-} from "../lib/ui";
+  Alert,
+  AnchorButton,
+  Button,
+  Card,
+  Input,
+  PageHeader,
+  LoadingLine,
+  Spinner,
+} from "../components/ui";
 
 type MetricCard = { key: string; label: string; hint: string };
+
+type MetricsQuery = {
+  author?: string;
+  query?: string;
+  limitPerSource?: number;
+  yearFrom?: number;
+  yearTo?: number;
+  mode?: "basic" | "extended";
+};
 
 const BASIC_CARDS: MetricCard[] = [
   { key: "papers", label: "Papers", hint: "works matched" },
@@ -65,26 +72,66 @@ function MetricGroup({
   data: MetricsResponse;
 }) {
   return (
-    <section className="space-y-3">
-      <h2 className="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</h2>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="space-y-2">
+      <h2 className="m-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        {title}
+      </h2>
+      <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {cards.map((card) => {
           const raw = (data as unknown as Record<string, unknown>)[card.key];
           const display =
-            raw === null || raw === undefined ? "—" : typeof raw === "number" ? raw : String(raw);
+            raw === null || raw === undefined ? "-" : typeof raw === "number" ? raw : String(raw);
           return (
-            <div key={card.key} className={`${CARD} p-5`}>
-              <p className="m-0 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            <Card key={card.key} className="px-3 py-2.5">
+              <p className="m-0 text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 {card.label}
               </p>
-              <p className="m-0 mt-2 text-3xl font-semibold tabular-nums text-slate-50">
+              <p className="m-0 mt-1 text-xl font-semibold tabular-nums leading-tight text-slate-50">
                 {display}
               </p>
-              <p className="m-0 mt-1.5 text-[11px] leading-snug text-slate-500">{card.hint}</p>
-            </div>
+              <p className="m-0 mt-0.5 text-[11px] leading-snug text-slate-400">{card.hint}</p>
+            </Card>
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function CitationsByYearTable({ data }: { data: MetricsResponse }) {
+  const rows = data.by_year ?? [];
+  if (rows.length === 0) return null;
+  return (
+    <section className="space-y-2">
+      <h2 className="m-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        Citations per year
+      </h2>
+      <Card className="overflow-x-auto">
+        <table className="w-full border-collapse text-[13px]">
+          <thead>
+            <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wide text-slate-400">
+              <th className="px-3 py-2 font-medium">Year</th>
+              <th className="px-3 py-2 text-right font-medium">Papers</th>
+              <th className="px-3 py-2 text-right font-medium">Citations</th>
+              <th className="px-3 py-2 text-right font-medium">Cumulative</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.year} className="border-b border-slate-800/60 last:border-0">
+                <td className="px-3 py-1.5 tabular-nums text-slate-300">{row.year}</td>
+                <td className="px-3 py-1.5 text-right tabular-nums text-slate-300">{row.papers}</td>
+                <td className="px-3 py-1.5 text-right tabular-nums text-slate-300">
+                  {row.citations}
+                </td>
+                <td className="px-3 py-1.5 text-right tabular-nums text-slate-400">
+                  {row.cumulative_citations}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
     </section>
   );
 }
@@ -97,6 +144,7 @@ export function MetricsPage() {
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
   const [data, setData] = useState<MetricsResponse | null>(null);
+  const [lastQuery, setLastQuery] = useState<MetricsQuery | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,16 +154,16 @@ export function MetricsPage() {
     if (!trimmed) return;
     setLoading(true);
     setError(null);
+    const params = {
+      [searchBy]: trimmed,
+      limitPerSource: limit,
+      yearFrom: yearFrom ? Number(yearFrom) : undefined,
+      yearTo: yearTo ? Number(yearTo) : undefined,
+      mode: metricMode,
+    };
+    setLastQuery(params);
     try {
-      setData(
-        await fetchMetrics({
-          [searchBy]: trimmed,
-          limitPerSource: limit,
-          yearFrom: yearFrom ? Number(yearFrom) : undefined,
-          yearTo: yearTo ? Number(yearTo) : undefined,
-          mode: metricMode,
-        }),
-      );
+      setData(await fetchMetrics(params));
     } catch (exc) {
       setError(exc instanceof Error ? exc.message : String(exc));
       setData(null);
@@ -125,28 +173,26 @@ export function MetricsPage() {
   }
 
   return (
-    <div className={PAGE}>
-      <section className="space-y-3">
-        <p className={EYEBROW}>Publish or Perish</p>
-        <h1 className={H1}>Bibliometrics</h1>
-        <p className={LEDE}>
-          Indicators for an author name or a topic query, computed over the merged multi-source
-          result set rather than a single index.
-        </p>
-      </section>
+    <div className="w-full space-y-5">
+      <PageHeader
+        title="Bibliometrics"
+        description="Indicators for an author name or a topic query, computed over the merged multi-source result set rather than a single index."
+      />
 
-      <form onSubmit={submit} className={`${CARD} space-y-4 p-4 sm:p-5`}>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="flex shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 p-1 text-xs">
+      <Card className="space-y-2 p-2.5">
+        <form onSubmit={submit} className="space-y-2">
+        <div className="flex flex-col gap-1.5 lg:flex-row lg:items-center">
+          <div className="flex shrink-0 rounded-md border border-slate-500 bg-slate-800/40 p-0.5 text-[11px]">
             {(["author", "query"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
                 onClick={() => setSearchBy(option)}
-                className={`rounded-lg px-3 py-2 transition-colors ${
+                aria-pressed={searchBy === option}
+                className={`touch-target rounded px-2.5 py-1 transition-colors ${
                   searchBy === option
-                    ? "bg-slate-800 text-slate-50"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "bg-slate-700 text-slate-50"
+                    : "text-slate-400 hover:text-slate-100"
                 }`}
               >
                 {option === "author" ? "Author" : "Topic query"}
@@ -154,16 +200,17 @@ export function MetricsPage() {
             ))}
           </div>
 
-          <div className="flex shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 p-1 text-xs">
+          <div className="flex shrink-0 rounded-md border border-slate-500 bg-slate-800/40 p-0.5 text-[11px]">
             {(["basic", "extended"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
                 onClick={() => setMetricMode(option)}
-                className={`rounded-lg px-3 py-2 transition-colors ${
+                aria-pressed={metricMode === option}
+                className={`touch-target rounded px-2.5 py-1 transition-colors ${
                   metricMode === option
-                    ? "bg-slate-800 text-slate-50"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "bg-slate-700 text-slate-50"
+                    : "text-slate-400 hover:text-slate-100"
                 }`}
               >
                 {option === "basic" ? "Basic" : "Extended"}
@@ -171,75 +218,111 @@ export function MetricsPage() {
             ))}
           </div>
 
-          <input
+          <Input
             value={value}
             onChange={(event) => setValue(event.target.value)}
             placeholder={searchBy === "author" ? "e.g. Harzing, Anne-Wil" : "e.g. bibliometric analysis"}
-            className={`${FIELD} h-11 min-w-0 flex-1`}
+            aria-label={searchBy === "author" ? "Author name" : "Topic query"}
+            className="min-w-0 flex-1"
           />
 
-          <label className="flex shrink-0 items-center gap-2 text-xs text-slate-400">
+          <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-slate-400">
             per source
-            <input
+            <Input
               type="number"
               min={1}
               max={200}
               value={limit}
               onChange={(event) => setLimit(Number(event.target.value) || 50)}
-              className={`${FIELD_SM} h-9 w-20`}
+              controlSize="sm"
+              className="w-20"
             />
           </label>
 
-          <button type="submit" disabled={loading} className={PRIMARY_BTN}>
-            {loading ? "Computing…" : "Compute"}
-          </button>
+          <Button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <Spinner size="xs" />
+                Computing…
+              </>
+            ) : (
+              "Compute"
+            )}
+          </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 border-t border-slate-800/70 pt-4 text-xs text-slate-400">
-          <span className="text-slate-500">Year range</span>
-          <label className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-800 pt-2 text-[11px] text-slate-400">
+          <span className="font-medium uppercase tracking-wide">Year range</span>
+          <label className="flex items-center gap-1.5">
             from
-            <input
+            <Input
               type="number"
               min={1900}
               max={2100}
               value={yearFrom}
               onChange={(event) => setYearFrom(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-24`}
+              placeholder="any"
+              controlSize="sm"
+              className="w-20"
             />
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5">
             to
-            <input
+            <Input
               type="number"
               min={1900}
               max={2100}
               value={yearTo}
               onChange={(event) => setYearTo(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-24`}
+              placeholder="any"
+              controlSize="sm"
+              className="w-20"
             />
           </label>
         </div>
-      </form>
+        </form>
+      </Card>
 
-      {error && <div className={ALERT_ERROR}>{error}</div>}
+      {error && <Alert>{error}</Alert>}
+
+      {loading && (
+        <LoadingLine>Collecting citations from every provider…</LoadingLine>
+      )}
 
       {data?.errors && Object.keys(data.errors).length > 0 && (
-        <div className={ALERT_WARN}>
+        <Alert tone="warn">
           {Object.entries(data.errors).map(([source, message]) => (
             <div key={source}>
               <strong>{source}:</strong> {message}
             </div>
           ))}
-        </div>
+        </Alert>
       )}
 
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {lastQuery && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Card className="px-2.5 py-1 text-[11px] tabular-nums text-slate-300">
+                {data.papers} papers · {data.total_citations} citations
+              </Card>
+              <AnchorButton
+                href={metricsCsvUrl(lastQuery)}
+                download="metrics.csv"
+              >
+                Download CSV
+              </AnchorButton>
+              <AnchorButton
+                href={metricsReportUrl({ ...lastQuery, mode: metricMode })}
+                download="metrics-report.txt"
+              >
+                Download search report
+              </AnchorButton>
+            </div>
+          )}
           <MetricGroup title="Basic" cards={BASIC_CARDS} data={data} />
           <MetricGroup title="Extended" cards={EXTENDED_CARDS} data={data} />
+          <CitationsByYearTable data={data} />
         </div>
       )}
     </div>

@@ -40,13 +40,19 @@ membuka arsip hasil pencarian lama, bukan untuk query baru.
 
 ## Implikasi untuk journal-scout
 
-journal-scout sudah mencakup Crossref, Scopus, OpenAlex, Semantic Scholar, dan
-arXiv/DBLP (yang tidak dimiliki PoP). Yang belum ada dan menjadi gap:
+**Status 2026-10-25.** journal-scout sudah mencakup Crossref, Scopus,
+OpenAlex, Semantic Scholar, arXiv, DBLP, dan PubMed (`providers/pubmed.py`),
+plus dua provider non-pencarian: Unpaywall sebagai enricher OA
+(`providers/unpaywall.py:16`) dan OpenCitations sebagai sumber sitasi.
+PubMed yang dulu dicatat sebagai "gap termurah" sudah ditutup — tool
+`search_pubmed` ada di `server.py`, dan provider-nya mendeklarasikan filter
+`affiliation`, `issn`, `orcid`, `doi` (`providers/pubmed.py:29`).
+
+Yang benar-benar belum ada:
 
 - **Google Scholar** — sumber sitasi terbesar; tidak ada API resmi, butuh
-  strategi scraping atau proxy pihak ketiga.
+  strategi scraping atau proxy pihak ketiga. Sengaja tidak masuk roadmap.
 - **Web of Science** — butuh langganan institusi, tapi satu-satunya sumber
   yang diakui untuk banyak laporan akademik.
-- **PubMed** — penting untuk bidang biomedis; API-nya gratis dan stabil,
-  jadi ini gap termurah untuk ditutup.
-- **Lens.org** — API tersedia dengan token gratis untuk riset.
+- **Lens.org** — API tersedia dengan token gratis untuk riset; belum
+  diimplementasikan.

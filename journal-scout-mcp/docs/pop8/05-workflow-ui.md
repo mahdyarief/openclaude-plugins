@@ -59,20 +59,48 @@ sitasi (bukan paper utuh) — masalah khas hasil scraping Google Scholar.
 
 ## Implikasi untuk journal-scout
 
-journal-scout tidak punya konsep "search tersimpan". Setiap panggilan tool
-adalah operasi stateless; tidak ada workspace, folder, atau trash. Gap-nya:
+**Status 2026-10-25.** Gap di bawah sudah ditutup:
 
-- **Persistensi query** — `TursoStore` (`src/josc/store.py`) sudah menyimpan
-  cache respons HTTP, tapi bukan objek query. Menambah tabel `searches`
-  (id, query, sumber, filter, timestamp, hasil) adalah langkah paling logis
-  untuk mendukung "recent/saved searches".
-- **Merge/split** — `merge.py` sudah punya dedup DOI-first; tinggal
-  diekspos sebagai operasi pada dua himpunan hasil, bukan hanya di dalam
-  satu panggilan.
-- **Aksi artikel** — web UI (`web/src/components/PaperCard.tsx`) hanya
-  menampilkan link DOI/URL. Unpaywall sudah ada sebagai *enricher*
-  (`src/josc/providers/unpaywall.py`), tapi belum ada tombol eksplisit
-  "find OA copy".
+- **Persistensi query — ✅ selesai.** Tabel `searches` (`store.py:138-149`)
+  menyimpan `id, query, author, sources, filters, result_count, created_at,
+  results`; ditulis `record_search()` (`store.py:233`) lewat `_remember()`
+  (`api.py:167`, dipanggil di `api.py:267`), dibaca `list_searches()`
+  (`store.py:279`) dan diekspos `GET /api/searches` (`api.py:193`). UI
+  riwayat ada di `web/src/routes/history.tsx`.
+- **Merge — ✅ selesai.** `POST /api/merge` (`api.py:474`) memakai dedup
+  DOI-first di `merge.py`; UI memanggilnya dari `history.tsx`.
+- **Split — ✅ selesai.** `TursoCache.split_search` (`store.py:493`)
+  memecah satu baris `searches` menjadi beberapa baris baru berukuran
+  `size`, diekspos lewat `POST /api/searches/{search_id}/split`
+  (`api.py:604`) dan tombol "Split" per baris di `history.tsx`.
+- **Duplicate Current Search — ✅ selesai 2026-10-25.**
+  `TursoCache.duplicate_search` (`store.py:369`) meng-clone baris riwayat
+  dengan id baru dan label `"<query> (copy)"`; route
+  `POST /api/searches/{search_id}/duplicate` (`api.py:702`), tombol
+  "Duplicate" per baris di `history.tsx:536`.
+- **Arsip seluruh workspace — ✅ selesai 2026-10-25.**
+  `export_workspace` (`store.py:399`) / `import_workspace` (`store.py:423`)
+  diekspos lewat `GET /api/searches/export` (`api.py:661`) dan
+  `POST /api/searches/import-workspace` (`api.py:681`); tombol
+  "Export workspace" / "Import workspace" di `history.tsx:373` dan `:381`.
+- **Aksi artikel — ✅ selesai.** `PaperCard.tsx` punya tombol
+  "Find open-access copy" (`:121-129`) yang memanggil `fetchPaper`
+  (`api.ts:62`), plus tombol **"Related works"** dan **"Citing works"**
+  yang memanggil `GET /api/related` dan `GET /api/citations` lalu
+  merender panel inline berisi maksimal 10 hasil.
+
+**Retrieve Citing Works ke search baru — ✅ selesai.**
+`GET /api/citations?save=true` (`api.py:315`) memanggil `_remember()`
+dengan label `citations:<identifier>`, sehingga hasil pengutip tersimpan
+sebagai baris riwayat baru.
+
+**Import External Data — ✅ selesai.** `POST /api/import`
+(`api.py:561`) mem-parsing `.ris/.bib/.enw/.csv/.txt/.ciw` lewat
+`src/josc/importers.py`, dan `history.tsx` punya tombol "Import file".
+
+Satu hal yang tetap tidak ada: `Uncheck 0 Cites` / `Uncheck CITATION
+results` (filter seleksi khusus hasil scraping Google Scholar) — tidak
+relevan karena journal-scout memakai API resmi.
 
 Yang **tidak** perlu ditiru: struktur folder berlapis dan trash. Untuk
 sebuah MCP server, daftar search datar dengan tag lebih tepat.

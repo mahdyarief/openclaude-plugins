@@ -1,6 +1,6 @@
 # 02 — Matriks Kapabilitas Provider
 
-Sumber: flag di `src/josc/providers/base.py:15-27` dan deklarasi per provider.
+Sumber: flag di `src/josc/providers/base.py:16-24` dan deklarasi per provider.
 Angka terverifikasi dengan menjalankan `provider_names()` dan
 `search_provider_names()`.
 
@@ -22,15 +22,15 @@ Angka terverifikasi dengan menjalankan `provider_names()` dan
 
 **Hanya tiga provider yang bisa jadi sumber sitasi penuh**: Scopus, OpenAlex,
 Semantic Scholar. Ini yang dipakai `get_citations`
-(`src/josc/aggregator.py:206`).
+(`src/josc/aggregator.py:223`).
 
 **Empat provider bisa jadi sumber referensi**: Scopus, OpenAlex, Semantic
-Scholar, Crossref. Dipakai `get_references` (`aggregator.py:216`) dan
-`build_citation_network` (`aggregator.py:256`).
+Scholar, Crossref. Dipakai `get_references` (`aggregator.py:233`) dan
+`build_citation_network` (`aggregator.py:284`).
 
 **Unpaywall bukan sumber pencarian.** `enricher = True`
 (`providers/unpaywall.py:16`) membuatnya hanya dipanggil dari `_enrich`
-(`aggregator.py:160`) untuk melengkapi `pdf_url` dan `is_open_access`.
+(`aggregator.py:177`) untuk melengkapi `pdf_url` dan `is_open_access`.
 
 **OpenCitations tidak bisa search.** `supports_search = False`
 (`providers/opencitations.py:33`) — hanya bisa dijadikan sumber edge sitasi
@@ -54,10 +54,10 @@ Sejak 2026-10-24 ia punya capability flag sendiri, `supports_tech_only`
 
 | Provider | `supports_tech_only` | Bukti |
 |---|---|---|
-| `arxiv` | **ya** | `providers/arxiv.py:105` |
-| `openalex` | **ya** | `providers/openalex.py:73` |
-| `scopus` | **ya** | `providers/scopus.py:158` |
-| `semanticscholar` | **ya** | `providers/semanticscholar.py:91` |
+| `arxiv` | **ya** | `providers/arxiv.py:109` |
+| `openalex` | **ya** | `providers/openalex.py:94` |
+| `scopus` | **ya** | `providers/scopus.py:172` |
+| `semanticscholar` | **ya** | `providers/semanticscholar.py:95` |
 | `crossref` | tidak | hanya menerima parameter, tidak dipakai |
 | `dblp` | tidak | hanya menerima parameter, tidak dipakai |
 | `pubmed` | tidak | hanya menerima parameter, tidak dipakai |
@@ -69,7 +69,7 @@ setiap respons default akan menyebutnya sebagai filter yang diabaikan.
 
 ## Filter terstruktur (`supports_filters`) — ✅ diperluas 2026-10-24
 
-`ProviderBase.supports_filters` (`providers/base.py:20-21`) mendeklarasikan
+`ProviderBase.supports_filters` (`providers/base.py:24`) mendeklarasikan
 field yang benar-benar dipakai di query provider. `aggregator._route_filters`
 (`aggregator.py:72-102`) hanya mengirim field ke provider yang
 mendeklarasikannya dan mengembalikan `filters_applied` / `filters_ignored` di
@@ -90,7 +90,7 @@ Bukti per provider:
 - `scopus` — `providers/scopus.py:20`; klausa `AFFIL(...)`/`ISSN(...)`/
   `ORCID(...)`/`DOI(...)` di `search()` (baris 165/167/169/171) dan
   `search_author()` (baris 183/185/187/189).
-- `openalex` — `providers/openalex.py:35`; `_filters()` (baris 64-119)
+- `openalex` — `providers/openalex.py:36`; `_filters()` (baris 65-96)
   memakai `raw_affiliation_strings.search:`, `primary_location.source.issn:`,
   `authorships.author.orcid:`, dan `doi:` (prefix `https://doi.org/` dibuang).
   Nilai `affiliation` diratakan dulu karena OpenAlex memecah `filter` pada koma.
@@ -98,7 +98,7 @@ Bukti per provider:
   parameter, `issn:`/`doi:` masuk `filter` yang **digabung** dengan batas
   tahun di `_works()` (baris 64-78). Tidak ada filter ORCID di API Crossref,
   jadi kolomnya sengaja kosong.
-- `pubmed` — `providers/pubmed.py:29`; `_build_term()` (baris 47-56)
+- `pubmed` — `providers/pubmed.py:29`; `_build_term()` (baris 47-59)
   menambahkan `[AD]`, `[IS]`, `[AID]`, `[DOI]`. `author`/`venue` sengaja tidak
   dideklarasikan karena keduanya punya entry point sendiri.
 - `semanticscholar`/`arxiv`/`dblp` — hanya field lama; API-nya tidak punya

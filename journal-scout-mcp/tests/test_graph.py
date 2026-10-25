@@ -4,6 +4,7 @@ from josc.graph import (
     awcr,
     build_network,
     citation_velocity,
+    citations_by_year,
     compute_metrics,
     e_index,
     g_index,
@@ -78,6 +79,33 @@ def test_compute_metrics_handles_empty_input():
     assert metrics["cites_year"] == 0.0
     assert metrics["cites_paper"] == 0.0
     assert metrics["authors_paper"] == 0.0
+
+
+def test_citations_by_year_aggregates_and_accumulates():
+    papers = [
+        _paper("10.1/a", "A", year=2018, citations=20),
+        _paper("10.1/b", "B", year=2019, citations=10),
+        _paper("10.1/c", "C", year=2019, citations=5),
+        _paper("10.1/d", "D", year=None, citations=99),  # no year -> skipped
+    ]
+    table = citations_by_year(papers)
+    assert table == [
+        {"year": 2018, "papers": 1, "citations": 20, "cumulative_citations": 20},
+        {"year": 2019, "papers": 2, "citations": 15, "cumulative_citations": 35},
+    ]
+    assert citations_by_year([]) == []
+
+
+def test_compute_metrics_includes_by_year():
+    papers = [
+        _paper("10.1/a", "A", year=2018, citations=20),
+        _paper("10.1/b", "B", year=2019, citations=10),
+    ]
+    metrics = compute_metrics(papers, current_year=2020)
+    assert metrics["by_year"] == [
+        {"year": 2018, "papers": 1, "citations": 20, "cumulative_citations": 20},
+        {"year": 2019, "papers": 1, "citations": 10, "cumulative_citations": 30},
+    ]
 
 
 def test_e_index_measures_tail_above_h_core():

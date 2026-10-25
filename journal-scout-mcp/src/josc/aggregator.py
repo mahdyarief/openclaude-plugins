@@ -5,6 +5,7 @@ from .graph import _node_id, build_network, compute_metrics as _compute_metrics
 from .merge import merge_papers
 from .models import Paper, ProviderError
 from .providers.base import ProviderBase
+from .query import operator_report, translate_query
 
 
 async def _gather(
@@ -61,6 +62,7 @@ def _select(providers: List[ProviderBase], sources: Optional[List[str]], capabil
         for provider in providers
         if (sources is None or provider.name in sources)
         and getattr(provider, capability, False)
+        and (sources is not None or not getattr(provider, "opt_out", False))
     ]
 
 
@@ -111,6 +113,20 @@ def _filter_kwargs(provider: ProviderBase, requested: Dict[str, Any]) -> Dict[st
     }
 
 
+_SORT_FIELDS = {"citations": "citation_count", "year": "year", "title": "title"}
+
+
+def _sort_results(results: List[Dict[str, Any]], sort: Optional[str], order: str) -> None:
+    """Sort paper dicts in place; records missing the key always come last."""
+    field = _SORT_FIELDS.get(sort or "")
+    if not field:
+        return
+    present = [item for item in results if item.get(field) is not None]
+    missing = [item for item in results if item.get(field) is None]
+    present.sort(key=lambda item: item[field], reverse=order != "asc")
+    results[:] = present + missing
+
+
 async def search_all(
     providers: List[ProviderBase],
     query: str,
@@ -126,14 +142,17 @@ async def search_all(
     issn: Optional[str] = None,
     orcid: Optional[str] = None,
     doi: Optional[str] = None,
+    sort: Optional[str] = None,
+    order: str = "desc",
 ) -> Dict[str, Any]:
     active = _select(providers, sources, "supports_search")
+    translated = {p.name: translate_query(query, p.name) for p in active}
     requested = {"author": author, "venue": venue, "affiliation": affiliation,
                  "issn": issn, "orcid": orcid, "doi": doi}
     applied, ignored = _route_filters(active, requested, tech_only=tech_only)
     calls = {
         p.name: p.search(
-            query=query,
+            query=translated[p.name],
             limit=limit_per_source,
             year_from=year_from,
             year_to=year_to,
@@ -143,7 +162,12 @@ async def search_all(
         )
         for p in active
     }
-    return await _fan_out(calls, {"applied": applied, "ignored": ignored})
+    result = await _fan_out(calls, {"applied": applied, "ignored": ignored})
+    _sort_results(result["results"], sort, order)
+    report = operator_report([p.name for p in active], query)
+    result["query_warnings"] = report["warnings"]
+    result["query_translated"] = translated
+    return result
 
 
 async def search_author(
@@ -201,8 +225,24 @@ async def _enrich(providers: List[ProviderBase], paper: Paper) -> Paper:
     return paper
 
 
-async def get_paper(providers: List[ProviderBase], identifier: str) -> Dict[str, Any]:
-    active = [p for p in providers if not p.enricher]
+async def get_paper(
+    providers: List[ProviderBase],
+    identifier: str,
+    sources: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Resolve one identifier across providers.
+
+    ``sources`` narrows the lookup when the identifier is only meaningful to
+    one provider. A bare numeric id is ambiguous — Semantic Scholar reads any
+    digits as a ``CorpusId``, PubMed as a PMID, Scopus as a Scopus id — so a
+    caller holding a Garuda document id must say so instead of letting every
+    other source guess.
+    """
+    active = [
+        p
+        for p in providers
+        if not p.enricher and (sources is None or p.name in sources)
+    ]
     calls = {p.name: p.get(identifier) for p in active}
     names = list(calls.keys())
     outcomes = await asyncio.gather(*calls.values(), return_exceptions=True)
@@ -224,8 +264,15 @@ async def get_citations(
     providers: List[ProviderBase],
     identifier: str,
     limit: int = 20,
+    sources: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    active = _select(providers, None, "supports_citations")
+    """Collect citing papers for one identifier.
+
+    ``sources`` mirrors :func:`get_paper`: a bare numeric id only means
+    something to the provider that issued it, so callers holding a Garuda or
+    PubMed id must scope the lookup instead of letting every provider guess.
+    """
+    active = _select(providers, sources, "supports_citations")
     calls = {p.name: p.citations(identifier, limit) for p in active}
     return await _fan_out(calls)
 
@@ -234,9 +281,10 @@ async def get_references(
     providers: List[ProviderBase],
     identifier: str,
     limit: int = 20,
+    sources: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Collect the reference list of one paper from every capable source."""
-    active = _select(providers, None, "supports_references")
+    active = _select(providers, sources, "supports_references")
     calls = {p.name: p.references(identifier, limit) for p in active}
     return await _fan_out(calls)
 
@@ -245,9 +293,10 @@ async def get_related(
     providers: List[ProviderBase],
     identifier: str,
     limit: int = 20,
+    sources: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Collect the related-works list of one paper from every capable source."""
-    active = _select(providers, None, "supports_related")
+    active = _select(providers, sources, "supports_related")
     calls = {p.name: p.related(identifier, limit) for p in active}
     return await _fan_out(calls)
 

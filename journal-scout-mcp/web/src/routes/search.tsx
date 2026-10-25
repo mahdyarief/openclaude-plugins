@@ -1,22 +1,24 @@
 import { useEffect, useState } from "react";
-import { useSearch } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { ExportMenu } from "../components/ExportMenu";
-import { PaperCard } from "../components/PaperCard";
-import { searchPapers, type SearchOptions } from "../lib/api";
-import type { SearchResponse } from "../lib/types";
+import { PaperDrawer } from "../components/PaperDrawer";
+import { PaperTable } from "../components/PaperTable";
+import { replaySearch, searchPapers, type SearchOptions } from "../lib/api";
+import type { Paper, SearchResponse } from "../lib/types";
 import {
-  ALERT_ERROR,
-  ALERT_WARN,
-  CARD,
-  CHIP,
-  EYEBROW,
-  FIELD,
-  FIELD_SM,
-  H1,
-  LEDE,
-  PAGE,
-  PRIMARY_BTN,
-} from "../lib/ui";
+  Alert,
+  Button,
+  Card,
+  Chip,
+  Input,
+  PageHeader,
+  Select,
+  Spinner,
+  LoadingLine,
+  LINK_CLASS,
+  cn,
+} from "../components/ui";
+import { ChevronDownIcon, SlidersIcon } from "../components/icons";
 
 const PROVIDERS = [
   "scopus",
@@ -26,6 +28,7 @@ const PROVIDERS = [
   "crossref",
   "pubmed",
   "dblp",
+  "garuda",
 ];
 
 function splitSources(value: string | undefined): string[] {
@@ -35,6 +38,10 @@ function splitSources(value: string | undefined): string[] {
         .map((item) => item.trim())
         .filter((item) => item !== "")
     : [];
+}
+
+function paperKey(paper: SearchResponse["results"][number], index: number): string {
+  return `${paper.doi ?? paper.title}-${index}`;
 }
 
 export function SearchPage() {
@@ -55,6 +62,42 @@ export function SearchPage() {
   const [data, setData] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sort, setSort] = useState<"" | "citations" | "year" | "title">("");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [warningsDismissed, setWarningsDismissed] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [drawerPaper, setDrawerPaper] = useState<Paper | null>(null);
+
+  function toggleSelected(key: string) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function selectAll() {
+    if (!data) return;
+    setSelectedIds(new Set(data.results.map((paper, index) => paperKey(paper, index))));
+  }
+
+  function selectCited() {
+    if (!data) return;
+    setSelectedIds(
+      new Set(
+        data.results
+          .map((paper, index) => ({ paper, key: paperKey(paper, index) }))
+          .filter(({ paper }) => (paper.citation_count ?? 0) > 0)
+          .map(({ key }) => key),
+      ),
+    );
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
 
   function toggleSource(source: string) {
     setSelectedSources((current) =>
@@ -64,12 +107,63 @@ export function SearchPage() {
     );
   }
 
+  function resetFilters() {
+    setYearFrom("");
+    setYearTo("");
+    setOffset("");
+    setTechOnly(false);
+    setAffiliation("");
+    setIssn("");
+    setOrcid("");
+    setDoi("");
+    setSelectedSources([]);
+  }
+
+  // Counts only the advanced filters, so the badge on the Filters button
+  // tells the user what is hiding behind the collapsed panel.
+  const activeFilterCount =
+    (yearFrom ? 1 : 0) +
+    (yearTo ? 1 : 0) +
+    (offset ? 1 : 0) +
+    (techOnly ? 1 : 0) +
+    (affiliation.trim() ? 1 : 0) +
+    (issn.trim() ? 1 : 0) +
+    (orcid.trim() ? 1 : 0) +
+    (doi.trim() ? 1 : 0) +
+    selectedSources.length;
+
   async function run(term: string, options: SearchOptions) {
     if (!term) return;
     setLoading(true);
     setError(null);
+    setSelectedIds(new Set());
     try {
       setData(await searchPapers(term, options));
+      setWarningsDismissed(false);
+    } catch (exc) {
+      setError(exc instanceof Error ? exc.message : String(exc));
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Loads an archived result set without calling /api/search, so replaying a
+  // history row never appends a duplicate entry to that same history.
+  async function loadCached(searchId: string) {
+    setLoading(true);
+    setError(null);
+    setSelectedIds(new Set());
+    try {
+      const payload = await replaySearch(searchId);
+      setQuery(payload.query ?? "");
+      setSelectedSources(payload.sources ?? []);
+      setData({
+        results: payload.results ?? [],
+        errors: {},
+        counts: {},
+      });
+      setWarningsDismissed(false);
     } catch (exc) {
       setError(exc instanceof Error ? exc.message : String(exc));
       setData(null);
@@ -91,8 +185,15 @@ export function SearchPage() {
       issn: issn.trim() || undefined,
       orcid: orcid.trim() || undefined,
       doi: doi.trim() || undefined,
+      sort: sort || undefined,
+      order,
     });
   }
+
+  const results = data?.results ?? [];
+  const selectedPapers = results.filter((paper, index) =>
+    selectedIds.has(paperKey(paper, index)),
+  );
 
   const paramQuery = params.q ?? "";
   const paramSources = params.sources ?? "";
@@ -100,8 +201,13 @@ export function SearchPage() {
   const paramIssn = params.issn ?? "";
   const paramOrcid = params.orcid ?? "";
   const paramDoi = params.doi ?? "";
+  const paramCached = params.cached ?? "";
 
   useEffect(() => {
+    if (paramCached) {
+      void loadCached(paramCached);
+      return;
+    }
     if (!paramQuery.trim()) return;
     setQuery(paramQuery);
     setSelectedSources(splitSources(paramSources));
@@ -119,217 +225,364 @@ export function SearchPage() {
     });
     // Re-run only when the URL-carried search changes (e.g. a history Reload).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramQuery, paramSources, paramAffiliation, paramIssn, paramOrcid, paramDoi]);
+  }, [
+    paramCached,
+    paramQuery,
+    paramSources,
+    paramAffiliation,
+    paramIssn,
+    paramOrcid,
+    paramDoi,
+  ]);
 
   return (
-    <div className={PAGE}>
-      <section className="space-y-3">
-        <p className={EYEBROW}>Multi-source discovery</p>
-        <h1 className={H1}>Literature search</h1>
-        <p className={LEDE}>
-          One query fans out across Scopus, OpenAlex, Semantic Scholar, Crossref, arXiv and DBLP,
-          then duplicate records are merged DOI-first into a single result set.
-        </p>
-      </section>
+    <div className="w-full space-y-5">
+      <PageHeader
+        title="Literature search"
+        description="One query fans out across Scopus, OpenAlex, Semantic Scholar, Crossref, arXiv and DBLP, then duplicate records are merged DOI-first into a single result set."
+      />
 
-      <form onSubmit={submit} className={`${CARD} space-y-4 p-4 sm:p-5`}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input
+      <Card className="space-y-2 p-2.5">
+        <form onSubmit={submit} className="space-y-2">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+          <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="e.g. graph neural networks for citation recommendation"
-            className={`${FIELD} h-11 min-w-0 flex-1`}
+            aria-label="Search query"
+            className="min-w-0 flex-1"
           />
-          <div className="flex items-center gap-3">
-            <label className="flex shrink-0 items-center gap-2 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-slate-400">
               per source
-              <input
+              <Input
                 type="number"
                 min={1}
                 max={50}
                 value={limit}
                 onChange={(event) => setLimit(Number(event.target.value) || 10)}
-                className={`${FIELD_SM} h-9 w-16`}
+                controlSize="sm"
+                className="w-16"
               />
             </label>
-            <button type="submit" disabled={loading} className={`${PRIMARY_BTN} flex-1 sm:flex-none`}>
-              {loading ? "Searching…" : "Search"}
-            </button>
+            <Button type="submit" disabled={loading} className="flex-1 sm:flex-none">
+              {loading ? (
+                <>
+                  <Spinner size="xs" />
+                  Searching…
+                </>
+              ) : (
+                "Search"
+              )}
+            </Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 border-t border-slate-800/70 pt-4 text-xs text-slate-400">
-          <span className="text-slate-500">Year range</span>
-          <label className="flex items-center gap-2">
-            from
-            <input
-              type="number"
-              min={1900}
-              max={2100}
-              value={yearFrom}
-              onChange={(event) => setYearFrom(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-24`}
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-800 pt-2 text-[11px] text-slate-400">
+          <span className="font-medium uppercase tracking-wide">Sort</span>
+          <Select
+            value={sort}
+            onChange={(event) =>
+              setSort(event.target.value as "" | "citations" | "year" | "title")
+            }
+            aria-label="Sort results"
+          >
+            <option value="">Relevance</option>
+            <option value="citations">Citations</option>
+            <option value="year">Year</option>
+            <option value="title">Title</option>
+          </Select>
+          <Button
+            variant="ghost"
+            onClick={() => setOrder((current) => (current === "asc" ? "desc" : "asc"))}
+          >
+            {order === "asc" ? "Ascending" : "Descending"}
+          </Button>
+
+          <Button
+            variant={advancedOpen ? "accent" : "ghost"}
+            onClick={() => setAdvancedOpen((current) => !current)}
+            aria-expanded={advancedOpen}
+            aria-controls="search-advanced"
+            className="gap-1.5"
+          >
+            <SlidersIcon className="h-3.5 w-3.5 shrink-0" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="rounded bg-sky-400 px-1 text-[10px] font-semibold leading-4 text-slate-950">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDownIcon
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 transition-transform",
+                advancedOpen && "rotate-180",
+              )}
             />
-          </label>
-          <label className="flex items-center gap-2">
-            to
-            <input
-              type="number"
-              min={1900}
-              max={2100}
-              value={yearTo}
-              onChange={(event) => setYearTo(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-24`}
-            />
-          </label>
-          <label className="flex items-center gap-2">
-            offset
-            <input
-              type="number"
-              min={0}
-              value={offset}
-              onChange={(event) => setOffset(event.target.value)}
-              placeholder="0"
-              className={`${FIELD_SM} h-9 w-20`}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-slate-300">
-            <input
-              type="checkbox"
-              checked={techOnly}
-              onChange={(event) => setTechOnly(event.target.checked)}
-              className="h-4 w-4 accent-sky-500"
-            />
-            tech only
-          </label>
+          </Button>
+
+          <span className="flex-1" />
+          <Link to="/history" className={LINK_CLASS}>
+            Import file
+          </Link>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 border-t border-slate-800/70 pt-4 text-xs text-slate-400">
-          <span className="text-slate-500">Filters</span>
-          <label className="flex items-center gap-2">
-            affiliation
-            <input
-              value={affiliation}
-              onChange={(event) => setAffiliation(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-40`}
-            />
-          </label>
-          <label className="flex items-center gap-2">
-            issn
-            <input
-              value={issn}
-              onChange={(event) => setIssn(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-28`}
-            />
-          </label>
-          <label className="flex items-center gap-2">
-            orcid
-            <input
-              value={orcid}
-              onChange={(event) => setOrcid(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-40`}
-            />
-          </label>
-          <label className="flex items-center gap-2">
-            doi
-            <input
-              value={doi}
-              onChange={(event) => setDoi(event.target.value)}
-              placeholder="—"
-              className={`${FIELD_SM} h-9 w-40`}
-            />
-          </label>
-        </div>
+        {advancedOpen && (
+          <div
+            id="search-advanced"
+            className="space-y-2.5 border-t border-slate-800 pt-2"
+          >
+            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="flex flex-col gap-1 text-[11px] text-slate-400">
+                Year from
+                <Input
+                  type="number"
+                  min={1900}
+                  max={2100}
+                  value={yearFrom}
+                  onChange={(event) => setYearFrom(event.target.value)}
+                  placeholder="any"
+                  controlSize="sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[11px] text-slate-400">
+                Year to
+                <Input
+                  type="number"
+                  min={1900}
+                  max={2100}
+                  value={yearTo}
+                  onChange={(event) => setYearTo(event.target.value)}
+                  placeholder="any"
+                  controlSize="sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[11px] text-slate-400">
+                Offset
+                <Input
+                  type="number"
+                  min={0}
+                  value={offset}
+                  onChange={(event) => setOffset(event.target.value)}
+                  placeholder="0"
+                  controlSize="sm"
+                />
+              </label>
+              <label className="flex h-8 items-center gap-1.5 self-end text-[11px] text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={techOnly}
+                  onChange={(event) => setTechOnly(event.target.checked)}
+                  className="h-3.5 w-3.5 accent-sky-500"
+                />
+                tech only
+              </label>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-800/70 pt-4 text-xs text-slate-400">
-          <span className="text-slate-500">Sources</span>
-          {PROVIDERS.map((provider) => (
-            <button
-              key={provider}
-              type="button"
-              onClick={() => toggleSource(provider)}
-              className={`rounded-md border px-2 py-1 transition-colors ${
-                selectedSources.includes(provider)
-                  ? "border-sky-500/40 bg-sky-500/15 text-sky-200"
-                  : "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              {provider}
-            </button>
-          ))}
-          {selectedSources.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setSelectedSources([])}
-              className="px-1 text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline"
-            >
-              all providers
-            </button>
-          )}
-        </div>
-      </form>
+            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="flex flex-col gap-1 text-[11px] text-slate-400">
+                Affiliation
+                <Input
+                  value={affiliation}
+                  onChange={(event) => setAffiliation(event.target.value)}
+                  placeholder="any"
+                  controlSize="sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[11px] text-slate-400">
+                ISSN
+                <Input
+                  value={issn}
+                  onChange={(event) => setIssn(event.target.value)}
+                  placeholder="any"
+                  controlSize="sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[11px] text-slate-400">
+                ORCID
+                <Input
+                  value={orcid}
+                  onChange={(event) => setOrcid(event.target.value)}
+                  placeholder="any"
+                  controlSize="sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[11px] text-slate-400">
+                DOI
+                <Input
+                  value={doi}
+                  onChange={(event) => setDoi(event.target.value)}
+                  placeholder="any"
+                  controlSize="sm"
+                />
+              </label>
+            </div>
 
-      {error && <div className={ALERT_ERROR}>{error}</div>}
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+              <span className="mr-1 font-medium uppercase tracking-wide">Sources</span>
+              {PROVIDERS.map((provider) => {
+                const active = selectedSources.includes(provider);
+                return (
+                  <button
+                    key={provider}
+                    type="button"
+                    onClick={() => toggleSource(provider)}
+                    aria-pressed={active}
+                    className={`touch-target rounded border px-2 py-0.5 text-[11px] transition-colors active:translate-y-px ${
+                      active
+                        ? "border-sky-400/60 bg-sky-400/15 text-sky-200"
+                        : "border-slate-500 bg-slate-800/40 text-slate-300 hover:border-slate-400 hover:text-slate-100"
+                    }`}
+                  >
+                    {provider}
+                  </button>
+                );
+              })}
+              {selectedSources.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedSources([])}
+                  className="touch-target px-1 text-[11px] text-sky-400 underline-offset-2 hover:underline"
+                >
+                  all providers
+                </button>
+              )}
+            </div>
+
+            {activeFilterCount > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-800 pt-2 text-[11px] text-slate-400">
+                <span className="font-medium uppercase tracking-wide">Active</span>
+                {yearFrom && <Chip className="tabular-nums">from {yearFrom}</Chip>}
+                {yearTo && <Chip className="tabular-nums">to {yearTo}</Chip>}
+                {offset && <Chip className="tabular-nums">offset {offset}</Chip>}
+                {techOnly && <Chip>tech only</Chip>}
+                {affiliation.trim() && <Chip>affiliation: {affiliation.trim()}</Chip>}
+                {issn.trim() && <Chip>issn: {issn.trim()}</Chip>}
+                {orcid.trim() && <Chip>orcid: {orcid.trim()}</Chip>}
+                {doi.trim() && <Chip>doi: {doi.trim()}</Chip>}
+                {selectedSources.map((source) => (
+                  <Chip key={source}>{source}</Chip>
+                ))}
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Reset
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        </form>
+      </Card>
+
+      {error && <Alert>{error}</Alert>}
+
+      {loading && (
+        <LoadingLine>Searching across providers, then merging duplicates…</LoadingLine>
+      )}
 
       {data && (
-        <div className="space-y-5">
-          <div className="flex flex-wrap gap-2">
-            <span className={`${CHIP} text-slate-300`}>
+        <div className="space-y-2.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Chip className="text-slate-200">
               {data.results.length} merged results
-            </span>
+            </Chip>
             {Object.entries(data.counts || {}).map(([source, count]) => (
-              <span key={source} className={CHIP}>
+              <Chip key={source}>
                 {source}: {count}
-              </span>
+              </Chip>
             ))}
-            {data.results.length > 0 && <ExportMenu papers={data.results} />}
+            {data.results.length > 0 && (
+              <>
+                <Chip>
+                  {selectedIds.size > 0
+                    ? `${selectedIds.size} selected`
+                    : "none selected"}
+                </Chip>
+                <Button variant="ghost" onClick={selectAll}>
+                  Select all
+                </Button>
+                <Button variant="ghost" onClick={selectCited}>
+                  Select cited
+                </Button>
+                {selectedIds.size > 0 && (
+                  <Button variant="ghost" onClick={clearSelection}>
+                    Clear
+                  </Button>
+                )}
+                <ExportMenu
+                  papers={selectedIds.size > 0 ? selectedPapers : data.results}
+                  selectedCount={selectedIds.size}
+                  totalCount={data.results.length}
+                />
+              </>
+            )}
           </div>
 
           {(data.filters_ignored?.length ?? 0) > 0 && (
-            <div className={ALERT_WARN}>
+            <Alert tone="warn">
               <strong>Filters ignored:</strong>{" "}
-              {data.filters_ignored?.join(", ")} — not every source honours these filters, so
+              {data.filters_ignored?.join(", ")}. Not every source honours these filters, so
               results may include records that do not match them.
-            </div>
+            </Alert>
+          )}
+
+          {!warningsDismissed && (data.query_warnings?.length ?? 0) > 0 && (
+            <Alert tone="warn" className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                {data.query_warnings?.map((warning, index) => (
+                  <div key={`${warning.source}-${warning.operator}-${index}`}>
+                    <strong>{warning.source}:</strong> {warning.message}
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setWarningsDismissed(true)}
+                className="touch-target shrink-0 text-[11px] text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
+              >
+                Dismiss
+              </button>
+            </Alert>
           )}
 
           {Object.keys(data.filters_applied || {}).length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-              <span className="text-slate-500">Filters applied</span>
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+              <span className="font-medium uppercase tracking-wide">Filters applied</span>
               {Object.entries(data.filters_applied || {}).map(([provider, filters]) => (
-                <span key={provider} className={CHIP}>
+                <Chip key={provider}>
                   {provider}: {filters.join(", ")}
-                </span>
+                </Chip>
               ))}
             </div>
           )}
 
           {Object.keys(data.errors || {}).length > 0 && (
-            <div className={ALERT_WARN}>
+            <Alert tone="warn">
               {Object.entries(data.errors).map(([source, message]) => (
                 <div key={source}>
                   <strong>{source}:</strong> {message}
                 </div>
               ))}
-            </div>
+            </Alert>
           )}
 
           {data.results.length === 0 ? (
-            <p className="text-sm text-slate-500">No results.</p>
+            <p className="m-0 text-[13px] text-slate-400">No results.</p>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {data.results.map((paper, index) => (
-                <PaperCard key={`${paper.doi ?? paper.title}-${index}`} paper={paper} />
-              ))}
-            </div>
+            <PaperTable
+              rows={data.results.map((paper, index) => ({
+                paper,
+                key: paperKey(paper, index),
+              }))}
+              selectedIds={selectedIds}
+              onToggle={toggleSelected}
+              onOpen={setDrawerPaper}
+              activeKey={drawerPaper ? paperKey(drawerPaper, data.results.indexOf(drawerPaper)) : null}
+            />
           )}
         </div>
       )}
+
+      <PaperDrawer paper={drawerPaper} onClose={() => setDrawerPaper(null)} />
     </div>
   );
 }

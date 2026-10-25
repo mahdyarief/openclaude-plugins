@@ -330,3 +330,28 @@ async def test_search_author_keeps_full_name_inside_auth_clause():
         assert captured["query"] == "AUTH(Harzing, Anne-Wil)"
     finally:
         await client.aclose()
+
+
+async def test_search_paginates_in_chunks_of_25():
+    # The API key's service level rejects count > 25, so a larger limit has
+    # to be split into successive ``start`` windows.
+    calls = []
+
+    def handler(request):
+        start = int(request.url.params.get("start") or 0)
+        count = int(request.url.params.get("count") or 0)
+        calls.append((start, count))
+        entries = [
+            {"dc:identifier": f"SCOPUS_ID:{start + i}", "dc:title": f"Paper {start + i}"}
+            for i in range(count)
+        ]
+        return httpx.Response(200, json={"search-results": {"entry": entries}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = ScopusProvider(client, {"api_key": "test-key"})
+    try:
+        papers = await provider.search("networks", 60)
+        assert calls == [(0, 25), (25, 25), (50, 10)]
+        assert len(papers) == 60
+    finally:
+        await client.aclose()

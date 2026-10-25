@@ -4,19 +4,16 @@ import { ForceGraph } from "../components/ForceGraph";
 import { fetchNetwork, graphmlUrl } from "../lib/api";
 import type { GraphNode, NetworkResponse } from "../lib/types";
 import {
-  ALERT_ERROR,
-  ALERT_WARN,
-  CARD,
-  CHIP,
-  EYEBROW,
-  FIELD,
-  FIELD_SM,
-  GHOST_BTN,
-  H1,
-  LEDE,
-  PAGE,
-  PRIMARY_BTN,
-} from "../lib/ui";
+  Alert,
+  AnchorButton,
+  Button,
+  Card,
+  Chip,
+  Input,
+  LoadingLine,
+  PageHeader,
+  Spinner,
+} from "../components/ui";
 
 export function GraphPage() {
   const { identifier } = useSearch({ from: "/graph" });
@@ -69,126 +66,129 @@ export function GraphPage() {
     data?.nodes?.find((node) => node.id === selectedId) ?? null;
 
   return (
-    <div className={PAGE}>
-      <section className="space-y-3">
-        <p className={EYEBROW}>Connected papers</p>
-        <h1 className={H1}>Citation graph</h1>
-        <p className={LEDE}>
-          Direct citations, bibliographic coupling and co-citation around one seed paper. Click any
-          node to inspect the underlying record.
-        </p>
-      </section>
+    <div className="w-full space-y-5">
+      <PageHeader
+        title="Citation graph"
+        description="Direct citations, bibliographic coupling and co-citation around one seed paper. Click any node to inspect the underlying record."
+      />
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          const value = seedInput.trim();
-          if (value) {
-            navigate({ search: { identifier: value } });
-          }
-        }}
-        className={`${CARD} p-4 sm:p-5`}
-      >
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs text-slate-400">
+      <Card className="p-2.5">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const value = seedInput.trim();
+            if (value) {
+              navigate({ search: { identifier: value } });
+            }
+          }}
+        >
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-end">
+          <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] text-slate-400">
             Seed identifier (DOI, Scopus id, OpenAlex id)
-            <input
+            <Input
               value={seedInput}
               onChange={(event) => setSeedInput(event.target.value)}
               placeholder="10.1145/3292500.3330701"
-              className={`${FIELD} h-11`}
             />
           </label>
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1.5 text-xs text-slate-400">
+          <div className="flex flex-wrap items-end gap-1.5">
+            <label className="flex flex-col gap-1 text-[11px] text-slate-400">
               refs / cites
-              <input
+              <Input
                 type="number"
                 min={1}
                 max={100}
                 value={limit}
                 onChange={(event) => setLimit(Number(event.target.value) || 20)}
-                className={`${FIELD_SM} h-11 w-24`}
+                controlSize="sm"
+                className="w-24"
               />
             </label>
-            <label className="flex flex-col gap-1.5 text-xs text-slate-400">
+            <label className="flex flex-col gap-1 text-[11px] text-slate-400">
               citing refs
-              <input
+              <Input
                 type="number"
                 min={0}
                 max={50}
                 value={citingLimit}
                 onChange={(event) => setCitingLimit(Number(event.target.value) || 0)}
-                className={`${FIELD_SM} h-11 w-24`}
+                controlSize="sm"
+                className="w-24"
               />
             </label>
-            <button type="submit" className={PRIMARY_BTN}>
-              Build graph
-            </button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Spinner size="xs" />
+                  Building…
+                </>
+              ) : (
+                "Build graph"
+              )}
+            </Button>
             {identifier && (
-              <a href={graphmlUrl(identifier, limit, citingLimit)} className={GHOST_BTN}>
+              <AnchorButton href={graphmlUrl(identifier, limit, citingLimit)}>
                 Export GraphML
-              </a>
+              </AnchorButton>
             )}
           </div>
         </div>
-      </form>
+        </form>
+      </Card>
 
-      {loading && <p className="text-sm text-slate-400">Building network…</p>}
+      {loading && <LoadingLine>Building network…</LoadingLine>}
 
-      {error && <div className={ALERT_ERROR}>{error}</div>}
+      {error && <Alert>{error}</Alert>}
 
       {data?.errors && Object.keys(data.errors).length > 0 && (
-        <div className={ALERT_WARN}>
+        <Alert tone="warn">
           {Object.entries(data.errors).map(([source, message]) => (
             <div key={source}>
               <strong>{source}:</strong> {message}
             </div>
           ))}
-        </div>
+        </Alert>
       )}
 
       {data?.stats && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {Object.entries(data.stats).map(([key, value]) => (
-            <span key={key} className={CHIP}>
+            <Chip key={key}>
               {key.replace(/_/g, " ")}: {value}
-            </span>
+            </Chip>
           ))}
         </div>
       )}
 
       {data?.nodes && data.nodes.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <ForceGraph
             nodes={data.nodes}
             edges={data.edges ?? []}
             selectedId={selectedId}
             onSelect={setSelectedId}
           />
-          <aside
-            className={`${CARD} scroll-thin max-h-[560px] overflow-auto p-5`}
-          >
+          <Card className="scroll-thin max-h-[560px] overflow-auto p-3">
             {selected ? (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <span className="inline-block rounded border border-slate-700 bg-slate-800/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
                   {selected.kind}
                 </span>
-                <h2 className="m-0 text-sm font-semibold leading-snug text-slate-100">
+                <h2 className="m-0 text-[13px] font-semibold leading-snug text-slate-100">
                   {selected.label}
                 </h2>
-                <p className="m-0 text-xs leading-relaxed text-slate-400">
+                <p className="m-0 text-[11px] leading-relaxed text-slate-400">
                   {selected.authors.slice(0, 4).join(", ") || "Unknown authors"}
                   {selected.year ? ` · ${selected.year}` : ""}
                 </p>
                 {selected.venue && (
-                  <p className="m-0 text-xs leading-relaxed text-slate-500">{selected.venue}</p>
+                  <p className="m-0 text-[11px] leading-relaxed text-slate-400">{selected.venue}</p>
                 )}
-                <p className="m-0 text-xs text-slate-400">
+                <p className="m-0 text-[11px] text-slate-400">
                   Citations: {selected.citation_count ?? "n/a"}
                 </p>
                 {selected.doi && (
-                  <p className="m-0 break-all text-[11px] text-slate-500">DOI: {selected.doi}</p>
+                  <p className="m-0 break-all text-[11px] text-slate-400">DOI: {selected.doi}</p>
                 )}
                 {selected.url && (
                   <a
@@ -202,14 +202,14 @@ export function GraphPage() {
                 )}
               </div>
             ) : (
-              <p className="m-0 text-xs text-slate-500">Click a node to inspect it.</p>
+              <p className="m-0 text-[11px] text-slate-400">Click a node, or tab into the node list, to inspect it.</p>
             )}
-          </aside>
+          </Card>
         </div>
       ) : (
         !loading &&
         !error && (
-          <p className="text-sm text-slate-500">
+          <p className="m-0 text-[13px] text-slate-400">
             Enter a DOI or provider id to build a network.
           </p>
         )

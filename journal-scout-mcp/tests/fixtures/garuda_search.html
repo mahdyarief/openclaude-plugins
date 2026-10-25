@@ -1,0 +1,766 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="garuda garba rujukan digital">
+        <meta name="author" content="kementrian riset, teknologi dan pendidikan tinggi">
+        <link rel="icon" href="/assets/img/garuda-icon.png">
+
+        <title>Garuda - Garba Rujukan Digital</title>
+
+        <!-- SEMANTIC UI -->
+        <link href="/assets/semantic/semantic.min.css" rel="stylesheet">
+        <link href="/assets/semantic/components/reset.css" rel="stylesheet"> 
+
+        <link href="/assets/css/main.css" rel="stylesheet">
+        <link href="/assets/css/app.css" rel="stylesheet">
+        <link href="/assets/css/flash-message.css" rel="stylesheet">
+        
+        <!-- JQUERY UI - AUTOCOMPLETE -->
+        <link href="/assets/css/jquery-ui/jquery-ui.css" rel="stylesheet" />
+
+        <script src="/assets/js/jquery.js"></script>
+        <script src="/assets/semantic/semantic.min.js"></script>
+        <script src="/assets/js/jquery.tagcloud.js" type="text/javascript"></script>
+        <script src="/assets/js/Chart.js"></script>
+        <script src="/assets/custom/main.js"></script>
+        <script src="/assets/js/app.js"></script>
+        <!-- JQUERY UI - AUTOCOMPLETE -->
+        <script src="/assets/js/jquery-ui/jquery-ui.min.js"></script>
+    </head>
+
+
+
+    <body>
+                <div class="ui stackable menu top-menu">
+            <a class="header item brand" href="/">
+                 <img src="/assets/img/garuda1.png" alt=""> 
+            </a>
+            <div class="right menu">
+                <a class="nav item " href="/">Home</a>
+                <a class="nav item " href="/publisher">Publisher</a>
+                <a class="nav item " href="/journal">Journal / Conference</a>
+                <a class="nav item " href="/area">Subject</a>
+                <a class="nav item " href="/suggest">Suggest</a>
+                <a class="nav item" target="_blank" href="https://drive.google.com/drive/folders/19TuyOLkABcMgh99AgLweV-B8BE1wcUl8?usp=sharing">Guidebook</a>
+                <a class="nav item disabled">&nbsp;</a>
+            </div>
+        </div>
+
+        <main role="main" class="container">
+
+<div class="row" style="margin: 0 15px;">
+    <form class="ui form" action="" method="GET">
+        <div class="ui stackable padded grid">
+            <div class="three wide field column">
+                <label>Search By</label>
+                <select class="ui selection dropdown" name="select">
+                    <option value="title" >Title</option>
+                    <option value="abstract" >Abstract</option>
+                    <option value="author" >Author</option>
+                    <option value="doi" >DOI</option>
+                </select>
+                <div class="ui checkbox" style="margin-top: 10px;">
+                    <input type="checkbox" tabindex="0" name="pdf" value="1" >
+                    <label>Downloadable PDF Only</label>
+                </div>
+            </div>
+            <div class="seven wide field column">
+                <label>Keywords</label>
+                <input type="text" name="q" placeholder="Source Title" value="neural network" minlength="3" required> 
+            </div>
+            <div class="four wide field column">
+                <label>Publisher</label>
+                <input type="text" name="pub" placeholder="Publisher Name" value="" minlength="3">
+            </div>
+            <div class="two wide field column">
+                <label>&nbsp;</label>
+                <button class="ui fluid button" type="submit"><i class="search icon"></i> Search</button>
+            </div>
+        </div>
+    </form>
+    
+    <div class="ui stackable grid">
+        <div class="four wide column">
+            <div class="ui basic segment">
+                <h4 class="ui header">Filter By Year</h4>
+                <p>
+                    1945                    <span style="float: right"> 2024</span>
+                </p> 
+                <div id="slider-range"></div>
+                <br>
+
+                <form id="filter_year" class="ui mini form" action="" method="get">
+                                            <input type="hidden" name="q" value="neural network">
+                                                        
+                                        
+                    <div class="equal width fields">
+                        <div class="field">
+                            <label>From</label>
+                            <input type="text" id="from" name="from">
+                        </div>
+                        <div class="field">
+                            <label>To</label>
+                            <input type="text" id="to" name="to">
+                        </div>
+                    </div>
+                    <div class="equal width fields">
+                        <div class="field">
+                            <button class="ui mini fluid button" type="submit">Filter</button>
+                        </div>
+                        <div class="field">
+                            <a class="ui mini fluid button basic red" href="/documents/?q=neural network&select=&pub=&pdf=">Reset</a>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+        </div>
+        <div class="twelve wide column">
+            <div class="ui equal width grid">
+                <div class="column">
+                    <h2 class="ui header">
+                        <i class="search icon"></i>
+                        <div class="content">
+                            Found 7,910 documents
+                            <div class="sub header">Search  
+                                <i><xmp>neural network</xmp></i> 
+                                <i><xmp></xmp></i> 
+                                <i><xmp></xmp></i>  
+                                <i><xmp></xmp></i>
+                                <i><xmp></xmp></i>
+                            </div>
+                        </div>
+                    </h2>
+                </div>
+                <div class="column right aligned">
+                                            <div class="page-column" style="float: right !important;">
+                            <a href="?page=1&q=neural network" class="ui mini icon button">
+                                <i class="angle double left icon"></i>
+                            </a>                                
+                                                            <a href="?page=1&q=neural network" class="ui mini icon button orange">
+                                    &nbsp;1&nbsp;
+                                </a>
+                                                            <a href="?page=2&q=neural network" class="ui mini icon button ">
+                                    &nbsp;2&nbsp;
+                                </a>
+                                                            <a href="?page=3&q=neural network" class="ui mini icon button ">
+                                    &nbsp;3&nbsp;
+                                </a>
+                                                            <a href="?page=4&q=neural network" class="ui mini icon button ">
+                                    &nbsp;4&nbsp;
+                                </a>
+                                                            <a href="?page=5&q=neural network" class="ui mini icon button ">
+                                    &nbsp;5&nbsp;
+                                </a>
+                                                        
+                            <a href="?page=791&q=neural network" class="ui mini icon button page-button">
+                                <i class="angle double right icon"></i>
+                            </a>
+                        </div>
+					                </div>
+            </div>
+
+            <div class="ui">
+                <div class="ui divider"></div>
+                                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/842734">
+                                <xmp>PERBANDINGAN PERFORMA PREDIKSI TINGKAT KEMISKINAN ANTARA BACKPROPAGATION NEURAL NETWORK DAN GENERALIZED REGRESSION NEURAL NETWORK </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/3609333"><xmp>Rina Mamase</xmp></a>; <a class="author-article" href="/author/view/3609339"><xmp>Ruli S. Sinukun</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Jurnal Technopreneur (JTech) Vol 6 No 2 (2018): JURNAL TECHNOPRENEUR (November) </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">UPPM Politeknik Gorontalo </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="842734" onclick="show_abstract(842734)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://jurnal.poligon.ac.id/index.php/jtech/article/download/210/110" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://jurnal.poligon.ac.id/index.php/jtech/article/view/210/110" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;PERBANDINGAN+PERFORMA+PREDIKSI+TINGKAT+KEMISKINAN+ANTARA+BACKPROPAGATION+NEURAL+NETWORK+DAN+GENERALIZED+REGRESSION+NEURAL+NETWORK&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=842734&val=12627&title=PERBANDINGAN PERFORMA PREDIKSI TINGKAT KEMISKINAN ANTARA BACKPROPAGATION NEURAL NETWORK DAN GENERALIZED REGRESSION NEURAL NETWORK">
+                                        Full PDF (199.443 KB)
+                                    </a>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.30869/jtech.v6i2.210">
+                                        DOI: 10.30869/jtech.v6i2.210                                    </a>
+                                                            </p>
+                            <div id="show_abstract842734" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Menurunkan tingkat kemiskinan penduduk merupakan suatu program kerja Pemerintah Indonesia yang hingga saat ini masih berlangsung. Pemberian bantuan secara merata, tepat dan cepat merupakan salah satu upaya pemerintah dalam menangani masalah kemiskinan. Upaya tersebut dapat diwujudkan dengan penyajian data kemiskinan secara cepat dan akurat melalui prediksi tingkat kemiskinan menggunakan suatu metode yang efektif. Kemiskinan adalah masalah multi dimensional, sehingga diperlukan kesepakatan pendekatan/metode yang dipakai apabila ingin memprediksi tingkat kemiskinan. Masalah kemiskinan tidak hanya berasal dari ketidakmampuan dalam memenuhi kebutuhan dasar saja, melainkan ada juga faktor atau indikator lain yang dapat mempengaruhi tingkat kemiskinan penduduk disuatu daerah/wilayah, seperti indikator pertanian, perdagangan dan industri. Selain penggunaan indikator kebutuhan dasar seperti kependudukan, tenaga kerja, pendidikan, dan kesehatan, penelitian ini juga mencoba menambahkan indikator pertanian, industri, dan perdagangan dalam prediksi tingkat kemiskinan. Metode prediksi yang digunakan dalam penelitian ini adalah Backpropagation Neural Network (BPNN) dan Generalized Regression Neural Network (GRNN). Pengujian dilakukan dengan menggunakan data tingkat kemiskinan di Provinsi Gorontalo pada tahun 2016 dan 2017. Mean Absolute Percentage Error (MAPE) digunakan sebagai kriteria evaluasi model prediksi. Hasil dari prediksi tingkat kemiskinan diperoleh bahwa metode GRNN memiliki performa 14-16% lebih baik jika dibandingkan dengan metode BPNN.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1446214">
+                                <xmp>Pemodelan Produksi Minyak dan Gas Bumi Pada Platform “MK” di PT “X” Menggunakan Metode ARIMA, Neural Network, dan Hibrida ARIMA-Neural Network </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/2780150"><xmp>Windia Cinde Prameswari</xmp></a>; <a class="author-article" href="/author/view/396346"><xmp>Destri Susilaningrum</xmp></a>; <a class="author-article" href="/author/view/2381138"><xmp>Suhartono Suhartono</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Jurnal Sains dan Seni ITS Vol 5, No 2 (2016) </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Lembaga Penelitian dan Pengabdian Kepada Masyarakat (LPPM), ITS </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1446214" onclick="show_abstract(1446214)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://ejurnal.its.ac.id/index.php/sains_seni/article/download/16893/3075" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://ejurnal.its.ac.id/index.php/sains_seni/article/view/16893/3075" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Pemodelan+Produksi+Minyak+dan+Gas+Bumi+Pada+Platform+MK+di+PT+X+Menggunakan+Metode+ARIMA+Neural+Network+dan+Hibrida+ARIMA-Neural+Network&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=1446214&val=4187&title=Pemodelan Produksi Minyak dan Gas Bumi Pada Platform MK di PT X Menggunakan Metode ARIMA Neural Network dan Hibrida ARIMA-Neural Network">
+                                        Full PDF (696.304 KB)
+                                    </a>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.12962/j23373520.v5i2.16893">
+                                        DOI: 10.12962/j23373520.v5i2.16893                                    </a>
+                                                            </p>
+                            <div id="show_abstract1446214" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Minyak dan gas bumi dapat diambil secara langsung melalui sumur-sumur yang dibuat, namun sumur-sumur tersebut tidak akan menghasilkan jumlah minyak dan gas bumi yang konstan setiap hari. Ketika kandungan minyak dan gas mulai turun maka yang harus dilakukan adalah memberikan treatment terhadap sumur tersebut, sehingga minyak dan gas yang masih terkandung di dasar bumi bisa naik dengan jumlah yang lebih banyak. Tujuan dilakukannya penelitian ini adalah untuk membantu perusahaan dalam menganalisis jumlah produksi minyak dan gas bumi selama periode 14 hari selanjutnya, sehingga dapat diketahui apakah selama periode 14 hari selanjutnya diperlukan treatment terhadap sumur. Data yang digunakan adalah jumlah produksi minyak dan gas bumi pada platform “MK” pada tahun 2015. Pemodelan jumlah produksi minyak dan gas bumi dilakukan menggunakan tiga metode, yaitu ARIMA, neural network, dan Hibrida ARIMA-neural network. Hasil yang diperoleh berdasarkan analisis ketiga metode tersebut adalah pada jumlah produksi minyak bumi model terbaik diperoleh dari metode hibrida ARIMA-neural network, dengan hasil ramalan yang cenderung sama selama 14 hari yaitu 1961 barel. Sedangkan jumlah produksi gas bumi model terbaik diperoleh dari metode neural network, dengan ramalan produksi untuk 14 hari selanjutnya cenderung meningkat.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1484475">
+                                <xmp>A Comparison of Emotional Neural Network (ENN) and Artificial Neural Network (ANN) Approach for Rainfall-Runoff Modelling </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/3900921"><xmp>Suraj Kumar</xmp></a>; <a class="author-article" href="/author/view/3900922"><xmp>Thendiyath Roshni</xmp></a>; <a class="author-article" href="/author/view/3900923"><xmp>Dar Himayoun</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Civil Engineering Journal Vol 5, No 10 (2019): October </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Salehan Institute of Higher Education </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1484475" onclick="show_abstract(1484475)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://civilejournal.org/index.php/cej/article/download/1709/pdf" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://civilejournal.org/index.php/cej/article/view/1709/pdf" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;A+Comparison+of+Emotional+Neural+Network+ENN+and+Artificial+Neural+Network+ANN+Approach+for+Rainfall-Runoff+Modelling&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.28991/cej-2019-03091398">
+                                        DOI: 10.28991/cej-2019-03091398                                    </a>
+                                                            </p>
+                            <div id="show_abstract1484475" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Reliable method of rainfall-runoff modeling is a prerequisite for proper management and mitigation of extreme events such as floods. The objective of this paper is to contrasts the hydrological execution of Emotional Neural Network (ENN) and Artificial Neural Network (ANN) for modelling rainfall-runoff in the Sone Command, Bihar as this area experiences flood due to heavy rainfall. ENN is a modified version of ANN as it includes neural parameters which enhance the network learning process. Selection of inputs is a crucial task for rainfall-runoff model. This paper utilizes cross correlation analysis for the selection of potential predictors. Three sets of input data: Set 1, Set 2 and Set 3 have been prepared using weather and discharge data of 2 raingauge stations and 1 discharge station located in the command for the period 1986-2014.  Principal Component Analysis (PCA) has then been performed on the selected data sets for selection of data sets showing principal tendencies.  The data sets obtained after PCA have then been used in the model development of ENN and ANN models. Performance indices were performed for the developed model for three data sets. The results obtained from Set 2 showed that ENN with R= 0.933, R2 = 0.870, Nash Sutcliffe = 0.8689, RMSE = 276.1359 and Relative Peak Error = 0.00879 outperforms ANN in simulating the discharge. Therefore, ENN model is suggested as a better model for rainfall-runoff discharge in the Sone command, Bihar.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1525327">
+                                <xmp>Perbandingan Neural Network (NN) Observer dan Neural Network-Genetic Algorithm (NN-GA) Observer untuk Estimasi Kecepatan Motor Induksi </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/349637"><xmp>Bambang Purwahyudi</xmp></a>; <a class="author-article" href="/author/view/2610233"><xmp>Soebagio Soebagio</xmp></a>; <a class="author-article" href="/author/view/318305"><xmp>Mauridhi Hery Purnomo</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Seminar Nasional Aplikasi Teknologi Informasi (SNATI) 2005 </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Jurusan Teknik Informatika, Fakultas Teknologi Industri, Universitas Islam Indonesia </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1525327" onclick="show_abstract(1525327)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://journal.uii.ac.id/Snati/article/download/1329/1112" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://journal.uii.ac.id/Snati/article/view/1329/1112" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Perbandingan+Neural+Network+NN+Observer+dan+Neural+Network-Genetic+Algorithm+NN-GA+Observer+untuk+Estimasi+Kecepatan+Motor+Induksi&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                            </p>
+                            <div id="show_abstract1525327" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Dalam makalah ini membahas perbandingan kontrol kecepatan tanpa sensor kecepatan motor induksiyang dioperasikan dengan metoda field oriented control (FOC). Kecepatan motor induksi diestimasi oleh suatuobserver. Estimasi kecepatan motor oleh observer hanya memerlukan masukan tegangan dan arus stator.Metode observer yang dibandingkan adalah antara Neural Network (NN) dan Neural Network-GeneticAlgorithm (NN-GA). Algoritma pembelajaran NN yang digunakan kedua metode ini menggunakanbackpropagasi, sedangkan GA pada metoda kedua digunakan untuk mengoptimasi parameter-parameter NNsehingga diperoleh struktur NN yang sederhana. Kedua Observer dirancang untuk menentukan pola kecepatansudut rotor, sehingga dapat dimanfaatkan untuk pengendalian kecepatan motor induksi. Hasil simulasimenunjukkan bahwa NN-GA observer mempunyai Standart Error Estimasi lebih baik dibandinggkan denganNN Observer dan kedua observer dapat mengestimasi kecepatan rotor motor induksi.Kata kunci: Neural Network-Genetic Algorithm, Observer, Field Oriented Control.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1566283">
+                                <xmp>Pemodelan Sistem dengan Metode Neural Network Back Propagation Modeling System Using Neural Network Backpropagation </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/2567502"><xmp>Dwi Sudarno Putra</xmp></a>; <a class="author-article" href="/author/view/5713426"><xmp>Toto Sugiarto -</xmp></a>; <a class="author-article" href="/author/view/2784243"><xmp>Meri Azmi -</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Jurnal Ilmiah Poli Rekayasa Vol 11, No 2 (2016) </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Pusat Penelitian dan pengabdian kepada Masyarakat (P3M) Politeknik Negeri Padang </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1566283" onclick="show_abstract(1566283)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://jpr-pnp.com/index.php/jpr/article/download/24/19" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://jpr-pnp.com/index.php/jpr/article/view/24/19" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Pemodelan+Sistem+dengan+Metode+Neural+Network+Back+Propagation+Modeling+System+Using+Neural+Network+Backpropagation&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=1566283&val=4376&title=Pemodelan Sistem dengan Metode Neural Network Back Propagation Modeling System Using Neural Network Backpropagation">
+                                        Full PDF (531.824 KB)
+                                    </a>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.30630/jipr.11.2.24">
+                                        DOI: 10.30630/jipr.11.2.24                                    </a>
+                                                            </p>
+                            <div id="show_abstract1566283" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">A system can be modeled using mathematical formulation analysis method. Analysis of the system starts from the value of inputs, processes, noise, and output processes. then sought mathematical approach. This method is very complex, especially for some of the processes that have a higher order. In this article the author tries to discuss a method to perform modeling on a system by using Back Propagation Neural Network method.In the neural network method we require the initial data for network training process. Network training process is intended to gain weight. The weight is then identified with a model system. This paper has demonstrated that the modeling system can be done by the method of back propagation neural network </xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1599629">
+                                <xmp>Pengenalan Alfabet Bahasa Isyarat Tangan Secara Real-Time dengan Menggunakan Metode Convolutional Neural Network dan Recurrent Neural Network </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/2790774"><xmp>Devina Yolanda</xmp></a>; <a class="author-article" href="/author/view/2790512"><xmp>Kartika Gunadi</xmp></a>; <a class="author-article" href="/author/view/2790513"><xmp>Endang Setyati</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Jurnal Infra Vol 8, No 1 (2020) </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Jurnal Infra </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1599629" onclick="show_abstract(1599629)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://publication.petra.ac.id/index.php/teknik-informatika/article/download/9791/8793" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://publication.petra.ac.id/index.php/teknik-informatika/article/view/9791/8793" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Pengenalan+Alfabet+Bahasa+Isyarat+Tangan+Secara+Real-Time+dengan+Menggunakan+Metode+Convolutional+Neural+Network+dan+Recurrent+Neural+Network&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                            </p>
+                            <div id="show_abstract1599629" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Sign language is one of the communication tools commonly used by people with disabilities. The alphabet sign language is a basic tool used by teachers to teach people with hearing impairment and speech impairment to recognize basic alphabet letters. However, many people find it difficult to communicate with these groups because of a lack of community insight into hand sign language. Research on sign language has experienced much progress in processing static images but is still experiencing problems due to difficulties in processing dynamic images / video given that most of the sign language is represented by body, hand, and face movements.This study uses Convolutional Neural Network (CNN) and Recurrent Neural Network (RNN) methods with video input. The CNN method will be used as a feature extraction in the spatial feature while the RNN is tasked to tolerate between frames extracted by CNN on the temporal feature.The final result to be displayed is in the form of text alphabet which is the result of the recognition of the sign language alphabet. Based on the test carried out, obtained an average accuracy value of  60.58% for all letters while real-time testing has failed because the technology used cannot sustain the architecture created.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1726024">
+                                <xmp>PENERAPAN ARTIFICIAL NEURAL NETWORK DAN LEAFLET.JS DALAM MEMBANGUN APLIKASI PEMETAAN DESA TERTINGGAL DAN KELUARGA PRA SEJAHTERA PADA KECAMATAN BATHIN III ULU KABUPATEN BUNGO PROVINSI JAMBI: ARTIFICIAL NEURAL NETWORK, BACKPROPAGATION, MAPPING, LEAFLET.JS, UNDERDEVELOPED VILLAGE </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/1565626"><xmp>Pariyadi</xmp></a>; <a class="author-article" href="/author/view/1565642"><xmp>Astari Prakasiwi, Degita</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> FORTECH (Journal of Information Technology) Vol. 2 No. 2 (2018): Fortech (Journal Of Information Technology) </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">LP2M STMIK Nurdin Hamzah Jambi </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1726024" onclick="show_abstract(1726024)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://ojs.stmiknh.ac.id/index.php/fortech/article/download/441/378" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://ojs.stmiknh.ac.id/index.php/fortech/article/view/441" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;PENERAPAN+ARTIFICIAL+NEURAL+NETWORK+DAN+LEAFLETJS+DALAM+MEMBANGUN+APLIKASI+PEMETAAN+DESA+TERTINGGAL+DAN+KELUARGA+PRA+SEJAHTERA+PADA+KECAMATAN+BATHIN+III+ULU+KABUPATEN+BUNGO+PROVINSI+JAMBI+ARTIFICIAL+NEURAL+NETWORK+BACKPROPAGATION+MAPPING+LEAFLETJS+UNDERDEVELOPED+VILLAGE&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=1726024&val=11997&title=PENERAPAN ARTIFICIAL NEURAL NETWORK DAN LEAFLETJS DALAM MEMBANGUN APLIKASI PEMETAAN DESA TERTINGGAL DAN KELUARGA PRA SEJAHTERA PADA KECAMATAN BATHIN III ULU KABUPATEN BUNGO PROVINSI JAMBI ARTIFICIAL NEURAL NETWORK BACKPROPAGATION MAPPING LEAFLETJS UNDERDEVELOPED VILLAGE">
+                                        Full PDF (265.667 KB)
+                                    </a>
+                                                                                            </p>
+                            <div id="show_abstract1726024" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Lagging villages are areas that are generally located in districts that are relatively underdeveloped and have relatively underdeveloped populations compared to other regions on a national scale. Batin III Ulu District Bungo has 9 (nine) villages which have promising space potential including abundant forest resources, natural tourism, agricultural land and plantations. Village development has not yet had an optimal impact and there are still disadvantaged families in each village in Bathin III Ulu Subdistrict. Development of application mapping of disadvantaged villages and underprivileged families in Bathin III Ulu Subdistrict, Bungo District, Jambi Province is a qualitative research that aims to support the government in accelerating the implementation of services for underdeveloped villages and underprivileged families. Automated learning stage to determine mapping of disadvantaged villages and underprivileged families through the application of Artificial Neural Network (ANN) as an adaptive system to model complex relationships between input and output to find patterns in the data and collaboration with Leaflet.Js as a library used for making thematic spatial maps that can emphasize priority objects to be addressed immediately. The application is built on a web-based basis so that users can easily access it anywhere and anytime as a reference in determining future development policies.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1802059">
+                                <xmp>Perancangan Sistem Diagnosis Kesehatan Manusia Melalui Screening Digital Berbasis Desktop Application Menggunakan Metode Forward Chaining dan Neural Network: Design of a Human Health Diagnosis System Through Desktop Application-Based Digital Screening Using Forward Chaining and Neural Network Methods </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/10562092"><xmp>Indis Dwi Agustin</xmp></a>; <a class="author-article" href="/author/view/6846080"><xmp>Nurahmad Hadi Cahyadi</xmp></a>; <a class="author-article" href="/author/view/6846081"><xmp>Mifta Aulia Ramadhani</xmp></a>; <a class="author-article" href="/author/view/6846082"><xmp>Mujtaba Fa’akuli Zazila</xmp></a>; <a class="author-article" href="/author/view/757490"><xmp>Am Maisarah Disrinama</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Journal of Health Vol. 11 No. 1 (2024): Journal of Health (JoH) - January </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">LPPM STIKES Guna Bangsa Yogyakarta </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1802059" onclick="show_abstract(1802059)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://journal.gunabangsa.ac.id/joh/article/download/175/79" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://journal.gunabangsa.ac.id/joh/article/view/175/79" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Perancangan+Sistem+Diagnosis+Kesehatan+Manusia+Melalui+Screening+Digital+Berbasis+Desktop+Application+Menggunakan+Metode+Forward+Chaining+dan+Neural+Network+Design+of+a+Human+Health+Diagnosis+System+Through+Desktop+Application-Based+Digital+Screening+Using+Forward+Chaining+and+Neural+Network+Methods&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=1802059&val=10214&title=Perancangan Sistem Diagnosis Kesehatan Manusia Melalui Screening Digital Berbasis Desktop Application Menggunakan Metode Forward Chaining dan Neural Network Design of a Human Health Diagnosis System Through Desktop Application-Based Digital Screening Using Forward Chaining and Neural Network Methods">
+                                        Full PDF (253.921 KB)
+                                    </a>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.30590/joh.v11n1.702">
+                                        DOI: 10.30590/joh.v11n1.702                                    </a>
+                                                            </p>
+                            <div id="show_abstract1802059" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">One of the problems with hospital services is that queues are important because they affect hospital productivity. Hospital queues can be caused by the large number of patients and the length of time the patient is treated. According to the Regulation of the Minister of Health of the Republic of Indonesia Number 30 of 2022, the standard of patient satisfaction with health services must reach ≥ 90% where one indicator is the length of waiting time. Long waiting times or queues can cause medical services to be less than optimal, especially for patients who have emergency complaints. Therefore, to increase the productivity of hospital services, a human health diagnosis system was designed through digital screening to make it easier for doctors to diagnose patient illnesses. The design of this disease diagnosis system was carried out using methods using forward chaining and neural network methods. This innovation is also equipped with severity level detection and treatment recommendations to patients. This research aims to create a knowledge model that can predict patient disease. The effectiveness test was carried out by taking 15 samples of respondents who had different symptoms. The results of this research were that the accuracy level of patient disease diagnosis testing reached 86.6% with the functional capability of the designed diagnostic application functioning at 100%. With this innovation, diagnosis of symptoms of human disease can be carried out precisely and precisely so that it can help medical personnel in increasing hospital productivity and the level of health in every community in Indonesia.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1897072">
+                                <xmp>Klasifikasi Varietas Tanaman Kelengkeng Berdasarkan Morfologi Daun Menggunakan Backpropagation Neural Network dan Probabilistic Neural Network </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/398838"><xmp>Hermawan Syahputra</xmp></a>; <a class="author-article" href="/author/view/439660"><xmp>Agus Harjoko</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> IJCCS (Indonesian Journal of Computing and Cybernetics Systems) Vol 5, No 3 (2011): November </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">IndoCEISS in colaboration with Universitas Gadjah Mada, Indonesia. </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1897072" onclick="show_abstract(1897072)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://jurnal.ugm.ac.id/ijccs/article/download/5206/4261" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://jurnal.ugm.ac.id/ijccs/article/view/5206/4261" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Klasifikasi+Varietas+Tanaman+Kelengkeng+Berdasarkan+Morfologi+Daun+Menggunakan+Backpropagation+Neural+Network+dan+Probabilistic+Neural+Network&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.22146/ijccs.5206">
+                                        DOI: 10.22146/ijccs.5206                                    </a>
+                                                            </p>
+                            <div id="show_abstract1897072" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Pengenalan daun memainkan peran penting dalam klasifikasi tanaman dan isu utamanya terletak pada apakah fitur yang dipilih stabil dan memiliki kemampuan yang baik untuk membedakan berbagai jenis daun. Pengenalan tanaman berbantuan komputer merupakan tugas yang masih sangat menantang dalam visi komputer karena kurangnya model atau skema representasi yang tepat. Fokus komputerisasi pengenalan tanaman hidup adalah untuk mengukur bentuk geometris berbasis morfologi daun. Informasi ini memainkan peran penting dalam mengidentifikasi berbagai kelas tanaman. Pada penelitian ini dilakukan pengenalan jenis tanaman berdasarkan fitur yang menonjol dari daun seperti fisiologis panjang (physiological length), lebar (physiological width), diameter,  keliling (leaf perimeter), luas (leaf area), faktor mulus (narrow factor), rasio aspek (aspect ratio), factor bentuk (form factor), rectangularity, rasio perimeter terhadap diameter, rasio perimeter panjang fisiologi dan lebar fisiologi yang dapat digunakan untuk membedakan satu sama lain. Berdasarkan hasil pengujian, ditunjukkan bahwa hasil pencocokkan daun kelengkeng dengan menggunakan neural network lebih baik dibandingkan dengan hasil pencocokkan daun kelengkeng dengan menggunakan probabilistic neural network. Akan tetapi ekstraksi fitur dengan menggunakan morfologi belum dapat memberikan informasi pembeda yang signifikan bagi pengenalan tanaman varitas kelengkeng berdasarkan daunnya.Keywords— klasifikasi, morfologi daun, neural network, probabilistic neural network</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2066129">
+                                <xmp>Penggabungan Metode Itakura Saito Distance dan Backpropagation Neural Network untuk Peningkatan Akurasi Suara pada Audio Forensik(Combining Itakura Saito Distance and Backpropagation Neural Network Methods to Improve Sound Accuracy in Audio Forensic) </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/5964337"><xmp>Ardy Wicaksono</xmp></a>; <a class="author-article" href="/author/view/2457466"><xmp>Sisdarmanto Adinandra</xmp></a>; <a class="author-article" href="/author/view/511103"><xmp>Yudi Prayudi</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> JUITA : Jurnal Informatika JUITA Vol. 8 Nomor 2, November 2020 </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Department of Informatics Engineering, Universitas Muhammadiyah Purwokerto </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2066129" onclick="show_abstract(2066129)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://jurnalnasional.ump.ac.id/index.php/JUITA/article/download/8248/3567" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://jurnalnasional.ump.ac.id/index.php/JUITA/article/view/8248/3567" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Penggabungan+Metode+Itakura+Saito+Distance+dan+Backpropagation+Neural+Network+untuk+Peningkatan+Akurasi+Suara+pada+Audio+ForensikCombining+Itakura+Saito+Distance+and+Backpropagation+Neural+Network+Methods+to+Improve+Sound+Accuracy+in+Audio+Forensic&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=2066129&val=7664&title=Penggabungan Metode Itakura Saito Distance dan Backpropagation Neural Network untuk Peningkatan Akurasi Suara pada Audio ForensikCombining Itakura Saito Distance and Backpropagation Neural Network Methods to Improve Sound Accuracy in Audio Forensic">
+                                        Full PDF (1547.992 KB)
+                                    </a>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.30595/juita.v8i2.8248">
+                                        DOI: 10.30595/juita.v8i2.8248                                    </a>
+                                                            </p>
+                            <div id="show_abstract2066129" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Audio merupakan salah satu barang bukti digital yang digunakan dalam cybercrime. Seringkali bahwa bukti audio ini membawa peran krusial untuk mengungkapkan adanya kasus kejahatan sehingga diperlukan proses analisis audio forensic. Audio tersebut berisi rekaman suara seseorang yang memiliki karakter dengan pengucapan kosakata yang berbeda-beda, pengucapan yang tidak jelas, dan memiliki banyak noise. Perlu adanya penanganan yang sesuai Standart Operational Procedure (SOP) audio forensics. Tahapan dalam melakukan audio forensic pada Digital Forensic Analyst Team Pusat Laboratorium Forensik (DFAT) PUSLABFOR terdiri dari 4 tahapan yakni Acquisition, Audio Enhancement, Decoding, dan Voice Recognition. Dalam penelitian ini akan dibahas mengenai analisis audio menggunakan metode speech processing yaitu Itakura Saito Distance dan metode jaringan syaraf tiruan yaitu Backpropagation Neural Network dengan tujuan memperkuat hasil akurasi identik suatu barang bukti rekaman suara. Jika metode ini dikaloborasikan akan memperkuat tingkat akurasi dan argument yang diperoleh dari proses analisa, khususnya dalam penanganan audio forensic. Akurasi itu sendiri diukur dari nilai kedekatan frekuensi atau spectrum antara rekaman suara asli dengan rekaman suara pembanding.  Hasil pengujian yang dilakukan pada 4 rekaman suara asli (unknown) dan 4 rekaman suara pembanding (known) dengan lebih dari 20 kosakata menunjukan akurasi tertinggi yang identik lebih dari 95%.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                                
+                                    <div class="ui two column stackable grid">
+                        <div class="column">
+                            <p class="pagination-info">
+                                Page 1 of 791                                | Total Record : 7910 
+                            </p>
+                        </div>
+                        <div class="column">
+                                                            <div class="page-column"  style="float: right !important;">
+                                    <a href="?page=1&q=neural network" class="ui mini icon button">
+                                        <i class="angle double left icon"></i>
+                                    </a>                                
+                                                                            <a href="?page=1&q=neural network" class="ui mini icon button orange">
+                                            &nbsp;1&nbsp;
+                                        </a>
+                                                                            <a href="?page=2&q=neural network" class="ui mini icon button ">
+                                            &nbsp;2&nbsp;
+                                        </a>
+                                                                            <a href="?page=3&q=neural network" class="ui mini icon button ">
+                                            &nbsp;3&nbsp;
+                                        </a>
+                                                                            <a href="?page=4&q=neural network" class="ui mini icon button ">
+                                            &nbsp;4&nbsp;
+                                        </a>
+                                                                            <a href="?page=5&q=neural network" class="ui mini icon button ">
+                                            &nbsp;5&nbsp;
+                                        </a>
+                                                                
+                                    <a href="?page=791&q=neural network" class="ui mini icon button">
+                                        <i class="angle double right icon"></i>
+                                    </a>
+                                </div>                        
+                                                    </div>
+                    </div>
+                    <br><br>
+                            </div>
+            <!-- </div> -->
+        </div>
+    </div>
+</div>
+
+<script>
+    $( function() {
+        $("#slider-range" ).slider({
+            range: true,
+            min: 1945,
+            max: 2024,
+            values: [ 1945, 2024 ],
+            slide: function( event, ui ) {
+                $("#from").val(ui.values[ 0 ]);
+                $("#to").val(ui.values[ 1 ]);
+            }
+        });
+        $("#from").val( $( "#slider-range" ).slider( "values", 0 ));
+        $("#to").val($( "#slider-range" ).slider( "values", 1 ));
+    });
+</script><!-- </div> -->
+</main>
+
+<div class="links-box">
+    <ul>
+        <li><a href="https://sinta.kemdiktisaintek.go.id" target="_blank">Sinta</a></li>
+        <li><a title="Basis Informasi Penelitian dan Pengabdian kepada Masyarakat" href="https://bima.kemdiktisaintek.go.id" target="_blank">Bima</a></li>
+        <li><a title="Akreditasi Jurnal Nasional" href="https://arjuna.kemdiktisaintek.go.id" target="_blank">Arjuna</a></li>
+        <li><a title="Pangkalan Data Pendidikan Tinggi Ristekdikti" href="https://pddikti.kemdiktisaintek.go.id" target="_blank">PDDIKTI</a></li>
+        <li><a title="Data Riset dan Pengembangan Ristekdikti" href="https://dikti.kemdiktisaintek.go.id/" target="_blank">Risbang</a></li>
+        <li><a title="The Largest Abstract and Citation Database of Peer-Reviewed Literature" href="https://www.scopus.com" target="_blank">Scopus</a></li>
+        <li><a title="Repositori Tugas Akhir Mahasiswa" href="https://rama.kemdiktisaintek.go.id/" target="_blank">Rama</a></li>
+    </ul>
+</div>
+<footer class="ui grid equal width footer">
+    <div class="clearfix"></div>
+    <div class="column">
+        <img src="/assets/img/logo_dikbud.png" />
+        <div class="footer-company">Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi </div>
+        <div class="footer-subcompany">(The Ministry of Education, Culture, Research, and Technology)</div>
+        <div class="footer-copyright">&copy; 2018</div>
+    </div>
+    <div class="column"></div>
+</footer>
+<!-- UI KIT -->
+
+
+
+
+<script>
+    setTimeout(function() {
+        // $('#flash_message').slideUp( 300, "linear" );
+        $('#flash_message').fadeOut( "slow");
+    }, 2000);
+</script>
+<!-- AUTOSEARCH BUKU-->
+<script>
+    $(function() {
+        $("#suggest_pub").autocomplete({
+            source: "/suggest/findPublisher",
+            select: function( event, ui ) {
+                event.preventDefault();
+                $("#suggest_pub").val(ui.item.value);
+            }
+        });
+    });
+</script>
+<!-- END AUTOSEARCH BUKU-->
+
+
+<script type="text/javascript">
+    $('.ui.checkbox').checkbox();
+    $('select.dropdown').dropdown();
+    $('.ui.dropdown').dropdown();
+    $('.top.menu .item').tab();
+
+    $(document).ready(function () {
+
+        $("#sort").change(function () {
+            var page = 1;
+            // $("#sort").val(page);
+            $("#form_sort").submit();
+        });
+
+        $("#select_item").change(function () {
+            var page = 1;
+            $("#page").val(page);
+            $("#form_journal").submit();
+        });        
+
+        $("#select_item").change(function () {
+            var page = 1;
+            $("#page").val(page);
+            $("#form_alphabeth").submit();
+        });
+
+        $("#select_item").change(function () {
+            var page = 1;
+            $("#page").val(page);
+            $("#form_search").submit();
+        });
+
+        $('#page').keydown(function () {
+            var key = e.which;
+            if (key == 13) {
+                $('#form_journal').submit();
+            }
+        });
+
+        $('#form_journal').keydown(function () {
+            var key = e.which;
+            if (key == 13) {
+                // As ASCII code for ENTER key is "13"
+                $('#form_journal').submit(); // Submit form code
+            }
+        });
+
+        $('.demo.menu .item').tab({history: false});
+
+        $('.area-cloud a').tagcloud();
+
+    });
+
+    $('.ui.top.attached.tabular.menu .item').tab({history: false});
+
+    $.fn.tagcloud.defaults = {
+        size: {start: 9, end: 30, unit: 'pt'},
+        color: {start: '#444', end: '#ed462f'}
+    };
+
+    function show_abstract(id){
+        $('#show_abstract'+id).slideToggle();
+    }
+
+    $(document).ready(function () {
+        $('#adv-btn').on('click', function () {
+            $('#adv-box').slideToggle('slow');
+            $('#form-journal').slideToggle('slow');
+        });
+
+        $('#adv-less').on('click', function () {
+            $('#adv-box').slideToggle('slow');
+            $('#form-journal').slideToggle('slow');
+        });
+    });
+
+
+
+</script>
+
+</body>
+</html>

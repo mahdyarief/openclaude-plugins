@@ -56,25 +56,55 @@ operasional:
 
 | Kapabilitas | PoP8 | journal-scout |
 |---|---|---|
-| Cache respons | per URL, bisa dibersihkan per query | `TTLCache` 300 s / 1024 entri (`src/josc/cache.py:11-12`) |
-| Cache persisten | ya (file lokal) | Turso/libSQL opsional (`src/josc/store.py`) |
+| Cache respons | per URL, bisa dibersihkan per query | `TTLCache` 300 s / 1024 entri (`src/josc/cache.py:11-12`), `clear(prefix)` (`cache.py:72`) |
+| Cache persisten | ya (file lokal) | Turso/libSQL opsional (`src/josc/store.py`), `TursoCache.clear(prefix)` (`store.py:218`) |
 | Throttle per sumber | implisit lewat cache + peringatan | `MIN_INTERVALS` eksplisit (`src/josc/http.py:12-17`) |
 | Retry/backoff | ya | `MAX_RETRIES=3`, `MAX_BACKOFF_SECONDS=60` (`src/josc/http.py:11,18`) |
-| Mode offline | ya | tidak ada — kegagalan langsung jadi `ProviderError` |
+| Mode offline | ya | ✅ `offline=true` + `stale: true` (`api.py:77-95`, `OfflineMiss` `api.py:40`) |
 | CAPTCHA | ya (IE + WebView2) | tidak relevan (tidak ada scraping) |
 | Crash recovery | ya | tidak relevan (server stateless) |
-| Diagnostik kuota | peringatan ambang | tool `get_quota_status` (Scopus saja) |
+| Diagnostik kuota | peringatan ambang | ✅ `quota_report` semua provider (`quota.py:62`), `GET /api/quota` (`api.py:557`) |
 
-Gap yang layak ditutup, urut prioritas:
+Status gap, urut prioritas:
 
-1. **Cache hit/miss yang bisa diinspeksi** — tambah metrik di `Fetcher`
-   (jumlah hit, miss, entri, umur) dan ekspos lewat `GET /api/health` yang
-   sudah ada (`src/josc/api.py:279`).
-2. **Mode offline eksplisit** — flag yang membuat pencarian hanya membaca
-   cache dan mengembalikan penanda `stale: true`, alih-alih error.
-3. **Diagnostik kuota yang seragam** — `get_quota_status` saat ini hanya
-   Scopus; Semantic Scholar dan OpenAlex juga punya limit yang perlu
-   dilaporkan dengan bentuk respons yang sama.
+1. ~~**Cache hit/miss yang bisa diinspeksi**~~ — **✅ selesai.**
+   `TTLCache.stats()` (`cache.py:80`) mengembalikan `ttl, entries,
+   max_entries, hits, misses, sets, evictions, expired, hit_rate`;
+   `_cache_stats()` (`api.py:139`) menyisipkannya ke `GET /api/health`
+   (`api.py:204`) sebagai blok `cache`. `TursoCache.stats()` (`store.py:191`)
+   menambahkan blok `store` lewat `_store_stats()` (`api.py:151`).
+2. ~~**Mode offline eksplisit**~~ — **✅ selesai.** `offline=true` di endpoint
+   baca menyajikan payload cache Turso dengan `stale: true`; cache kosong
+   menghasilkan `503` lewat `OfflineMiss` (`api.py:40`).
+3. ~~**Diagnostik kuota yang seragam**~~ — **✅ selesai.**
+   `quota_report` (`quota.py:62`) mengembalikan limit terdokumentasi untuk
+   sembilan sumber dengan bentuk respons yang sama; `GET /api/quota`
+   (`api.py:557`) mengeksposnya, dan tool MCP `get_quota_status`
+   (`server.py:346`) menyisipkan detail live Scopus sebagai
+   `scopus_detail`.
+
+4. ~~**Clear cache per query**~~ — **✅ selesai.** `TTLCache.clear(prefix)`
+   (`cache.py:72`) dan `TursoCache.clear(prefix)` (`store.py:218`),
+   diekspos lewat `POST /api/cache/clear` (`api.py:582`).
+
+5. ~~**Cache info per query**~~ — **✅ selesai 2026-10-25.**
+   `TTLCache.info(prefix, limit)` (`cache.py:102`) mengembalikan
+   `key, size_bytes, age_seconds, ttl_remaining, expired` per entri;
+   `TursoCache.info(prefix, limit)` (`store.py:463`) melakukan hal yang sama
+   untuk tabel `query_cache` dengan `expires_in_seconds`. Keduanya diekspos
+   lewat `GET /api/cache/info` (`api.py:639`) sebagai
+   `{"memory": [...], "store": [...]}`.
+
+6. ~~**Retry operation from cache**~~ — **✅ selesai 2026-10-25.**
+   `TursoCache.replay_search(id)` (`store.py:443`) menyajikan ulang
+   `results` tersimpan dengan `stale: true` tanpa menyentuh jaringan;
+   route `GET /api/searches/{id}/replay` (`api.py:716`), tombol
+   "Retry from cache" per baris riwayat di `history.tsx:544`.
+
+**Sisa yang masih terbuka:** ukuran/umur baris riwayat kini ikut dikirim
+(`size_bytes`, `age_seconds` di `list_searches`, `store.py:279`) dan
+ditampilkan di UI (`history.tsx:563`), tetapi belum ada endpoint untuk
+mengubah TTL atau memeriksa cache per provider secara terpisah.
 
 Yang **tidak** perlu ditiru: CAPTCHA dan crash recovery. Keduanya ada karena
 PoP8 adalah aplikasi desktop yang melakukan scraping; journal-scout memakai

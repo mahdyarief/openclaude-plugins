@@ -9,6 +9,7 @@ SCOPUS_BASE = "https://api.elsevier.com/content/"
 SCIVAL_BASE = "https://api.elsevier.com/analytics/scival/"
 _SCOPUS_ID_PREFIX = "SCOPUS_ID:"
 SCIVAL_METRIC_TYPES = "publications,citations,hIndex"
+MAX_PAGE_SIZE = 25
 
 
 class ScopusProvider(ProviderBase):
@@ -150,11 +151,20 @@ class ScopusProvider(ProviderBase):
         return query
 
     async def _search_query(self, query: str, limit: int, offset: int) -> List[Paper]:
-        params = {"query": query, "count": limit, "start": offset}
-        data = await self._fetch_json(
-            f"{SCOPUS_BASE}search/scopus", params=params, headers=self._headers()
-        )
-        return self._entries_to_papers(data)
+        # Scopus rejects ``count`` above the API key's service-level maximum
+        # (25 for the standard key), so a larger limit is fetched in windows.
+        papers: List[Paper] = []
+        while len(papers) < limit:
+            window = min(MAX_PAGE_SIZE, limit - len(papers))
+            params = {"query": query, "count": window, "start": offset + len(papers)}
+            data = await self._fetch_json(
+                f"{SCOPUS_BASE}search/scopus", params=params, headers=self._headers()
+            )
+            batch = self._entries_to_papers(data)
+            papers.extend(batch)
+            if len(batch) < window:
+                break
+        return papers[:limit]
 
     async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0, affiliation=None, issn=None, orcid=None, doi=None) -> List[Paper]:
         if author:

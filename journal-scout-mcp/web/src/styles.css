@@ -1,10 +1,29 @@
 @import "tailwindcss";
 
+/*
+ * Compact product UI: one accent (sky), cool neutral base, no decorative gradients.
+ * Every custom hex lives here as a token; components reference the generated
+ * Tailwind utilities (bg-canvas, border-line, text-accent, ...) instead of
+ * repeating raw values. Canvas-rendered colors are read back at runtime with
+ * the CSS variables below.
+ */
 @theme {
-  --color-surface: #0b1120;
-  --color-surface-raised: #111a2e;
-  --color-line: #1e293b;
+  --color-canvas: #080c13;
+  --color-rail: #060a10;
+  --color-surface: #0a0f18;
+  --color-surface-alt: #0a1018;
+  --color-line-hover: #334155;
   --color-accent: #38bdf8;
+  --color-ink: #e2e8f0;
+  --color-scrollbar: #263244;
+  --color-graph-seed: #38bdf8;
+  --color-graph-citation: #fbbf24;
+  --color-graph-reference: #a78bfa;
+  --color-graph-cocited: #34d399;
+  --color-edge-cites: #475569;
+  --color-edge-coupled: #fbbf24;
+  --color-edge-cocited: #a78bfa;
+  --color-node-stroke: #0b1120;
 }
 
 :root {
@@ -24,27 +43,49 @@ html {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 600px at 12% -10%, rgba(56, 189, 248, 0.12), transparent 60%),
-    radial-gradient(900px 500px at 88% 0%, rgba(168, 85, 247, 0.1), transparent 55%),
-    #070b14;
-  background-attachment: fixed;
-  color: #e2e8f0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(56, 189, 248, 0.3);
+  background: color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Coarse pointers get a 44px minimum hit area without inflating the visual
+   size of dense controls. The pseudo-element is invisible and only present
+   when the primary input is a finger. */
+@media (pointer: coarse) {
+  .touch-target {
+    position: relative;
+  }
+
+  .touch-target::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
 }
 
 .history-row {
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition: border-color 120ms ease, background-color 120ms ease;
 }
 
 .history-row:hover {
-  border-color: #334155;
+  border-color: var(--color-line-hover);
 }
 
 .scroll-thin::-webkit-scrollbar {
@@ -53,7 +94,7 @@ body {
 }
 
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--color-scrollbar);
   border-radius: 9999px;
 }
 
@@ -61,16 +102,32 @@ body {
   background: transparent;
 }
 
+/* Indeterminate progress ring. The adjacent label carries the state, so the
+   ring is decorative and reduced-motion users get a static ring instead. */
+.spinner {
+  animation: spinner-rotate 700ms linear infinite;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Targeted, not a blanket 0.01ms kill: state changes (spinner, row hover) stay
+   perceivable, only the motion itself is removed. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .spinner {
+    animation: none !important;
+    border-top-color: currentColor;
+    opacity: 0.6;
+  }
+
+  .history-row {
+    transition: none;
   }
 }

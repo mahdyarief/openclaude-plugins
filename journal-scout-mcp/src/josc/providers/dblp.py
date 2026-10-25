@@ -10,6 +10,9 @@ DBLP_URL = "https://dblp.org/search/publ/api"
 class DblpProvider(ProviderBase):
     name = "dblp"
     supports_search = True
+    # dblp.org currently serves an Anubis challenge to automated clients, so
+    # leave it out of the default fan-out; it stays available on request.
+    opt_out = True
     # DBLP's query language supports the ``author:`` term prefix.
     supports_filters = frozenset({"author"})
 

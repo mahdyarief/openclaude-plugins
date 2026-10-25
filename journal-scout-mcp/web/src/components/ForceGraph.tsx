@@ -19,21 +19,28 @@ type SimLink = SimulationLinkDatum<SimNode> & {
   weight: number;
 };
 
+// Canvas cannot resolve CSS custom properties, so token names are read back
+// through getComputedStyle at draw time (see cssVar below).
 const KIND_COLOR: Record<GraphNode["kind"], string> = {
-  seed: "#38bdf8",
-  citation: "#fbbf24",
-  reference: "#a78bfa",
-  cocited: "#34d399",
+  seed: "--color-graph-seed",
+  citation: "--color-graph-citation",
+  reference: "--color-graph-reference",
+  cocited: "--color-graph-cocited",
 };
 
 const EDGE_STYLE: Record<
   GraphEdge["type"],
   { stroke: string; dash: number[]; opacity: number }
 > = {
-  cites: { stroke: "#475569", dash: [], opacity: 0.75 },
-  coupled: { stroke: "#fbbf24", dash: [5, 4], opacity: 0.6 },
-  cocited: { stroke: "#a78bfa", dash: [2, 4], opacity: 0.5 },
+  cites: { stroke: "--color-edge-cites", dash: [], opacity: 0.75 },
+  coupled: { stroke: "--color-edge-coupled", dash: [5, 4], opacity: 0.6 },
+  cocited: { stroke: "--color-edge-cocited", dash: [2, 4], opacity: 0.5 },
 };
+
+function cssVar(canvas: HTMLCanvasElement, name: string): string {
+  const value = getComputedStyle(canvas).getPropertyValue(name).trim();
+  return value || "#888";
+}
 
 function radius(node: GraphNode): number {
   if (node.kind === "seed") return 13;
@@ -95,6 +102,20 @@ export function ForceGraph({
 
     nodesRef.current = simNodes;
 
+    const colors = {
+      seed: cssVar(canvas, KIND_COLOR.seed),
+      citation: cssVar(canvas, KIND_COLOR.citation),
+      reference: cssVar(canvas, KIND_COLOR.reference),
+      cocited: cssVar(canvas, KIND_COLOR.cocited),
+      ink: cssVar(canvas, "--color-ink"),
+      nodeStroke: cssVar(canvas, "--color-node-stroke"),
+      edge: {
+        cites: cssVar(canvas, EDGE_STYLE.cites.stroke),
+        coupled: cssVar(canvas, EDGE_STYLE.coupled.stroke),
+        cocited: cssVar(canvas, EDGE_STYLE.cocited.stroke),
+      },
+    };
+
     const draw = () => {
       const { width, height, dpr } = sizeRef.current;
       const scale = Math.min(width / WIDTH, height / HEIGHT);
@@ -119,7 +140,7 @@ export function ForceGraph({
         if (target.x == null || target.y == null) continue;
         const style = EDGE_STYLE[link.type];
         ctx.globalAlpha = style.opacity;
-        ctx.strokeStyle = style.stroke;
+        ctx.strokeStyle = colors.edge[link.type];
         ctx.lineWidth = Math.min(4, 1 + Math.log2(link.weight + 1));
         ctx.setLineDash(style.dash);
         ctx.beginPath();
@@ -135,12 +156,12 @@ export function ForceGraph({
         const selected = node.id === selectedRef.current;
         ctx.beginPath();
         ctx.arc(node.x, node.y, radius(node) + (selected ? 4 : 0), 0, Math.PI * 2);
-        ctx.fillStyle = KIND_COLOR[node.kind];
+        ctx.fillStyle = colors[node.kind];
         ctx.globalAlpha = selected ? 1 : 0.85;
         ctx.fill();
         ctx.globalAlpha = 1;
         ctx.lineWidth = selected ? 2.5 : 1.5;
-        ctx.strokeStyle = selected ? "#e2e8f0" : "#0b1120";
+        ctx.strokeStyle = selected ? colors.ink : colors.nodeStroke;
         ctx.stroke();
 
         if (node.kind === "seed") {
@@ -148,7 +169,7 @@ export function ForceGraph({
             node.label.length > 46 ? `${node.label.slice(0, 46)}…` : node.label;
           ctx.font = "11px system-ui, sans-serif";
           ctx.textAlign = "center";
-          ctx.fillStyle = "#e2e8f0";
+          ctx.fillStyle = colors.ink;
           ctx.fillText(label, node.x, node.y - radius(node) - 8);
         }
       }
@@ -201,19 +222,36 @@ export function ForceGraph({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
+    <div className="relative overflow-hidden rounded-lg border border-slate-800 bg-slate-950/60">
       <canvas
         ref={canvasRef}
         onClick={handleClick}
+        role="img"
+        aria-label={`Citation network with ${nodes.length} nodes and ${edges.length} edges`}
         className="block h-[560px] w-full cursor-pointer"
       />
+
+      <ul className="sr-only">
+        {nodes.map((node) => (
+          <li key={node.id}>
+            <button
+              type="button"
+              onClick={() => onSelect(node.id)}
+              aria-pressed={node.id === selectedId}
+              className="focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-10 focus:max-w-[calc(100%-1rem)] focus:rounded focus:border focus:border-slate-600 focus:bg-slate-900 focus:px-2 focus:py-1 focus:text-left focus:text-[11px] focus:text-slate-100 touch-target"
+            >
+              {node.label} ({node.kind})
+            </button>
+          </li>
+        ))}
+      </ul>
 
       <div className="absolute bottom-3 left-3 flex flex-wrap gap-3 rounded-lg border border-slate-800 bg-slate-900/85 px-3 py-2 text-[11px] text-slate-300">
         {(["seed", "citation", "reference", "cocited"] as const).map((kind) => (
           <span key={kind} className="flex items-center gap-1.5">
             <span
               className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ background: KIND_COLOR[kind] }}
+              style={{ background: `var(${KIND_COLOR[kind]})` }}
             />
             {kind}
           </span>

@@ -41,22 +41,45 @@ menghasilkan hasil yang tidak sebanding antar sumber.
 
 ## Implikasi untuk journal-scout
 
-journal-scout saat ini hanya menerima `query` sebagai string bebas plus
-`author`/`venue`/`year_from`/`year_to`/`tech_only`/`offset`
-(`src/josc/server.py:40-57`).
+**Status 2026-10-25.** Skema pencarian (`src/josc/server.py:41-62`) menerima
+`query`, `count`, `author`, `venue`, `year_from`, `year_to`, `tech_only`,
+`offset`, `affiliation`, `issn`, `orcid`, dan `doi` — semua field filter di
+tabel atas sudah punya padanan. `search_all` (`aggregator.py:114-129`)
+mengirim field hanya ke provider yang mendeklarasikannya di
+`supports_filters` (`providers/base.py:24`) dan mengembalikan
+`filters_applied` / `filters_ignored`.
 
-**Status 2026-10-24:** `author` dan `venue` sudah diimplementasikan.
-`search_all` (`aggregator.py:102-129`) hanya mengirim field yang
-dideklarasikan provider di `supports_filters` (`providers/base.py:20-21`) dan
-mengembalikan `filters_applied` / `filters_ignored` — jadi sinyal keterbatasan
-sudah ada untuk dua field ini.
+Deklarasi per provider: `crossref.py:16`, `openalex.py:36`, `scopus.py:20`,
+dan `pubmed.py:29` mencakup `affiliation`/`issn`/`orcid`/`doi` sesuai
+kemampuan API masing-masing; `arxiv.py:52` dan `dblp.py:14` hanya `author`;
+`semanticscholar.py:30` hanya `venue`. Form web sudah mengekspos keempat
+field baru (`web/src/routes/search.tsx:55-58`, render di `:253-282`).
 
-Yang masih terbuka:
+**Status 2026-10-25: sudah ditutup.** Translasi operator dan peringatan
+operator kini ada di `src/josc/query.py`:
 
-1. **Field lain** (affiliation, ISSN, ORCID, DOI) belum didukung.
-2. **Translasi operator per sumber** — tidak ada layer yang mengubah query
-   kanonik menjadi sintaks masing-masing API.
-3. ~~**`tech_only` belum punya capability flag**~~ — **✅ selesai
-   2026-10-24.** `supports_tech_only` (`providers/base.py:22`) membuat
-   Crossref, DBLP, dan PubMed dilaporkan di `filters_ignored` alih-alih
-   diabaikan diam-diam.
+- `OPERATOR_SUPPORT` (`query.py:19`) memetakan tiap provider ke dukungan
+  `AND`/`OR`/`NOT` sesuai matriks di tabel atas.
+- `detect_operators` (`query.py:33`) menemukan token operator uppercase.
+- `translate_query` (`query.py:41`) membuang operator yang tidak didukung
+  (Crossref membuang `AND`, OpenAlex/Semantic Scholar membuang ketiganya,
+  Scopus mengubah `NOT` menjadi `AND NOT`).
+- `operator_report` (`query.py:65`) menghasilkan
+  `{"requested": [...], "warnings": [{"source", "operator", "message"}]}`.
+- `search_all` (`aggregator.py`) mengirim query hasil translasi per provider
+  dan mengembalikan `query_warnings` + `query_translated`.
+- UI menampilkan peringatan itu di `web/src/routes/search.tsx`, dan sort
+  hasil (`relevance`/`citations`/`year`/`title` + asc/desc) tersedia di API
+  (`api.py:242-243`) maupun tool MCP `search_all` (`server.py:267`).
+
+~~**Field lain** (affiliation, ISSN, ORCID, DOI)~~ — **✅ selesai
+2026-10-25.**
+
+~~**`tech_only` belum punya capability flag**~~ — **✅ selesai
+2026-10-24.** `supports_tech_only` (`providers/base.py:22`) membuat
+Crossref, DBLP, dan PubMed dilaporkan di `filters_ignored` alih-alih
+diabaikan diam-diam.
+
+Satu hal yang tetap berbeda dari PoP8: operator **tidak** diterjemahkan ke
+sintaks field-tag per API (mis. `TS=` WoS). Query hanya dibersihkan dari
+operator yang tidak didukung, tanpa menambahkan tag field.

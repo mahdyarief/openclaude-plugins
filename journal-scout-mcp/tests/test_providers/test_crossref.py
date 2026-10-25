@@ -112,3 +112,33 @@ async def test_search_author_also_honors_year_filter():
         assert captured["filter"] == "from-pub-date:2017-01-01"
     finally:
         await client.aclose()
+
+
+async def test_search_drops_container_records_without_title():
+    # Crossref returns journal-issue records with ``title: []`` for broad
+    # queries; they are not articles and must not reach the result list.
+    def handler(request):
+        return httpx.Response(
+            200,
+            json={
+                "message": {
+                    "items": [
+                        {"DOI": "10.1/issue", "type": "journal-issue", "title": []},
+                        {"DOI": "10.1/proc", "type": "proceedings", "title": []},
+                        {
+                            "DOI": "10.1/article",
+                            "type": "journal-article",
+                            "title": ["A real paper"],
+                        },
+                    ]
+                }
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        papers = await provider.search("data and information quality", 5)
+        assert [p.doi for p in papers] == ["10.1/article"]
+    finally:
+        await client.aclose()

@@ -119,3 +119,101 @@ def test_stats_values_are_json_serializable_primitives():
     assert decoded == stats
     for value in stats.values():
         assert isinstance(value, (int, float, str, bool, type(None)))
+
+
+def test_clear_returns_count_and_empties_store():
+    cache = TTLCache()
+    cache.set("a", 1)
+    cache.set("b", 2)
+    assert cache.clear() == 2
+    assert len(cache) == 0
+    assert cache.stats()["entries"] == 0
+
+
+def test_clear_with_prefix_removes_only_matching_keys():
+    cache = TTLCache()
+    cache.set("prefix:a", 1)
+    cache.set("prefix:b", 2)
+    cache.set("other", 3)
+    assert cache.clear("prefix:") == 2
+    assert len(cache) == 1
+    assert cache.get("other") == 3
+
+
+def test_clear_leaves_counters_untouched():
+    clock = [0.0]
+    cache = TTLCache(ttl=100, max_entries=1, clock=lambda: clock[0])
+    cache.set("a", 1)
+    cache.get("a")
+    cache.get("missing")
+    clock[0] = 1.0
+    cache.set("b", 2)  # eviction
+    before = cache.stats()
+    cache.clear()
+    after = cache.stats()
+    assert after["entries"] == 0
+    for name in ("hits", "misses", "sets", "evictions", "expired"):
+        assert after[name] == before[name]
+
+
+def test_info_orders_by_soonest_expiry_and_has_all_keys():
+    clock = [0.0]
+    cache = TTLCache(ttl=100, clock=lambda: clock[0])
+    cache.set("later", 1)
+    clock[0] = 10.0
+    cache.set("sooner", 2)  # set later -> expires later, so "later" is soonest
+    info = cache.info()
+    assert len(info) == 2
+    assert [entry["key"] for entry in info] == ["later", "sooner"]
+    for entry in info:
+        assert set(entry) == {
+            "key",
+            "size_bytes",
+            "age_seconds",
+            "ttl_remaining",
+            "expired",
+        }
+
+
+def test_info_size_bytes_positive_for_dict_and_live_entry():
+    clock = [0.0]
+    cache = TTLCache(ttl=10, clock=lambda: clock[0])
+    cache.set("k", {"a": 1, "b": 2})
+    entry = cache.info()[0]
+    assert entry["size_bytes"] > 0
+    assert entry["expired"] is False
+
+
+def test_info_reports_expired_after_ttl_without_get():
+    clock = [0.0]
+    cache = TTLCache(ttl=10, clock=lambda: clock[0])
+    cache.set("k", 1)
+    clock[0] = 15.0
+    entry = cache.info()[0]
+    assert entry["expired"] is True
+    assert entry["ttl_remaining"] <= 0
+
+
+def test_info_prefix_filters_keys():
+    clock = [0.0]
+    cache = TTLCache(ttl=10, clock=lambda: clock[0])
+    cache.set("prefix:a", 1)
+    cache.set("prefix:b", 2)
+    cache.set("other", 3)
+    info = cache.info(prefix="prefix:")
+    assert len(info) == 2
+    assert {entry["key"] for entry in info} == {"prefix:a", "prefix:b"}
+
+
+def test_info_leaves_stats_counters_untouched():
+    clock = [0.0]
+    cache = TTLCache(ttl=10, clock=lambda: clock[0])
+    cache.set("a", 1)
+    cache.set("b", 2)
+    cache.get("a")
+    cache.get("missing")
+    before = cache.stats()
+    cache.info()
+    after = cache.stats()
+    for name in ("hits", "misses", "sets", "evictions", "expired", "entries"):
+        assert after[name] == before[name]

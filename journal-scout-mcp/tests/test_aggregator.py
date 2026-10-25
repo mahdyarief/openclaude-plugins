@@ -3,6 +3,7 @@ from josc.aggregator import (
     compute_metrics,
     get_citations,
     get_paper,
+    get_related,
     get_references,
     search_all,
     search_author,
@@ -92,6 +93,94 @@ async def test_get_paper_merges_across_providers():
     assert set(result["paper"]["sources"]) == {"goodget", "goodget2"}
 
 
+class CountingGetProvider(ProviderBase):
+    """Records calls so a test can prove a provider was never asked."""
+
+    def __init__(self, name, title, fetcher=None):
+        super().__init__(fetcher)
+        self.name = name
+        self._title = title
+        self.calls = []
+
+    async def get(self, identifier):
+        self.calls.append(identifier)
+        return Paper(doi="10.1/shared", title=self._title, sources=[self.name])
+
+
+async def test_get_paper_scopes_to_named_source():
+    """A bare numeric id belongs to one source; the others must not guess."""
+    garuda = CountingGetProvider("garuda", "Garuda record")
+    semanticscholar = CountingGetProvider("semanticscholar", "Wrong record")
+
+    result = await get_paper(
+        [garuda, semanticscholar], "6420654", sources=["garuda"]
+    )
+
+    assert garuda.calls == ["6420654"]
+    assert semanticscholar.calls == []
+    assert result["paper"]["title"] == "Garuda record"
+    assert result["paper"]["sources"] == ["garuda"]
+
+
+async def test_get_paper_without_sources_still_queries_every_provider():
+    garuda = CountingGetProvider("garuda", "Garuda record")
+    semanticscholar = CountingGetProvider("semanticscholar", "Other record")
+
+    result = await get_paper([garuda, semanticscholar], "10.1/shared")
+
+    assert garuda.calls == ["10.1/shared"]
+    assert semanticscholar.calls == ["10.1/shared"]
+    assert set(result["paper"]["sources"]) == {"garuda", "semanticscholar"}
+
+
+class CountingRelationProvider(ProviderBase):
+    """Records calls so a test can prove a provider was never asked."""
+
+    supports_citations = True
+    supports_related = True
+
+    def __init__(self, name, fetcher=None):
+        super().__init__(fetcher)
+        self.name = name
+        self.calls = []
+
+    async def citations(self, identifier, limit):
+        self.calls.append(identifier)
+        return [Paper(doi="10.1/citing", title="Citing", sources=[self.name])]
+
+    async def related(self, identifier, limit):
+        self.calls.append(identifier)
+        return [Paper(doi="10.1/related", title="Related", sources=[self.name])]
+
+
+async def test_get_citations_scopes_to_named_source():
+    """A bare id must not be broadcast to providers that only guess at it."""
+    scopus = CountingRelationProvider("scopus")
+    semanticscholar = CountingRelationProvider("semanticscholar")
+
+    result = await get_citations(
+        [scopus, semanticscholar], "6420654", limit=10, sources=["scopus"]
+    )
+
+    assert scopus.calls == ["6420654"]
+    assert semanticscholar.calls == []
+    assert len(result["results"]) == 1
+    assert result["results"][0]["sources"] == ["scopus"]
+
+
+async def test_get_related_scopes_to_named_source():
+    openalex = CountingRelationProvider("openalex")
+    semanticscholar = CountingRelationProvider("semanticscholar")
+
+    result = await get_related(
+        [openalex, semanticscholar], "6420654", limit=10, sources=["openalex"]
+    )
+
+    assert openalex.calls == ["6420654"]
+    assert semanticscholar.calls == []
+    assert result["results"][0]["sources"] == ["openalex"]
+
+
 async def test_get_citations_collects_from_providers():
     outside = OutsideCitationProvider(None)
     result = await get_citations([GoodCitationProvider(None), outside], "10.1/x", limit=10)
@@ -99,6 +188,29 @@ async def test_get_citations_collects_from_providers():
     assert "crossref" not in result["counts"]
     assert len(result["results"]) == 1
     assert result["results"][0]["title"] == "Citing"
+
+
+class OptOutProvider(ProviderBase):
+    name = "optout"
+    supports_search = True
+    opt_out = True
+
+    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False, offset=0):
+        return [Paper(doi="10.1/opt", title="Opt out record", sources=["optout"])]
+
+
+async def test_search_all_skips_optout_provider_by_default():
+    providers = [GoodProvider(None), OptOutProvider(None)]
+    result = await search_all(providers, "q", limit_per_source=5)
+    assert "optout" not in result["counts"]
+    assert all(p["doi"] != "10.1/opt" for p in result["results"])
+
+
+async def test_search_all_includes_optout_when_explicitly_requested():
+    providers = [GoodProvider(None), OptOutProvider(None)]
+    result = await search_all(providers, "q", limit_per_source=5, sources=["optout"])
+    assert "optout" in result["counts"]
+    assert any(p["doi"] == "10.1/opt" for p in result["results"])
 
 
 class NetworkProvider(ProviderBase):

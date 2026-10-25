@@ -12,6 +12,7 @@ from .exporters import FORMATTERS, format_papers
 from .http import Fetcher
 from .models import ProviderError
 from .providers import build_providers, search_provider_names
+from .quota import quota_report
 from .store import build_store, cached_call
 
 UNIFIED_TOOLS = [
@@ -109,6 +110,8 @@ def _tool_list() -> List[types.Tool]:
                     "query": {"type": "string"},
                     "limit_per_source": {"type": "integer", "default": 5},
                     "sources": {"type": "array", "items": {"type": "string"}},
+                    "sort": {"type": "string", "enum": ["relevance", "citations", "year", "title"], "description": "Sort the merged result set."},
+                    "order": {"type": "string", "enum": ["asc", "desc"], "default": "desc"},
                     **_SEARCH_FILTERS,
                 },
                 "required": ["query"],
@@ -130,45 +133,51 @@ def _tool_list() -> List[types.Tool]:
         ),
         types.Tool(
             name="get_paper",
-            description="Resolve a DOI/arXiv/Scopus/OpenAlex id across sources, merge metadata, and attach open-access links.",
+            description="Resolve a DOI/arXiv/Scopus/OpenAlex id across sources, merge metadata, and attach open-access links. Pass sources to disambiguate a bare id that only one provider understands.",
             inputSchema={
                 "type": "object",
-                "properties": {"identifier": {"type": "string"}},
+                "properties": {
+                    "identifier": {"type": "string"},
+                    "sources": {"type": "array", "items": {"type": "string"}},
+                },
                 "required": ["identifier"],
             },
         ),
         types.Tool(
             name="get_citations",
-            description="Collect the cross-source citation graph (Scopus + OpenAlex + Semantic Scholar) for one paper.",
+            description="Collect the cross-source citation graph (Scopus + OpenAlex + Semantic Scholar) for one paper. Pass sources to disambiguate a bare id that only one provider understands.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "identifier": {"type": "string"},
                     "limit": {"type": "integer", "default": 20},
+                    "sources": {"type": "array", "items": {"type": "string"}},
                 },
                 "required": ["identifier"],
             },
         ),
         types.Tool(
             name="get_references",
-            description="Collect the reference list of one paper from every source that exposes references (Scopus/OpenAlex/Semantic Scholar/Crossref), merged and deduped.",
+            description="Collect the reference list of one paper from every source that exposes references (Scopus/OpenAlex/Semantic Scholar/Crossref), merged and deduped. Pass sources to disambiguate a bare id.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "identifier": {"type": "string"},
                     "limit": {"type": "integer", "default": 20},
+                    "sources": {"type": "array", "items": {"type": "string"}},
                 },
                 "required": ["identifier"],
             },
         ),
         types.Tool(
             name="get_related_works",
-            description="List the works OpenAlex considers related to one paper (Publish or Perish 'Related Works'), merged and deduped.",
+            description="List the works OpenAlex considers related to one paper (Publish or Perish 'Related Works'), merged and deduped. Pass sources to disambiguate a bare id.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "identifier": {"type": "string"},
                     "limit": {"type": "integer", "default": 20},
+                    "sources": {"type": "array", "items": {"type": "string"}},
                 },
                 "required": ["identifier"],
             },
@@ -235,7 +244,7 @@ def _tool_list() -> List[types.Tool]:
         )
     tools.append(types.Tool(name="get_abstract_details", description="Scopus abstract details for a Scopus id.", inputSchema={"type": "object", "properties": {"scopus_id": {"type": "string"}}, "required": ["scopus_id"]}))
     tools.append(types.Tool(name="get_author_profile", description="Scopus author profile.", inputSchema={"type": "object", "properties": {"author_id": {"type": "string"}}, "required": ["author_id"]}))
-    tools.append(types.Tool(name="get_quota_status", description="Scopus API quota status.", inputSchema={"type": "object", "properties": {}}))
+    tools.append(types.Tool(name="get_quota_status", description="Documented rate limits and quota status for every configured source; includes live Scopus headers when available.", inputSchema={"type": "object", "properties": {}}))
     tools.append(types.Tool(name="scival_author_metrics", description="SciVal author metrics.", inputSchema=_id_metric_schema("author_id")))
     tools.append(types.Tool(name="scival_institution_metrics", description="SciVal institution metrics.", inputSchema=_id_metric_schema("institution_id")))
     tools.append(types.Tool(name="scival_author_lookup", description="SciVal author lookup by name.", inputSchema=_lookup_schema()))
@@ -261,9 +270,13 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             issn=arguments.get("issn"),
             orcid=arguments.get("orcid"),
             doi=arguments.get("doi"),
+            sort=arguments.get("sort"),
+            order=arguments.get("order", "desc"),
         )
     if name == "get_paper":
-        return await aggregator.get_paper(providers, arguments["identifier"])
+        return await aggregator.get_paper(
+            providers, arguments["identifier"], sources=arguments.get("sources")
+        )
     if name == "search_author":
         return await aggregator.search_author(
             providers,
@@ -277,15 +290,24 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         )
     if name == "get_citations":
         return await aggregator.get_citations(
-            providers, arguments["identifier"], limit=arguments.get("limit", 20)
+            providers,
+            arguments["identifier"],
+            limit=arguments.get("limit", 20),
+            sources=arguments.get("sources"),
         )
     if name == "get_references":
         return await aggregator.get_references(
-            providers, arguments["identifier"], limit=arguments.get("limit", 20)
+            providers,
+            arguments["identifier"],
+            limit=arguments.get("limit", 20),
+            sources=arguments.get("sources"),
         )
     if name == "get_related_works":
         return await aggregator.get_related(
-            providers, arguments["identifier"], limit=arguments.get("limit", 20)
+            providers,
+            arguments["identifier"],
+            limit=arguments.get("limit", 20),
+            sources=arguments.get("sources"),
         )
     if name == "build_citation_network":
         return await aggregator.build_citation_network(
@@ -339,7 +361,12 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
     if name == "get_author_profile":
         return await scopus_provider.get_author(arguments["author_id"])
     if name == "get_quota_status":
-        return await scopus_provider.get_quota_status()
+        report = quota_report(providers)
+        try:
+            report["scopus_detail"] = await scopus_provider.get_quota_status()
+        except Exception:  # noqa: BLE001 - the static report is still useful
+            report["scopus_detail"] = None
+        return report
     if name == "scival_author_metrics":
         return await scopus_provider.scival_author_metrics(
             arguments["author_id"], arguments.get("year_from"), arguments.get("year_to")

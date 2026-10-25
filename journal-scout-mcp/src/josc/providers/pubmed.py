@@ -11,11 +11,26 @@ EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 DEFAULT_TOOL = "journal-scout"
 
 
+_PLACEHOLDER_TITLES = frozenset(
+    {"[not available]", "not available", "n/a", "na", "none", "[no title]", "untitled"}
+)
+
+
 def _text(element) -> Optional[str]:
     if element is None:
         return None
     value = "".join(element.itertext()).strip()
     return value or None
+
+
+def _usable_title(value: Optional[str]) -> Optional[str]:
+    """Return ``value`` unless PubMed used it as an "[Not Available]" placeholder."""
+    if not value:
+        return None
+    text = value.strip()
+    if text.lower().rstrip(".").strip() in _PLACEHOLDER_TITLES:
+        return None
+    return text
 
 
 class PubMedProvider(ProviderBase):
@@ -93,7 +108,11 @@ class PubMedProvider(ProviderBase):
         if data is None:
             return None
 
-        title = _text(data.find("ArticleTitle")) or ""
+        # Records with no English title carry the placeholder "[Not Available]."
+        # in ArticleTitle and the real title in VernacularTitle.
+        title = _usable_title(_text(data.find("ArticleTitle")))
+        if not title:
+            title = _usable_title(_text(data.find("VernacularTitle"))) or ""
 
         abstract_parts = []
         for node in data.findall("Abstract/AbstractText"):
