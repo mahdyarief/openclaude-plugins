@@ -216,11 +216,26 @@ export function PaperTable({
                   <span className="line-clamp-2 font-medium leading-snug text-slate-100">
                     {paper.title || "(untitled)"}
                   </span>
-                  {paper.is_open_access && (
-                    <span className="mt-1 inline-block rounded border border-emerald-600/40 bg-emerald-500/10 px-1 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300">
-                      open access
-                    </span>
-                  )}
+                  <span className="mt-1 flex flex-wrap items-center gap-1">
+                    {paper.is_retracted && (
+                      <span className="rounded border border-rose-600/50 bg-rose-500/10 px-1 py-0.5 text-[10px] uppercase tracking-wide text-rose-300">
+                        retracted
+                      </span>
+                    )}
+                    {paper.is_open_access && (
+                      <span className="rounded border border-emerald-600/40 bg-emerald-500/10 px-1 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300">
+                        open access
+                      </span>
+                    )}
+                    {paper.topics?.[0] && (
+                      <span
+                        className="max-w-[16rem] truncate rounded border border-slate-700 bg-slate-800/60 px-1 py-0.5 text-[10px] text-slate-300"
+                        title={paper.topics.join(", ")}
+                      >
+                        {paper.topics[0]}
+                      </span>
+                    )}
+                  </span>
                 </td>
                 <td className="px-2 py-1.5 align-top text-slate-400">
                   <span className="line-clamp-2">{authorSummary(paper.authors)}</span>
@@ -233,6 +248,14 @@ export function PaperTable({
                 </td>
                 <td className="px-2 py-1.5 align-top text-right tabular-nums text-slate-200">
                   {paper.citation_count ?? "—"}
+                  {paper.cited_by_percentile != null && (
+                    <span
+                      className="block text-[10px] font-normal text-slate-400"
+                      title="Citation percentile within its field and year"
+                    >
+                      top {100 - paper.cited_by_percentile}%
+                    </span>
+                  )}
                 </td>
                 <td className="px-2 py-1.5 align-top">
                   <span className="flex flex-wrap gap-1">

@@ -169,6 +169,11 @@ export function PaperDrawer({
             </header>
 
             <div className="scroll-thin flex-1 overflow-y-auto px-4 py-3">
+              {detail.is_retracted && (
+                <p className="m-0 mb-3 rounded border border-rose-600/50 bg-rose-500/10 px-2 py-1.5 text-[11px] leading-snug text-rose-200">
+                  This record carries a retraction notice. Read it before citing.
+                </p>
+              )}
               <dl className="m-0">
                 <Field label="Authors">
                   {detail.authors.length > 0 ? detail.authors.join(", ") : "Unknown authors"}
@@ -178,6 +183,11 @@ export function PaperDrawer({
                 <Field label="Type">{detail.type || "—"}</Field>
                 <Field label="Cited">
                   {detail.citation_count != null ? detail.citation_count : "—"}
+                  {detail.cited_by_percentile != null && (
+                    <span className="ml-1 text-[11px] text-slate-400">
+                      · top {100 - detail.cited_by_percentile}%
+                    </span>
+                  )}
                 </Field>
                 <Field label="Sources">
                   <span className="flex flex-wrap gap-1">
@@ -223,7 +233,70 @@ export function PaperDrawer({
                     "—"
                   )}
                 </Field>
+                {detail.topics && detail.topics.length > 0 && (
+                  <Field label="Topics">{detail.topics.join(" · ")}</Field>
+                )}
+                {detail.keywords && detail.keywords.length > 0 && (
+                  <Field label="Keywords">{detail.keywords.join(", ")}</Field>
+                )}
+                {detail.publication_types && detail.publication_types.length > 0 && (
+                  <Field label="Pub types">{detail.publication_types.join(", ")}</Field>
+                )}
+                {detail.institutions && detail.institutions.length > 0 && (
+                  <Field label="Institutions">{detail.institutions.join(" · ")}</Field>
+                )}
+                {detail.funders && detail.funders.length > 0 && (
+                  <Field label="Funders">{detail.funders.join(" · ")}</Field>
+                )}
+                {detail.license && (
+                  <Field label="License">
+                    <a
+                      href={detail.license}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sky-400 no-underline hover:underline"
+                    >
+                      {detail.license}
+                    </a>
+                  </Field>
+                )}
+                {detail.language && <Field label="Language">{detail.language}</Field>}
               </dl>
+
+              {detail.tldr && (
+                <section className="mt-4">
+                  <h3 className="m-0 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    TL;DR
+                  </h3>
+                  <p className="mb-0 mt-1.5 rounded border border-sky-800/50 bg-sky-500/[0.07] px-2 py-1.5 text-[12px] leading-relaxed text-sky-100">
+                    {detail.tldr}
+                  </p>
+                </section>
+              )}
+
+              {detail.citations_by_year && Object.keys(detail.citations_by_year).length > 0 && (
+                <section className="mt-4">
+                  <h3 className="m-0 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    Citations per year
+                  </h3>
+                  <ul className="m-0 mt-1.5 list-none space-y-0.5 p-0">
+                    {Object.entries(detail.citations_by_year)
+                      .map(([year, count]) => [Number(year), count] as const)
+                      .sort((a, b) => b[0] - a[0])
+                      .slice(0, 8)
+                      .map(([year, count]) => (
+                        <li
+                          key={year}
+                          className="flex items-center gap-2 text-[11px] text-slate-300"
+                        >
+                          <span className="w-10 tabular-nums text-slate-400">{year}</span>
+                          <span className="h-1.5 rounded bg-sky-500/40" style={{ width: `${Math.min(count, 40) * 4}px` }} />
+                          <span className="tabular-nums">{count}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </section>
+              )}
 
               <section className="mt-4">
                 <div className="flex items-center justify-between">

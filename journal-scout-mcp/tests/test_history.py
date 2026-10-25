@@ -51,6 +51,10 @@ def test_fingerprint_changes_when_a_filter_changes():
     assert _fingerprint() != _fingerprint(limit_per_source=25)
 
 
+def test_fingerprint_changes_when_topic_filter_changes():
+    assert _fingerprint() != _fingerprint(topic="machine learning")
+
+
 async def test_remember_forwards_the_fingerprint_to_the_store(monkeypatch):
     store = FakeStore()
     monkeypatch.setattr(history, "_store", lambda: store)

@@ -331,6 +331,104 @@ def test_node_id_falls_back_to_provider_id_then_title():
     assert network["seed"] == "title:some title"
 
 
+def test_nodes_carry_metadata_for_the_detail_panel():
+    seed = Paper(
+        doi="10.1/seed",
+        title="Seed",
+        abstract="Seed abstract",
+        pdf_url="https://example.org/seed.pdf",
+        is_open_access=True,
+        type="journal-article",
+    )
+
+    network = build_network(seed, [], [])
+
+    node = network["nodes"][0]
+    assert node["abstract"] == "Seed abstract"
+    assert node["pdf_url"] == "https://example.org/seed.pdf"
+    assert node["is_open_access"] is True
+    assert node["type"] == "journal-article"
+
+
+def test_nodes_carry_degree_metrics():
+    seed = _paper("10.1/seed", "Seed")
+    references = [_paper("10.1/r1", "R1"), _paper("10.1/r2", "R2")]
+    citations = [_paper("10.1/c1", "C1")]
+
+    network = build_network(seed, references, citations)
+
+    nodes = {node["id"]: node for node in network["nodes"]}
+    assert nodes["doi:10.1/seed"]["out_degree"] == 2
+    assert nodes["doi:10.1/seed"]["in_degree"] == 1
+    assert nodes["doi:10.1/r1"]["in_degree"] == 1
+    assert nodes["doi:10.1/r1"]["out_degree"] == 0
+    assert nodes["doi:10.1/c1"]["out_degree"] == 1
+    assert nodes["doi:10.1/c1"]["degree"] == 1
+
+
+def test_assign_communities_separates_disconnected_clusters():
+    from josc.graph import _assign_communities
+
+    nodes = {f"n{i}": {"id": f"n{i}"} for i in range(4)}
+    edges = [
+        {"source": "n0", "target": "n1", "type": "cocited", "weight": 2},
+        {"source": "n2", "target": "n3", "type": "cocited", "weight": 2},
+    ]
+
+    _assign_communities(nodes, edges)
+
+    assert nodes["n0"]["community"] == nodes["n1"]["community"]
+    assert nodes["n2"]["community"] == nodes["n3"]["community"]
+    assert nodes["n0"]["community"] != nodes["n2"]["community"]
+    assert {nodes["n0"]["community"], nodes["n2"]["community"]} == {0, 1}
+
+
+def test_network_reports_community_count_in_stats():
+    seed = _paper("10.1/seed", "Seed")
+    network = build_network(seed, [_paper("10.1/r1", "R1")], [])
+
+    assert network["stats"]["communities"] == 1
+    assert all("community" in node for node in network["nodes"])
+
+
+def test_build_network_links_seed_references_to_their_own_references():
+    seed = _paper("10.1/seed", "Seed")
+    ref = _paper("10.1/r1", "Ref one")
+    older_a = _paper("10.1/older-a", "Older A")
+    older_b = _paper("10.1/older-b", "Older B")
+
+    network = build_network(
+        seed,
+        [ref],
+        [],
+        reference_references={"doi:10.1/r1": [older_a, older_b]},
+    )
+
+    cites = {(e["source"], e["target"]) for e in network["edges"] if e["type"] == "cites"}
+    assert ("doi:10.1/r1", "doi:10.1/older-a") in cites
+    assert ("doi:10.1/r1", "doi:10.1/older-b") in cites
+    assert ("doi:10.1/seed", "doi:10.1/r1") in cites
+
+    node_ids = {node["id"] for node in network["nodes"]}
+    assert {"doi:10.1/older-a", "doi:10.1/older-b"} <= node_ids
+
+
+def test_second_hop_nodes_respect_the_node_budget():
+    seed = _paper("10.1/seed", "Seed")
+    refs = [_paper(f"10.1/r{i}", f"Ref {i}") for i in range(3)]
+    deeper = [_paper(f"10.1/d{i}", f"Deep {i}") for i in range(10)]
+
+    network = build_network(
+        seed,
+        refs,
+        [],
+        reference_references={f"doi:10.1/r{i}": deeper for i in range(3)},
+        max_nodes=6,
+    )
+
+    assert network["stats"]["nodes"] <= 6
+
+
 def test_to_graphml_is_valid_xml_with_nodes_and_edges():
     seed = _paper("10.1/seed", "Seed & <Friends>", year=2020, citations=7)
     network = build_network(seed, [_paper("10.1/r1", "Ref")], [])

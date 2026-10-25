@@ -1,4 +1,5 @@
 import asyncio
+import re
 from typing import Any, Dict, List, Optional
 
 from .graph import _node_id, build_network, compute_metrics as _compute_metrics
@@ -115,9 +116,67 @@ def _filter_kwargs(provider: ProviderBase, requested: Dict[str, Any]) -> Dict[st
 
 _SORT_FIELDS = {"citations": "citation_count", "year": "year", "title": "title"}
 
+# Boolean tokens carry no topical meaning, so they must not earn relevance.
+_OPERATOR_TOKENS = {"and", "or", "not"}
 
-def _sort_results(results: List[Dict[str, Any]], sort: Optional[str], order: str) -> None:
+
+def _query_tokens(query: str) -> List[str]:
+    return [
+        token
+        for token in re.findall(r"[a-z0-9]+", (query or "").lower())
+        if token not in _OPERATOR_TOKENS
+    ]
+
+
+def _relevance_score(item: Dict[str, Any], tokens: List[str]) -> int:
+    """Title matches outweigh abstract matches; each token counts once."""
+    title = (item.get("title") or "").lower()
+    abstract = (item.get("abstract") or "").lower()
+    score = 0
+    for token in tokens:
+        if token in title:
+            score += 3
+        elif token in abstract:
+            score += 1
+    return score
+
+
+def _filter_by_topic(
+    results: List[Dict[str, Any]], topic: Optional[str]
+) -> List[Dict[str, Any]]:
+    """Keep records whose ``topics`` contain ``topic`` as a case-insensitive substring.
+
+    Topic vocabularies are provider-specific (OpenAlex concepts, Crossref
+    subjects, PubMed MeSH), so there is no shared query parameter to push
+    down. Filtering the merged set keeps it a single pass with no extra
+    network requests.
+    """
+    needle = (topic or "").strip().lower()
+    if not needle:
+        return results
+    return [
+        item
+        for item in results
+        if any(needle in (value or "").lower() for value in item.get("topics") or [])
+    ]
+
+
+def _sort_results(
+    results: List[Dict[str, Any]],
+    sort: Optional[str],
+    order: str,
+    query: str = "",
+) -> None:
     """Sort paper dicts in place; records missing the key always come last."""
+    if sort == "relevance":
+        tokens = _query_tokens(query)
+        if not tokens:
+            return
+        results.sort(
+            key=lambda item: _relevance_score(item, tokens),
+            reverse=order != "asc",
+        )
+        return
     field = _SORT_FIELDS.get(sort or "")
     if not field:
         return
@@ -144,6 +203,7 @@ async def search_all(
     doi: Optional[str] = None,
     sort: Optional[str] = None,
     order: str = "desc",
+    topic: Optional[str] = None,
 ) -> Dict[str, Any]:
     active = _select(providers, sources, "supports_search")
     translated = {p.name: translate_query(query, p.name) for p in active}
@@ -163,7 +223,8 @@ async def search_all(
         for p in active
     }
     result = await _fan_out(calls, {"applied": applied, "ignored": ignored})
-    _sort_results(result["results"], sort, order)
+    result["results"] = _filter_by_topic(result["results"], topic)
+    _sort_results(result["results"], sort, order, query)
     report = operator_report([p.name for p in active], query)
     result["query_warnings"] = report["warnings"]
     result["query_translated"] = translated
@@ -337,12 +398,15 @@ async def build_citation_network(
     citing_limit: int = 10,
     max_nodes: int = 200,
     graph_format: str = "json",
+    reference_limit: int = 10,
 ) -> Dict[str, Any]:
     """Build a Connected-Papers-style network around one paper.
 
     Besides the seed's own references and citing papers, the reference lists
     of the top ``citing_limit`` citing papers are fetched so co-citation and
-    bibliographic coupling edges can be derived.
+    bibliographic coupling edges can be derived. The references of the seed's
+    own references are fetched too (up to ``reference_limit``), which is what
+    produces citation paths that do not pass through the seed.
     """
     resolved = await get_paper(providers, identifier)
     if not resolved.get("paper"):
@@ -379,8 +443,35 @@ async def build_citation_network(
                 continue
             citing_references[citing_id] = outcome[0]
 
+    # Second hop: expand the seed's own references so citation paths can form
+    # between non-seed nodes instead of every edge pointing back at the seed.
+    ref_targets = []
+    for ref in references[:reference_limit]:
+        related = _relation_identifier(ref)
+        if related:
+            ref_targets.append((_node_id(ref), related))
+
+    reference_references: Dict[str, List[Paper]] = {}
+    if ref_targets:
+        outcomes = await asyncio.gather(
+            *[
+                _fetch_papers(providers, related, limit, "supports_references", "references")
+                for _, related in ref_targets
+            ],
+            return_exceptions=True,
+        )
+        for (ref_id, _), outcome in zip(ref_targets, outcomes):
+            if isinstance(outcome, Exception):
+                continue
+            reference_references[ref_id] = outcome[0]
+
     network = build_network(
-        seed, references, citations, citing_references, max_nodes=max_nodes
+        seed,
+        references,
+        citations,
+        citing_references,
+        max_nodes=max_nodes,
+        reference_references=reference_references,
     )
     network["seed_paper"] = seed.to_dict()
     network["errors"] = {**ref_errors, **cite_errors}
@@ -388,6 +479,7 @@ async def build_citation_network(
         "references": ref_counts,
         "citations": cite_counts,
         "citing_references": len(citing_references),
+        "reference_references": len(reference_references),
     }
 
     if graph_format == "graphml":

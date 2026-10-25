@@ -23,6 +23,7 @@ def search_fingerprint(
     doi: Optional[str] = None,
     sort: Optional[str] = None,
     order: str = "desc",
+    topic: Optional[str] = None,
 ) -> str:
     """Hash everything that changes the result set.
 
@@ -43,6 +44,7 @@ def search_fingerprint(
         "doi": doi,
         "sort": sort,
         "order": order,
+        "topic": topic,
     }
     encoded = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()

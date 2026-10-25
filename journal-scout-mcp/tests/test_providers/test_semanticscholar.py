@@ -40,6 +40,35 @@ async def test_search_maps_data_to_paper():
         await client.aclose()
 
 
+async def test_search_keeps_tldr_separate_from_abstract():
+    # ``tldr`` was only used as an abstract fallback, so a one-line summary was
+    # lost whenever the record already had a full abstract.
+    payload = {
+        "data": [
+            {
+                "paperId": "p1",
+                "title": "Paper",
+                "abstract": "A long full abstract.",
+                "tldr": {"text": "A one-line summary."},
+                "year": 2021,
+                "authors": [],
+            }
+        ]
+    }
+
+    def handler(request):
+        return httpx.Response(200, json=payload)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = SemanticScholarProvider(client)
+    try:
+        paper = (await provider.search("paper", 5))[0]
+        assert paper.abstract == "A long full abstract."
+        assert paper.tldr == "A one-line summary."
+    finally:
+        await client.aclose()
+
+
 async def test_api_key_header_sent_when_configured(monkeypatch):
     captured = {}
 

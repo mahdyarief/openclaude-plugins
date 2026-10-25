@@ -1,6 +1,6 @@
 import json
 
-from josc.server import TOOL_NAMES, build_json
+from josc.server import TOOL_NAMES, _tool_list, build_json
 from josc.models import Paper
 from josc.providers.base import ProviderBase
 
@@ -39,6 +39,44 @@ def test_tool_names_count():
 async def test_dispatch_search_all():
     result = await build_json("search_all", {"query": "q"}, [SearchProvider(None)], None)
     assert result["results"][0]["title"] == "Hit"
+
+
+def test_search_all_schema_advertises_topic_filter():
+    schema = next(tool for tool in _tool_list() if tool.name == "search_all").inputSchema
+    assert "topic" in schema["properties"]
+
+
+class TopicProvider(ProviderBase):
+    name = "openalex"
+    supports_search = True
+
+    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False, offset=0):
+        return [
+            Paper(
+                doi="10.1/ml",
+                title="ML paper",
+                topics=["Machine Learning"],
+                sources=["openalex"],
+            )
+        ]
+
+
+async def test_dispatch_search_all_forwards_topic_filter():
+    result = await build_json(
+        "search_all",
+        {"query": "q", "topic": "machine learning"},
+        [TopicProvider(None)],
+        None,
+    )
+    assert [paper["doi"] for paper in result["results"]] == ["10.1/ml"]
+
+    filtered_out = await build_json(
+        "search_all",
+        {"query": "q", "topic": "databases"},
+        [TopicProvider(None)],
+        None,
+    )
+    assert filtered_out["results"] == []
 
 
 async def test_dispatch_per_source_search():
@@ -90,3 +128,41 @@ async def test_dispatch_unknown_tool_raises():
         assert "Unknown tool" in str(e)
     else:
         raise AssertionError("expected ValueError")
+
+
+class NetworkSeedProvider(ProviderBase):
+    name = "openalex"
+    supports_search = False
+    supports_references = True
+
+    def __init__(self, fetcher):
+        super().__init__(fetcher)
+        self.reference_calls = []
+
+    async def get(self, identifier):
+        return Paper(doi="10.1/seed", title="Seed", year=2020, sources=["openalex"])
+
+    async def references(self, identifier, limit):
+        self.reference_calls.append(identifier)
+        if identifier == "10.1/seed":
+            return [Paper(doi="10.1/r1", title="Ref one", year=2019, sources=["openalex"])]
+        return [Paper(doi="10.1/deep", title="Deep ref", year=2018, sources=["openalex"])]
+
+    async def citations(self, identifier, limit):
+        return []
+
+
+async def test_dispatch_build_citation_network_forwards_reference_limit():
+    """The MCP schema exposes reference_limit; the dispatcher must honour it."""
+    provider = NetworkSeedProvider(None)
+
+    network = await build_json(
+        "build_citation_network",
+        {"identifier": "10.1/seed", "reference_limit": 0},
+        [provider],
+        None,
+    )
+
+    assert provider.reference_calls == ["10.1/seed"]
+    assert network["counts"]["reference_references"] == 0
+    assert network["stats"]["nodes"] == 2

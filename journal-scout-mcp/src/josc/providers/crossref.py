@@ -16,6 +16,22 @@ class CrossrefProvider(ProviderBase):
     supports_filters = frozenset({"author", "venue", "affiliation", "issn", "doi"})
 
     @staticmethod
+    def _title(item) -> str:
+        """Join ``title`` and ``subtitle``; standards carry the part name there.
+
+        BSI standards all share the bare title "Data quality" and only differ in
+        ``subtitle`` ("Part 82: …", "Sensor data: …"), so dropping it made every
+        row look identical.
+        """
+        title = (first_of(item.get("title")) or "").strip()
+        subtitle = (first_of(item.get("subtitle")) or "").strip()
+        if not subtitle or subtitle.lower() in title.lower():
+            return title
+        if not title:
+            return subtitle
+        return f"{title}: {subtitle}"
+
+    @staticmethod
     def _to_paper(item):
         authors = []
         for a in item.get("author", []) or []:
@@ -23,24 +39,54 @@ class CrossrefProvider(ProviderBase):
             if name:
                 authors.append(name)
         year = None
-        for key in ("published", "published-print", "published-online"):
+        # Standards leave ``issued`` empty and only fill ``approved``/``created``,
+        # so the chain has to keep looking rather than stopping at the first key.
+        for key in (
+            "published",
+            "published-print",
+            "published-online",
+            "issued",
+            "approved",
+            "created",
+        ):
             parts = (item.get(key) or {}).get("date-parts") or []
-            if parts and parts[0]:
+            if parts and parts[0] and parts[0][0] is not None:
                 year = parse_year(parts[0][0])
-                break
+                if year is not None:
+                    break
         doi = normalize_doi(item.get("DOI"))
+        # ``update-to`` lists notices applied to this work; a retraction is the
+        # one that changes how the record should be read.
+        updates = item.get("update-to") or []
+        is_retracted = any(
+            (update.get("type") or "").lower() == "retraction" for update in updates
+        )
+        funders = []
+        for funder in item.get("funder") or []:
+            name = funder.get("name")
+            if name and name not in funders:
+                funders.append(name)
+        license_url = None
+        for entry in item.get("license") or []:
+            if entry.get("URL"):
+                license_url = entry["URL"]
+                break
         return Paper(
             doi=doi,
-            title=first_of(item.get("title")) or "",
+            title=CrossrefProvider._title(item),
             abstract=strip_jats(item.get("abstract")),
             year=year,
             authors=authors,
-            venue=first_of(item.get("container-title")),
+            venue=first_of(item.get("container-title")) or item.get("publisher"),
             citation_count=item.get("is-referenced-by-count"),
             url=item.get("URL"),
             type=item.get("type"),
             sources=["crossref"],
             ids={"crossref": item.get("DOI")} if item.get("DOI") else {},
+            is_retracted=is_retracted or None,
+            topics=list(item.get("subject") or []),
+            funders=funders,
+            license=license_url,
         )
 
     def _items_to_papers(self, data) -> List[Paper]:

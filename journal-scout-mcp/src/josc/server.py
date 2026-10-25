@@ -112,6 +112,13 @@ def _tool_list() -> List[types.Tool]:
                     "sources": {"type": "array", "items": {"type": "string"}},
                     "sort": {"type": "string", "enum": ["relevance", "citations", "year", "title"], "description": "Sort the merged result set."},
                     "order": {"type": "string", "enum": ["asc", "desc"], "default": "desc"},
+                    "topic": {
+                        "type": "string",
+                        "description": (
+                            "Keep only results whose topics contain this text "
+                            "(case-insensitive substring, applied after merge)."
+                        ),
+                    },
                     **_SEARCH_FILTERS,
                 },
                 "required": ["query"],
@@ -191,6 +198,7 @@ def _tool_list() -> List[types.Tool]:
                     "identifier": {"type": "string"},
                     "limit": {"type": "integer", "default": 20, "description": "Max references and citations fetched per source."},
                     "citing_limit": {"type": "integer", "default": 10, "description": "How many citing papers get their own reference lists fetched for coupling/co-citation."},
+                    "reference_limit": {"type": "integer", "default": 10, "description": "How many seed references get their own reference lists fetched for the second hop."},
                     "max_nodes": {"type": "integer", "default": 200},
                     "graph_format": {"type": "string", "enum": ["json", "graphml"], "default": "json"},
                 },
@@ -272,6 +280,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             doi=arguments.get("doi"),
             sort=arguments.get("sort"),
             order=arguments.get("order", "desc"),
+            topic=arguments.get("topic"),
         )
     if name == "get_paper":
         return await aggregator.get_paper(
@@ -317,6 +326,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             citing_limit=arguments.get("citing_limit", 10),
             max_nodes=arguments.get("max_nodes", 200),
             graph_format=arguments.get("graph_format", "json"),
+            reference_limit=arguments.get("reference_limit", 10),
         )
     if name == "compute_metrics":
         return await aggregator.compute_metrics(

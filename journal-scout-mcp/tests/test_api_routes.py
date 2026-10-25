@@ -366,6 +366,44 @@ async def test_citations_route_passes_source_to_aggregator(monkeypatch, with_pro
     assert seen == {"identifier": "6420654", "sources": ["scopus"]}
 
 
+async def test_search_route_passes_topic_filter_to_aggregator(
+    monkeypatch, with_providers
+):
+    seen = {}
+
+    async def fake_search(providers, query, **kwargs):
+        seen.update(kwargs)
+        return {"results": [], "errors": {}, "counts": {}}
+
+    monkeypatch.setattr(api.aggregator, "search_all", fake_search)
+    with_providers([FakeProvider("openalex")])
+
+    req = FakeRequest(query_params={"query": "q", "topic": "machine learning"})
+    response = await api.search(req)
+
+    assert response.status_code == 200
+    assert seen["topic"] == "machine learning"
+
+
+async def test_search_route_fingerprint_includes_topic(monkeypatch, with_providers):
+    seen = []
+
+    async def fake_search(providers, query, **kwargs):
+        return {"results": [], "errors": {}, "counts": {}}
+
+    async def fake_remember(**kwargs):
+        seen.append(kwargs["fingerprint"])
+
+    monkeypatch.setattr(api.aggregator, "search_all", fake_search)
+    monkeypatch.setattr(api.history, "_remember", fake_remember)
+    with_providers([FakeProvider("openalex")])
+
+    await api.search(FakeRequest(query_params={"query": "q"}))
+    await api.search(FakeRequest(query_params={"query": "q", "topic": "databases"}))
+
+    assert seen[0] != seen[1]
+
+
 async def test_search_route_records_history_with_a_fingerprint(
     monkeypatch, with_providers
 ):

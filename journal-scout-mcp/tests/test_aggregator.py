@@ -256,6 +256,51 @@ async def test_get_references_routes_on_references_capability():
     assert result["results"][0]["doi"] == "10.1/shared"
 
 
+class TwoHopProvider(ProviderBase):
+    """Resolves a seed, its references, and the references of one reference."""
+
+    name = "twohop"
+    supports_search = False
+    supports_citations = True
+    supports_references = True
+
+    def __init__(self):
+        super().__init__(None)
+        self.reference_calls = []
+
+    async def get(self, identifier):
+        return Paper(doi="10.1/seed", title="Seed", year=2020, sources=["twohop"])
+
+    async def references(self, identifier, limit):
+        self.reference_calls.append(identifier)
+        if identifier == "10.1/seed":
+            return [
+                Paper(doi="10.1/r1", title="Ref one", sources=["twohop"]),
+                Paper(doi="10.1/r2", title="Ref two", sources=["twohop"]),
+            ]
+        if identifier == "10.1/r1":
+            return [Paper(doi="10.1/deep", title="Deep", sources=["twohop"])]
+        return []
+
+    async def citations(self, identifier, limit):
+        return []
+
+
+async def test_build_citation_network_fetches_second_hop_references():
+    """The seed's references must be expanded, or the graph is a star."""
+    provider = TwoHopProvider()
+
+    network = await build_citation_network(
+        [provider], "10.1/seed", limit=5, citing_limit=2
+    )
+
+    assert "10.1/r1" in provider.reference_calls
+    assert "10.1/r2" in provider.reference_calls
+    cites = {(e["source"], e["target"]) for e in network["edges"] if e["type"] == "cites"}
+    assert ("doi:10.1/r1", "doi:10.1/deep") in cites
+    assert network["counts"]["reference_references"] == 2
+
+
 async def test_build_citation_network_produces_edges_and_stats():
     network = await build_citation_network(
         [NetworkProvider(None)], "10.1/seed", limit=5, citing_limit=2
@@ -464,3 +509,107 @@ async def test_search_all_reports_tech_only_alongside_field_filters():
 
     assert result["filters_applied"] == {"tech": ["tech_only"], "filtered": ["author"]}
     assert result["filters_ignored"] == []
+
+
+class MultiProvider(ProviderBase):
+    name = "multi"
+    supports_search = True
+
+    def __init__(self, fetcher, papers):
+        super().__init__(fetcher)
+        self.papers = papers
+
+    async def search(self, query, limit, year_from=None, year_to=None, tech_only=False, offset=0):
+        return list(self.papers)
+
+
+async def test_search_all_sort_relevance_ranks_title_match_above_abstract_match():
+    # The abstract-only title sorts alphabetically first, so this fails unless
+    # relevance scoring really runs instead of the default title ordering.
+    abstract_only = Paper(
+        doi="10.1/abs",
+        title="A survey of things",
+        abstract="A study about data quality in practice.",
+        sources=["multi"],
+    )
+    title_match = Paper(
+        doi="10.1/title",
+        title="Data quality in practice",
+        abstract=None,
+        sources=["multi"],
+    )
+    provider = MultiProvider(None, [abstract_only, title_match])
+
+    result = await search_all([provider], "data quality", sort="relevance")
+
+    assert [paper["doi"] for paper in result["results"]] == ["10.1/title", "10.1/abs"]
+
+
+async def test_search_all_sort_relevance_ignores_boolean_operators():
+    operator_only = Paper(
+        doi="10.1/op",
+        title="And or not",
+        abstract=None,
+        sources=["multi"],
+    )
+    match = Paper(
+        doi="10.1/match",
+        title="Data quality",
+        abstract=None,
+        sources=["multi"],
+    )
+    provider = MultiProvider(None, [operator_only, match])
+
+    result = await search_all([provider], "data AND quality", sort="relevance")
+
+    assert [paper["doi"] for paper in result["results"]] == ["10.1/match", "10.1/op"]
+
+
+async def test_search_all_filters_by_topic_after_merge():
+    """Topic vocabularies differ per provider, so the filter runs locally."""
+    provider = MultiProvider(
+        None,
+        [
+            Paper(doi="10.1/ml", title="ML", topics=["Machine Learning"], sources=["multi"]),
+            Paper(doi="10.1/db", title="DB", topics=["Databases"], sources=["multi"]),
+            Paper(doi="10.1/none", title="No topic", sources=["multi"]),
+        ],
+    )
+
+    result = await search_all([provider], "q", topic="machine learning")
+
+    assert [paper["doi"] for paper in result["results"]] == ["10.1/ml"]
+    # Local filtering is not a provider capability, so it is neither applied
+    # nor ignored at the provider level.
+    assert result["filters_applied"] == {}
+    assert result["filters_ignored"] == []
+
+
+async def test_search_all_topic_filter_matches_any_topic_case_insensitively():
+    provider = MultiProvider(
+        None,
+        [
+            Paper(
+                doi="10.1/a",
+                title="A",
+                topics=["Information Retrieval", "Data Quality"],
+                sources=["multi"],
+            ),
+            Paper(doi="10.1/b", title="B", topics=["Databases"], sources=["multi"]),
+        ],
+    )
+
+    result = await search_all([provider], "q", topic="data quality")
+
+    assert [paper["doi"] for paper in result["results"]] == ["10.1/a"]
+
+
+async def test_search_all_without_topic_filter_keeps_every_record():
+    provider = MultiProvider(
+        None,
+        [Paper(doi="10.1/a", title="A", topics=[], sources=["multi"])],
+    )
+
+    result = await search_all([provider], "q")
+
+    assert len(result["results"]) == 1

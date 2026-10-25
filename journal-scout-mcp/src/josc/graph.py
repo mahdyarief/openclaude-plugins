@@ -49,6 +49,10 @@ def _node(paper: Paper, kind: str, node_id: Optional[str] = None) -> Dict[str, A
         "venue": paper.venue,
         "citation_count": paper.citation_count,
         "url": paper.url,
+        "abstract": paper.abstract,
+        "pdf_url": paper.pdf_url,
+        "is_open_access": paper.is_open_access,
+        "type": paper.type,
         "sources": paper.sources,
     }
 
@@ -425,6 +429,56 @@ def _representatives(
     return best
 
 
+def _assign_communities(
+    nodes: Dict[str, Dict[str, Any]],
+    edges: Sequence[Dict[str, Any]],
+    max_iterations: int = 20,
+) -> int:
+    """Label-propagation clustering; writes ``community`` on every node.
+
+    Citation graphs are sparse and unweighted enough that label propagation
+    gives useful research clusters cheaply. Ties prefer the node's current
+    label so a two-node edge cannot oscillate forever, and labels are
+    renumbered by first appearance to keep the output deterministic.
+    Returns the number of distinct communities found.
+    """
+    adjacency: Dict[str, List[Tuple[str, int]]] = {node_id: [] for node_id in nodes}
+    for edge in edges:
+        source, target = edge["source"], edge["target"]
+        weight = edge.get("weight") or 1
+        if source in adjacency and target in adjacency:
+            adjacency[source].append((target, weight))
+            adjacency[target].append((source, weight))
+
+    labels: Dict[str, str] = {node_id: node_id for node_id in nodes}
+    for _ in range(max_iterations):
+        changed = False
+        for node_id in nodes:
+            scores: Dict[str, int] = {}
+            for neighbour, weight in adjacency[node_id]:
+                label = labels[neighbour]
+                scores[label] = scores.get(label, 0) + weight
+            if not scores:
+                continue
+            best = max(
+                scores.items(),
+                key=lambda item: (item[1], item[0] == labels[node_id], item[0]),
+            )[0]
+            if best != labels[node_id]:
+                labels[node_id] = best
+                changed = True
+        if not changed:
+            break
+
+    renumbered: Dict[str, int] = {}
+    for node_id in nodes:
+        label = labels[node_id]
+        if label not in renumbered:
+            renumbered[label] = len(renumbered)
+        nodes[node_id]["community"] = renumbered[label]
+    return len(renumbered)
+
+
 def build_network(
     seed: Paper,
     references: Sequence[Paper],
@@ -433,6 +487,7 @@ def build_network(
     max_nodes: int = 200,
     cocitation_min_weight: int = 2,
     cocitation_max_edges: int = 300,
+    reference_references: Optional[Dict[str, Sequence[Paper]]] = None,
 ) -> Dict[str, Any]:
     """Assemble a Connected-Papers-style network around ``seed``.
 
@@ -456,8 +511,16 @@ def build_network(
     citing_lists: List[Sequence[Paper]] = [
         (citing_references or {}).get(_node_id(citing)) or [] for citing in citations
     ]
+    # Second hop: the references of the seed's own references. Fetching these
+    # is what turns a star into a chain (A -> B -> C); without them every
+    # non-seed node can only ever touch the seed.
+    second_hop_lists: List[Sequence[Paper]] = [
+        (reference_references or {}).get(_node_id(ref)) or [] for ref in references
+    ]
     participants: List[Paper] = [seed, *references, *citations]
     for refs in citing_lists:
+        participants.extend(refs)
+    for refs in second_hop_lists:
         participants.extend(refs)
     canonical = _canonical_ids(participants)
     representatives = _representatives(participants, canonical)
@@ -477,6 +540,25 @@ def build_network(
             break
         citing_id = _add_node(nodes, citing, "citation", canonical[id(citing)])
         _add_edge(edges, citing_id, seed_id, "cites")
+
+    if reference_references:
+        # Second-hop citation links: ref -> its own references. This is what
+        # creates paths that do not pass through the seed.
+        for ref, refs in zip(references, second_hop_lists):
+            if not refs:
+                continue
+            ref_id = canonical[id(ref)]
+            if ref_id not in nodes:
+                continue
+            for deeper in refs:
+                deeper_id = canonical[id(deeper)]
+                if deeper_id == ref_id:
+                    continue
+                if deeper_id not in nodes:
+                    if len(nodes) >= max_nodes:
+                        continue
+                    _add_node(nodes, deeper, "reference", deeper_id)
+                _add_edge(edges, ref_id, deeper_id, "cites")
 
     if citing_references:
         # Co-citation counts across the reference lists of citing papers.
@@ -529,13 +611,29 @@ def build_network(
             if left in kept and right in kept:
                 _add_edge(edges, left, right, "cocited", weight)
 
+    edge_list = [
+        {"source": source, "target": target, "type": kind, "weight": weight}
+        for (source, target, kind), weight in edges.items()
+    ]
+
+    in_degree: Dict[str, int] = {node_id: 0 for node_id in nodes}
+    out_degree: Dict[str, int] = {node_id: 0 for node_id in nodes}
+    for edge in edge_list:
+        if edge["source"] in out_degree:
+            out_degree[edge["source"]] += 1
+        if edge["target"] in in_degree:
+            in_degree[edge["target"]] += 1
+    for node_id, node in nodes.items():
+        node["in_degree"] = in_degree[node_id]
+        node["out_degree"] = out_degree[node_id]
+        node["degree"] = in_degree[node_id] + out_degree[node_id]
+
+    communities = _assign_communities(nodes, edge_list)
+
     return {
         "seed": seed_id,
         "nodes": list(nodes.values()),
-        "edges": [
-            {"source": source, "target": target, "type": kind, "weight": weight}
-            for (source, target, kind), weight in edges.items()
-        ],
+        "edges": edge_list,
         "stats": {
             "nodes": len(nodes),
             "edges": len(edges),
@@ -543,6 +641,7 @@ def build_network(
             "citations": len(citations),
             "coupled_edges": sum(1 for _, _, k in edges if k == "coupled"),
             "cocited_edges": sum(1 for _, _, k in edges if k == "cocited"),
+            "communities": communities,
         },
     }
 

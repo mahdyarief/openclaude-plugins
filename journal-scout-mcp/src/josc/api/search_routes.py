@@ -72,8 +72,9 @@ async def search(request: Request) -> JSONResponse:
     doi = _text(request, "doi")
     sort = _text(request, "sort")
     order = _text(request, "order") or "desc"
+    topic = _text(request, "topic")
     key = ("search", query, limit_per_source, year_from, year_to, tech_only, sources,
-           offset, affiliation, issn, orcid, doi, sort, order)
+           offset, affiliation, issn, orcid, doi, sort, order, topic)
     offline = _flag(request, "offline")
     try:
         payload = await _cached(
@@ -93,6 +94,7 @@ async def search(request: Request) -> JSONResponse:
                 doi=doi,
                 sort=sort,
                 order=order,
+                topic=topic,
             ),
             offline=offline,
         )
@@ -100,7 +102,7 @@ async def search(request: Request) -> JSONResponse:
         return _error(exc)
     if not offline:
         filters = {"affiliation": affiliation, "issn": issn,
-                   "orcid": orcid, "doi": doi}
+                   "orcid": orcid, "doi": doi, "topic": topic}
         fingerprint = history.search_fingerprint(
             query=query,
             sources=sources,
@@ -115,6 +117,7 @@ async def search(request: Request) -> JSONResponse:
             doi=doi,
             sort=sort,
             order=order,
+            topic=topic,
         )
         await history._remember(
             query=query,
@@ -218,8 +221,17 @@ async def network(request: Request) -> Response:
     limit = _int(request, "limit", 20)
     citing_limit = _int(request, "citing_limit", 10)
     max_nodes = _int(request, "max_nodes", 200)
+    reference_limit = _int(request, "reference_limit", 10)
     graph_format = request.query_params.get("format", "json")
-    key = ("network", identifier, limit, citing_limit, max_nodes, graph_format)
+    key = (
+        "network",
+        identifier,
+        limit,
+        citing_limit,
+        max_nodes,
+        reference_limit,
+        graph_format,
+    )
     offline = _flag(request, "offline")
     try:
         payload = await _cached(
@@ -231,6 +243,7 @@ async def network(request: Request) -> Response:
                 citing_limit=citing_limit,
                 max_nodes=max_nodes,
                 graph_format=graph_format,
+                reference_limit=reference_limit,
             ),
             offline=offline,
         )

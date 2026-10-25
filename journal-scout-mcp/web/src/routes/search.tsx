@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import { ExportMenu } from "../components/ExportMenu";
 import { PaperDrawer } from "../components/PaperDrawer";
@@ -59,11 +59,12 @@ export function SearchPage() {
   const [issn, setIssn] = useState(params.issn ?? "");
   const [orcid, setOrcid] = useState(params.orcid ?? "");
   const [doi, setDoi] = useState(params.doi ?? "");
+  const [topicFilter, setTopicFilter] = useState("");
   const [data, setData] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [sort, setSort] = useState<"" | "citations" | "year" | "title">("");
+  const [sort, setSort] = useState<"relevance" | "citations" | "year" | "title">("relevance");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [warningsDismissed, setWarningsDismissed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -117,6 +118,7 @@ export function SearchPage() {
     setOrcid("");
     setDoi("");
     setSelectedSources([]);
+    setTopicFilter("");
   }
 
   // Counts only the advanced filters, so the badge on the Filters button
@@ -137,6 +139,7 @@ export function SearchPage() {
     setLoading(true);
     setError(null);
     setSelectedIds(new Set());
+    setTopicFilter("");
     try {
       setData(await searchPapers(term, options));
       setWarningsDismissed(false);
@@ -194,6 +197,32 @@ export function SearchPage() {
   const selectedPapers = results.filter((paper, index) =>
     selectedIds.has(paperKey(paper, index)),
   );
+
+  // Topic vocabularies differ per provider, so this filter runs locally on the
+  // merged set. It never issues another request: changing it is instant.
+  const availableTopics = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const paper of results) {
+      for (const topic of paper.topics ?? []) {
+        const value = topic.trim();
+        if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+    );
+  }, [results]);
+
+  const topicNeedle = topicFilter.trim().toLowerCase();
+  const visibleRows = useMemo(() => {
+    const indexed = results.map((paper, index) => ({ paper, index }));
+    if (!topicNeedle) return indexed;
+    return indexed.filter(({ paper }) =>
+      (paper.topics ?? []).some((topic) =>
+        topic.toLowerCase().includes(topicNeedle),
+      ),
+    );
+  }, [results, topicNeedle]);
 
   const paramQuery = params.q ?? "";
   const paramSources = params.sources ?? "";
@@ -283,11 +312,11 @@ export function SearchPage() {
           <Select
             value={sort}
             onChange={(event) =>
-              setSort(event.target.value as "" | "citations" | "year" | "title")
+              setSort(event.target.value as "relevance" | "citations" | "year" | "title")
             }
             aria-label="Sort results"
           >
-            <option value="">Relevance</option>
+            <option value="relevance">Relevance</option>
             <option value="citations">Citations</option>
             <option value="year">Year</option>
             <option value="title">Title</option>
@@ -517,6 +546,44 @@ export function SearchPage() {
             )}
           </div>
 
+          {availableTopics.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+              <label className="flex items-center gap-1.5">
+                <span className="font-medium uppercase tracking-wide">Topic</span>
+                <Input
+                  value={topicFilter}
+                  onChange={(event) => setTopicFilter(event.target.value)}
+                  placeholder="filter by topic…"
+                  controlSize="sm"
+                  className="w-48"
+                  aria-label="Filter results by topic"
+                />
+              </label>
+              {topicNeedle ? (
+                <>
+                  <Chip className="text-slate-200">
+                    {visibleRows.length} of {results.length} match
+                  </Chip>
+                  <Button variant="ghost" size="sm" onClick={() => setTopicFilter("")}>
+                    Clear
+                  </Button>
+                </>
+              ) : (
+                availableTopics.slice(0, 6).map(([topic, count]) => (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => setTopicFilter(topic)}
+                    className="touch-target rounded border border-slate-700 bg-slate-800/60 px-1.5 py-0.5 text-[10px] text-slate-300 transition-colors hover:border-sky-600 hover:text-sky-200"
+                    title={`Filter by "${topic}" (${count})`}
+                  >
+                    {topic} <span className="text-slate-500">{count}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+
           {(data.filters_ignored?.length ?? 0) > 0 && (
             <Alert tone="warn">
               <strong>Filters ignored:</strong>{" "}
@@ -567,16 +634,27 @@ export function SearchPage() {
 
           {data.results.length === 0 ? (
             <p className="m-0 text-[13px] text-slate-400">No results.</p>
+          ) : visibleRows.length === 0 ? (
+            <p className="m-0 text-[13px] text-slate-400">
+              No results match the topic filter.
+            </p>
           ) : (
             <PaperTable
-              rows={data.results.map((paper, index) => ({
+              rows={visibleRows.map(({ paper, index }) => ({
                 paper,
                 key: paperKey(paper, index),
               }))}
               selectedIds={selectedIds}
               onToggle={toggleSelected}
               onOpen={setDrawerPaper}
-              activeKey={drawerPaper ? paperKey(drawerPaper, data.results.indexOf(drawerPaper)) : null}
+              activeKey={
+                drawerPaper
+                  ? paperKey(
+                      drawerPaper,
+                      results.indexOf(drawerPaper),
+                    )
+                  : null
+              }
             />
           )}
         </div>

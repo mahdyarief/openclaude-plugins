@@ -12,6 +12,17 @@ export type Paper = {
   type: string | null;
   sources: string[];
   ids: Record<string, string>;
+  is_retracted?: boolean | null;
+  cited_by_percentile?: number | null;
+  citations_by_year?: Record<string, number>;
+  topics?: string[];
+  keywords?: string[];
+  institutions?: string[];
+  funders?: string[];
+  publication_types?: string[];
+  language?: string | null;
+  license?: string | null;
+  tldr?: string | null;
 };
 
 export type RelationResponse = {
@@ -40,7 +51,15 @@ export type GraphNode = {
   venue: string | null;
   citation_count: number | null;
   url: string | null;
+  abstract?: string | null;
+  pdf_url?: string | null;
+  is_open_access?: boolean | null;
+  type?: string | null;
   sources: string[];
+  in_degree?: number;
+  out_degree?: number;
+  degree?: number;
+  community?: number;
 };
 
 export type GraphEdge = {
@@ -61,6 +80,7 @@ export type NetworkResponse = {
     citations: number;
     coupled_edges: number;
     cocited_edges: number;
+    communities?: number;
   };
   seed_paper?: Paper;
   errors?: Record<string, string>;

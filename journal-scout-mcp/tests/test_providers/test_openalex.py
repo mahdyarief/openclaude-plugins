@@ -56,6 +56,52 @@ async def test_get_normalizes_doi_url_to_same_request_as_bare_doi():
         await client.aclose()
 
 
+async def test_search_parses_quality_and_trend_fields_already_in_payload():
+    # OpenAlex already sends these; the parser used to discard them, so the
+    # UI had no way to flag retractions, rank or show a citation trend.
+    payload = {
+        "results": [
+            {
+                "id": "https://openalex.org/W1",
+                "doi": "https://doi.org/10.1/x",
+                "title": "Paper",
+                "publication_year": 2020,
+                "cited_by_count": 50,
+                "is_retracted": True,
+                "cited_by_percentile_year": {"min": 95, "max": 99},
+                "counts_by_year": [
+                    {"year": 2020, "cited_by_count": 5},
+                    {"year": 2021, "cited_by_count": 20},
+                ],
+                "primary_topic": {"display_name": "Machine Learning"},
+                "language": "en",
+                "authorships": [
+                    {
+                        "author": {"display_name": "A Author"},
+                        "institutions": [{"display_name": "MIT"}],
+                    }
+                ],
+            }
+        ]
+    }
+
+    def handler(request):
+        return httpx.Response(200, json=payload)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = OpenAlexProvider(client)
+    try:
+        paper = (await provider.search("paper", 5))[0]
+        assert paper.is_retracted is True
+        assert paper.cited_by_percentile == 95
+        assert paper.citations_by_year == {2020: 5, 2021: 20}
+        assert paper.topics == ["Machine Learning"]
+        assert paper.institutions == ["MIT"]
+        assert paper.language == "en"
+    finally:
+        await client.aclose()
+
+
 async def test_citations_resolves_doi_then_queries_cites_filter():
     captured = []
 

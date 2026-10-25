@@ -45,10 +45,11 @@ class SemanticScholarProvider(ProviderBase):
             ids["doi"] = doi
         if external.get("ArXiv"):
             ids["arxiv"] = external["ArXiv"]
+        tldr = (item.get("tldr") or {}).get("text")
         return Paper(
             doi=doi,
             title=item.get("title") or "",
-            abstract=item.get("abstract") or (item.get("tldr") or {}).get("text"),
+            abstract=item.get("abstract") or tldr,
             year=parse_year(item.get("year")),
             authors=authors,
             venue=item.get("venue") or None,
@@ -59,6 +60,7 @@ class SemanticScholarProvider(ProviderBase):
             type=", ".join(item.get("publicationTypes") or []) or None,
             sources=["semanticscholar"],
             ids=ids,
+            tldr=tldr,
         )
 
     @staticmethod

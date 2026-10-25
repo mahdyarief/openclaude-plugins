@@ -84,6 +84,34 @@ def _longest(*values: Optional[str]) -> Optional[str]:
     return max(present, key=len) if present else None
 
 
+def _union(*lists: Sequence[str]) -> List[str]:
+    """Order-preserving union, so each provider contributes what it knows."""
+    merged: List[str] = []
+    for values in lists:
+        for value in values:
+            if value and value not in merged:
+                merged.append(value)
+    return merged
+
+
+def _merge_citation_counts(*maps: Dict[int, int]) -> Dict[int, int]:
+    merged: Dict[int, int] = {}
+    for mapping in maps:
+        for year, count in mapping.items():
+            merged[year] = max(merged.get(year, 0), count)
+    return merged
+
+
+def _merge_retracted(a: Optional[bool], b: Optional[bool]) -> Optional[bool]:
+    # A retraction notice from any source is authoritative; absence of a flag
+    # elsewhere must not clear it.
+    if a or b:
+        return True
+    if a is False or b is False:
+        return False
+    return None
+
+
 def merge_two(a: Paper, b: Paper) -> Paper:
     preferred, fallback = _ranked(a, b)
     counts = [c for c in (a.citation_count, b.citation_count) if c is not None]
@@ -107,6 +135,21 @@ def merge_two(a: Paper, b: Paper) -> Paper:
         type=_pick_text(preferred.type, fallback.type),
         sources=sources,
         ids=ids,
+        is_retracted=_merge_retracted(a.is_retracted, b.is_retracted),
+        cited_by_percentile=(
+            preferred.cited_by_percentile
+            if preferred.cited_by_percentile is not None
+            else fallback.cited_by_percentile
+        ),
+        citations_by_year=_merge_citation_counts(a.citations_by_year, b.citations_by_year),
+        topics=_union(a.topics, b.topics),
+        keywords=_union(a.keywords, b.keywords),
+        institutions=_union(a.institutions, b.institutions),
+        funders=_union(a.funders, b.funders),
+        publication_types=_union(a.publication_types, b.publication_types),
+        language=_pick_text(preferred.language, fallback.language),
+        license=_pick_text(preferred.license, fallback.license),
+        tldr=_pick_text(preferred.tldr, fallback.tldr),
     )
 
 

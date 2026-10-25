@@ -49,6 +49,7 @@ export type SearchOptions = {
   doi?: string;
   sort?: "relevance" | "citations" | "year" | "title";
   order?: "asc" | "desc";
+  topic?: string;
 };
 
 export function searchPapers(query: string, options: SearchOptions = {}): Promise<SearchResponse> {
@@ -67,6 +68,7 @@ export function searchPapers(query: string, options: SearchOptions = {}): Promis
     doi: options.doi,
     sort: options.sort,
     order: options.order,
+    topic: options.topic,
   });
 }
 
@@ -82,7 +84,7 @@ export function fetchPaper(
 }
 
 export function fetchRelations(
-  kind: "related" | "citations",
+  kind: "related" | "citations" | "references",
   identifier: string,
   source?: string,
   limit = 10,

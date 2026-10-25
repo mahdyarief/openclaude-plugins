@@ -69,6 +69,40 @@ def test_merge_prefers_longest_abstract():
     assert merge_two(a, b).abstract == "a much longer abstract body"
 
 
+def test_merge_keeps_enrichment_fields_from_whichever_source_has_them():
+    # Enrichment fields arrive from different providers: a retraction flag and a
+    # percentile only from OpenAlex, topics and keywords only from PubMed. The
+    # merge must not drop the one that the preferred record lacks.
+    preferred = Paper(
+        doi="10.1/x",
+        title="P",
+        sources=["scopus"],
+        is_retracted=False,
+        topics=["Scopus Subject"],
+    )
+    fallback = Paper(
+        doi="10.1/x",
+        title="P",
+        sources=["openalex"],
+        is_retracted=True,
+        cited_by_percentile=97,
+        keywords=["governance"],
+        language="en",
+    )
+    merged = merge_two(preferred, fallback)
+    assert merged.cited_by_percentile == 97
+    assert merged.keywords == ["governance"]
+    assert merged.language == "en"
+
+
+def test_merge_unions_topics_and_keeps_true_retraction_flag():
+    a = Paper(doi="10.1/x", title="P", sources=["crossref"], is_retracted=False, topics=["Computer Science"])
+    b = Paper(doi="10.1/x", title="P", sources=["openalex"], is_retracted=True, topics=["Machine Learning"])
+    merged = merge_two(a, b)
+    assert merged.is_retracted is True
+    assert merged.topics == ["Computer Science", "Machine Learning"]
+
+
 def test_merge_folds_doiless_record_into_its_doi_twin_by_title_author():
     # The arxiv copy lacks a DOI but shares title+first author with the
     # DOI-bearing record, so it must fold in instead of appearing twice.

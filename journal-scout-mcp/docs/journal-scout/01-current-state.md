@@ -40,6 +40,12 @@ Skema pencarian (`src/josc/server.py:41-62`) punya:
 diteruskan ke provider yang mendeklarasikannya di `supports_filters`; lihat
 `02-provider-matrix.md`.
 
+`search_all` juga menerima `topic` — filter lokal pasca-merge yang menjaga
+hasil yang `topics`-nya mengandung teks tersebut (substring, case-insensitive).
+Filter ini tidak diteruskan ke provider karena kosakata topik tiap provider
+berbeda (OpenAlex concept, Crossref subject, PubMed MeSH); lihat
+`aggregator._filter_by_topic` (`src/josc/aggregator.py`).
+
 Tool `get_paper` menerima `identifier` dan `sources` (array opsional).
 `sources` membatasi provider yang dihubungi: identifier numerik telanjang
 ambigu karena Semantic Scholar membaca digit apa pun sebagai `CorpusId`,
@@ -54,6 +60,44 @@ dan `get_related_works` (`aggregator.py`), dan diteruskan lewat query param
 
 Prompt template (`src/josc/prompts.py:62-91`): `literature_review`,
 `author_overview`, `citation_trace`.
+
+## Metadata enrichment (Tier 0 — tanpa request tambahan)
+
+`Paper` (`src/josc/models.py`) membawa field kualitas yang di-parse dari payload
+yang sudah dikirim provider, jadi tidak ada panggilan jaringan ekstra:
+
+| Field | Sumber | Arti |
+|---|---|---|
+| `is_retracted` | OpenAlex `is_retracted`, Crossref `update-to[type=retraction]` | Penanda retraksi |
+| `cited_by_percentile` | OpenAlex `cited_by_percentile_year.min` | Persentil sitasi dalam bidang+tahun |
+| `citations_by_year` | OpenAlex `counts_by_year` | Tren sitasi per tahun |
+| `topics` | OpenAlex `primary_topic`, Crossref `subject`, PubMed `MeshHeadingList` | Klasifikasi bidang |
+| `keywords` | PubMed `KeywordList` | Kata kunci penulis |
+| `publication_types` | PubMed `PublicationTypeList` | Tipe publikasi |
+| `institutions` | OpenAlex `authorships[].institutions` | Afiliasi penulis |
+| `funders` | Crossref `funder` | Pendanaan |
+| `license` | Crossref `license[].URL` | Lisensi |
+| `language` | OpenAlex `language` | Bahasa |
+| `tldr` | Semantic Scholar `tldr.text` | Ringkasan satu kalimat (terpisah dari abstrak) |
+| `is_open_access` | Scopus `openaccess` / `openaccessFlag`, OpenAlex `open_access.is_oa` | Status OA |
+
+`merge_two` (`src/josc/merge.py`) menggabungkan field ini: flag retraksi
+menang jika salah satu sumber menyatakan `True`, topik/kata kunci/funder
+di-union, dan `citations_by_year` mengambil nilai maksimum per tahun.
+
+UI menampilkannya di `PaperTable` (badge `retracted`/`open access`/topik, serta
+`top X%` di kolom sitasi) dan `PaperDrawer` (banner retraksi, TL;DR, topics,
+keywords, institutions, funders, license, language, dan grafik tren sitasi).
+
+## Degradasi Scopus `view=REF`
+
+Scopus `references()` memakai `abstract?view=REF`, yang hanya tersedia untuk key
+dengan entitlement subscriber. `citations()` tidak terpengaruh karena memakai
+endpoint *search* (`REF(sid)`). Bila key menjawab 401 `AUTHORIZATION_ERROR`,
+`references()` (`src/josc/providers/scopus.py`) mengubahnya menjadi pesan
+actionable dan menyetel `_ref_entitlement_denied`, sehingga panggilan
+berikutnya gagal lokal tanpa membakar kuota. Graf tetap terbangun; hanya edge
+referensi Scopus yang dilewati dan alasannya tercatat di `errors.scopus`.
 
 ## HTTP API
 

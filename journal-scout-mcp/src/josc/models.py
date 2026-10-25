@@ -16,6 +16,17 @@ class Paper:
     type: str | None = None
     sources: list[str] = field(default_factory=list)
     ids: dict[str, str] = field(default_factory=dict)
+    is_retracted: bool | None = None
+    cited_by_percentile: int | None = None
+    citations_by_year: dict[int, int] = field(default_factory=dict)
+    topics: list[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
+    institutions: list[str] = field(default_factory=list)
+    funders: list[str] = field(default_factory=list)
+    publication_types: list[str] = field(default_factory=list)
+    language: str | None = None
+    license: str | None = None
+    tldr: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -32,6 +43,17 @@ class Paper:
             "type": self.type,
             "sources": self.sources,
             "ids": self.ids,
+            "is_retracted": self.is_retracted,
+            "cited_by_percentile": self.cited_by_percentile,
+            "citations_by_year": self.citations_by_year,
+            "topics": self.topics,
+            "keywords": self.keywords,
+            "institutions": self.institutions,
+            "funders": self.funders,
+            "publication_types": self.publication_types,
+            "language": self.language,
+            "license": self.license,
+            "tldr": self.tldr,
         }
 
 

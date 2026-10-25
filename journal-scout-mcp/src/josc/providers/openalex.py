@@ -39,13 +39,26 @@ class OpenAlexProvider(ProviderBase):
     @staticmethod
     def _to_paper(work):
         authors = []
+        institutions = []
         for a in work.get("authorships", []) or []:
             name = (a.get("author") or {}).get("display_name")
             if name:
                 authors.append(name)
+            for institution in a.get("institutions") or []:
+                label = institution.get("display_name")
+                if label and label not in institutions:
+                    institutions.append(label)
         primary = work.get("primary_location") or {}
         source = primary.get("source") or {}
         oa = work.get("open_access") or {}
+        topic = (work.get("primary_topic") or {}).get("display_name")
+        percentile = (work.get("cited_by_percentile_year") or {}).get("min")
+        citations_by_year = {}
+        for entry in work.get("counts_by_year") or []:
+            year = parse_year(entry.get("year"))
+            count = entry.get("cited_by_count")
+            if year is not None and count is not None:
+                citations_by_year[year] = count
         return Paper(
             doi=normalize_doi(work.get("doi")),
             title=work.get("title") or work.get("display_name") or "",
@@ -60,6 +73,12 @@ class OpenAlexProvider(ProviderBase):
             type=work.get("type"),
             sources=["openalex"],
             ids={"openalex": work.get("id")} if work.get("id") else {},
+            is_retracted=work.get("is_retracted"),
+            cited_by_percentile=percentile,
+            citations_by_year=citations_by_year,
+            topics=[topic] if topic else [],
+            institutions=institutions,
+            language=work.get("language"),
         )
 
     def _filters(self, year_from, year_to, tech_only, author=None, venue=None,

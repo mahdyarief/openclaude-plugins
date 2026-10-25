@@ -114,6 +114,83 @@ async def test_search_author_also_honors_year_filter():
         await client.aclose()
 
 
+async def test_search_parses_retraction_and_subject_fields_already_in_payload():
+    # Crossref ships ``update-to`` (retraction notices), ``subject``, ``license``
+    # and ``funder``; none of them used to reach the Paper model.
+    payload = {
+        "message": {
+            "items": [
+                {
+                    "DOI": "10.1/retracted",
+                    "type": "journal-article",
+                    "title": ["A retracted study"],
+                    "subject": ["Computer Science", "Information Systems"],
+                    "license": [{"URL": "https://creativecommons.org/licenses/by/4.0/"}],
+                    "funder": [{"name": "National Science Foundation"}],
+                    "update-to": [
+                        {
+                            "type": "retraction",
+                            "DOI": "10.1/retraction-notice",
+                            "label": "Retraction",
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+
+    def handler(request):
+        return httpx.Response(200, json=payload)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        paper = (await provider.search("retracted", 5))[0]
+        assert paper.is_retracted is True
+        assert paper.topics == ["Computer Science", "Information Systems"]
+        assert paper.license == "https://creativecommons.org/licenses/by/4.0/"
+        assert paper.funders == ["National Science Foundation"]
+    finally:
+        await client.aclose()
+
+
+async def test_search_keeps_subtitle_publisher_and_approved_date():
+    # BSI standards carry only "Data quality" in ``title``; the part name lives
+    # in ``subtitle`` and the only date is ``approved``/``created``. Without
+    # these fields four different standards render as identical bare rows.
+    payload = {
+        "message": {
+            "items": [
+                {
+                    "DOI": "10.3403/30431817",
+                    "type": "standard",
+                    "title": ["Data quality"],
+                    "subtitle": ["Part 82: Data quality assessment: Creating data rules"],
+                    "publisher": "BSI British Standards",
+                    "issued": {"date-parts": [[None]]},
+                    "approved": {"date-parts": [[2022, 7, 31]]},
+                    "created": {"date-parts": [[2022, 7, 11]]},
+                }
+            ]
+        }
+    }
+
+    def handler(request):
+        return httpx.Response(200, json=payload)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        paper = (await provider.search("data quality", 5))[0]
+        assert paper.title == (
+            "Data quality: Part 82: Data quality assessment: Creating data rules"
+        )
+        assert paper.venue == "BSI British Standards"
+        assert paper.year == 2022
+    finally:
+        await client.aclose()
+
+
 async def test_search_drops_container_records_without_title():
     # Crossref returns journal-issue records with ``title: []`` for broad
     # queries; they are not articles and must not reach the result list.

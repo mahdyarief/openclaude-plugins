@@ -12,6 +12,7 @@ kebenaran tentang repo ini sendiri**.
 | [02-provider-matrix.md](02-provider-matrix.md) | Matriks kapabilitas 9 provider |
 | [03-gap-analysis.md](03-gap-analysis.md) | Gap terhadap PoP8, dipetakan ke kode |
 | [04-roadmap.md](04-roadmap.md) | Urutan pengerjaan berdasarkan biaya/manfaat |
+| [05-usage-guide.md](05-usage-guide.md) | Panduan pemakaian MCP tool dan web UI, sintaks query, prompt siap pakai |
 
 ## Aturan pemeliharaan
 
@@ -31,7 +32,7 @@ kebenaran tentang repo ini sendiri**.
 | Route HTTP API | 27 |
 | Route web UI | 4 (`/`, `/graph`, `/metrics`, `/history`) |
 | Format ekspor terdaftar | 17 (`apa, bibtex, chicago, csiro, csv, csv_bom, csv_header, csv_plain, endnote, harvard, isi, json, mla, ris, vancouver, xls, xls_plain`) |
-| Test | 395 |
+| Test | 428 |
 
 Diverifikasi dengan menjalankan `TOOL_NAMES`, `provider_names()`,
 `search_provider_names()`, dan `FORMATTERS` dari `src/josc`.

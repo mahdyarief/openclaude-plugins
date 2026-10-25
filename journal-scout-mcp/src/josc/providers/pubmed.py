@@ -151,6 +151,25 @@ class PubMedProvider(ProviderBase):
         doi = normalize_doi(doi)
 
         ids = {"pubmed": pmid} if pmid else {}
+
+        mesh_topics = []
+        for heading in citation.findall("MeshHeadingList/MeshHeading"):
+            name = _text(heading.find("DescriptorName"))
+            if name and name not in mesh_topics:
+                mesh_topics.append(name)
+
+        keywords = []
+        for keyword in citation.findall("KeywordList/Keyword"):
+            value = _text(keyword)
+            if value and value not in keywords:
+                keywords.append(value)
+
+        publication_types = []
+        for publication_type in data.findall("PublicationTypeList/PublicationType"):
+            value = _text(publication_type)
+            if value and value not in publication_types:
+                publication_types.append(value)
+
         return Paper(
             doi=doi,
             title=title,
@@ -162,6 +181,9 @@ class PubMedProvider(ProviderBase):
             type="article",
             sources=["pubmed"],
             ids=ids,
+            topics=mesh_topics,
+            keywords=keywords,
+            publication_types=publication_types,
         )
 
     @classmethod
