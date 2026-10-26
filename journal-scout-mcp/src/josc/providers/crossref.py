@@ -55,6 +55,7 @@ class CrossrefProvider(ProviderBase):
                 if year is not None:
                     break
         doi = normalize_doi(item.get("DOI"))
+        isbn = first_of(item.get("ISBN"))
         # ``update-to`` lists notices applied to this work; a retraction is the
         # one that changes how the record should be read.
         updates = item.get("update-to") or []
@@ -73,6 +74,7 @@ class CrossrefProvider(ProviderBase):
                 break
         return Paper(
             doi=doi,
+            isbn=isbn,
             title=CrossrefProvider._title(item),
             abstract=strip_jats(item.get("abstract")),
             year=year,

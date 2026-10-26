@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 @dataclass
 class Paper:
     doi: str | None = None
+    isbn: str | None = None
     title: str = ""
     abstract: str | None = None
     year: int | None = None
@@ -31,6 +32,7 @@ class Paper:
     def to_dict(self) -> dict:
         return {
             "doi": self.doi,
+            "isbn": self.isbn,
             "title": self.title,
             "abstract": self.abstract,
             "year": self.year,

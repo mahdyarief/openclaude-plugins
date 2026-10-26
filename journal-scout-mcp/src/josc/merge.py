@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Sequence
 
+from .dedup import same_work
 from .models import Paper
 from .utils import normalize_doi, normalize_title
 
@@ -23,32 +24,6 @@ def dedup_key(paper: Paper) -> str:
     if doi:
         return f"doi:{doi}"
     return f"title:{normalize_title(paper.title)}"
-
-
-def _author_token(authors: Sequence[str]) -> str:
-    """Normalized first-author name, used as a weak secondary merge key."""
-    return normalize_title(authors[0]) if authors else ""
-
-
-def _match_keys(paper: Paper) -> List[tuple]:
-    """Every identity a record can be recognised by, strongest first.
-
-    A DOI is authoritative. When it is missing, records are matched by
-    ``(title, year)`` and — failing a year — by ``(title, first author)``, so a
-    DOI-less record still folds into its better-described twin instead of
-    showing up as a duplicate.
-    """
-    keys: List[tuple] = []
-    doi = normalize_doi(paper.doi)
-    if doi:
-        keys.append(("doi", doi))
-    title = normalize_title(paper.title)
-    if title and paper.year is not None:
-        keys.append(("title", title, paper.year))
-    author = _author_token(paper.authors)
-    if title and author:
-        keys.append(("author", title, author))
-    return keys
 
 
 def _priority(sources: Sequence[str]) -> int:
@@ -124,6 +99,7 @@ def merge_two(a: Paper, b: Paper) -> Paper:
     return Paper(
         doi=normalize_doi(_pick_text(a.doi, b.doi)),
         title=_pick_text(preferred.title, fallback.title) or "",
+        isbn=_pick_text(preferred.isbn, fallback.isbn),
         abstract=_longest(a.abstract, b.abstract),
         year=preferred.year or fallback.year,
         authors=_merge_authors(a, b),
@@ -154,31 +130,55 @@ def merge_two(a: Paper, b: Paper) -> Paper:
 
 
 def merge_papers(papers: List[Paper]) -> List[Paper]:
-    """Merge duplicates keyed by DOI, falling back to ``(title, year)``.
+    """Merge records that describe the same work.
 
-    Records that share *any* identity are folded together, so a DOI-less
-    record joins its DOI-bearing twin instead of showing up as a duplicate.
+    Identical normalized DOIs always merge. Everything else is bucketed by
+    normalized title and then filtered through :func:`josc.dedup.same_work`, so
+    two unrelated works that happen to share a title stay separate.
     """
-    clusters: List[Optional[Paper]] = []
-    index: Dict[tuple, int] = {}
-    for paper in papers:
-        keys = _match_keys(paper)
-        targets = sorted({index[key] for key in keys if key in index})
-        if not targets:
-            idx = len(clusters)
-            clusters.append(paper)
+    parent = list(range(len(papers)))
+
+    def find(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(left: int, right: int) -> None:
+        root_left, root_right = find(left), find(right)
+        if root_left != root_right:
+            parent[root_right] = root_left
+
+    by_doi: Dict[str, int] = {}
+    for index, paper in enumerate(papers):
+        doi = normalize_doi(paper.doi)
+        if not doi:
+            continue
+        if doi in by_doi:
+            union(index, by_doi[doi])
         else:
-            idx = targets[0]
-            merged = clusters[idx]
-            for other in targets[1:]:
-                merged = merge_two(merged, clusters[other])
-                for key, value in list(index.items()):
-                    if value == other:
-                        index[key] = idx
-                clusters[other] = None
-            clusters[idx] = merge_two(merged, paper)
-        for key in keys:
-            index[key] = idx
-    result = [c for c in clusters if c is not None]
-    result.sort(key=lambda p: (-(p.citation_count or 0), -(p.year or 0), p.title or ""))
-    return result
+            by_doi[doi] = index
+
+    by_title: Dict[str, List[int]] = {}
+    for index, paper in enumerate(papers):
+        title = normalize_title(paper.title)
+        if not title:
+            continue
+        for other in by_title.get(title, []):
+            if same_work(papers[index], papers[other]):
+                union(index, other)
+        by_title.setdefault(title, []).append(index)
+
+    groups: Dict[int, List[int]] = {}
+    for index in range(len(papers)):
+        groups.setdefault(find(index), []).append(index)
+
+    merged: List[Paper] = []
+    for indices in groups.values():
+        combined = papers[indices[0]]
+        for other in indices[1:]:
+            combined = merge_two(combined, papers[other])
+        merged.append(combined)
+
+    merged.sort(key=lambda p: (-(p.citation_count or 0), -(p.year or 0), p.title or ""))
+    return merged
