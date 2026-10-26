@@ -2,10 +2,40 @@ from typing import List, Optional
 
 from ..config import get_polite_email
 from ..models import Paper
+from ..retractions import RetractionInfo, normalize_reason
 from ..utils import first_of, normalize_doi, parse_year, strip_jats
 from .base import ProviderBase
 
 CROSSREF_URL = "https://api.crossref.org/works"
+
+
+def build_retraction(item: dict) -> Optional[RetractionInfo]:
+    """Build structured retraction metadata from a Crossref work record.
+
+    Crossref labels notices with the bare type (``Retraction``), while the
+    taxonomy carries the prefixed form (``Updated to Retraction``), so the
+    label is retried with the prefix before being treated as unknown.
+    """
+    updates = item.get("update-to") or []
+    for update in updates:
+        if not isinstance(update, dict) or update.get("type") != "retraction":
+            continue
+        parts = ((update.get("updated") or {}).get("date-parts") or [[]])[0]
+        notice_date = None
+        if len(parts) == 3:
+            notice_date = f"{int(parts[0]):04d}-{int(parts[1]):02d}-{int(parts[2]):02d}"
+        label = update.get("label")
+        reason = normalize_reason(label) or (
+            normalize_reason(f"Updated to {label}") if label else None
+        )
+        return RetractionInfo(
+            reasons=[reason] if reason else [],
+            notice_doi=normalize_doi(update.get("DOI")),
+            notice_url=update.get("URL"),
+            notice_date=notice_date,
+            source="crossref",
+        )
+    return None
 
 
 class CrossrefProvider(ProviderBase):
