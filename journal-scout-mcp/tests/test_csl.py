@@ -1,4 +1,5 @@
 from josc.csl import CSL_STYLES, CSLStyleError, paper_to_csl, render_csl
+from josc.exporters import FORMATTERS, format_papers
 
 
 def test_paper_to_csl_maps_core_fields():
@@ -103,3 +104,16 @@ def test_render_rejects_a_style_missing_required_keys():
         assert "missing" in str(exc).lower()
     else:
         raise AssertionError("CSLStyleError was not raised")
+
+
+def test_csl_formats_are_registered():
+    assert {"csl-apa", "csl-vancouver", "csl-chicago"} <= set(FORMATTERS)
+
+
+def test_csl_format_is_dispatchable_through_format_papers():
+    out = format_papers(SAMPLE, "csl-apa")
+    assert out.startswith("Vaswani, A., Shazeer, N. (2017).")
+
+
+def test_legacy_formats_are_untouched():
+    assert format_papers(SAMPLE, "apa").startswith("Vaswani, A.")
