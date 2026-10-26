@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from typing import Any, Dict, List, Optional
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 
@@ -49,6 +52,7 @@ async def health(request: Request) -> JSONResponse:
                     "related": getattr(p, "supports_related", False),
                     "author_search": getattr(p, "supports_author_search", False),
                     "tech_only": getattr(p, "supports_tech_only", False),
+                    "filters": sorted(getattr(p, "supports_filters", ()) or ()),
                 }
                 for p in _providers()
             },
@@ -56,16 +60,37 @@ async def health(request: Request) -> JSONResponse:
     )
 
 
+def _conditions(request: Request) -> Optional[List[Dict[str, Any]]]:
+    raw = (request.query_params.get("conditions") or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"'conditions' must be a JSON array: {exc.msg}") from exc
+    if not isinstance(parsed, list):
+        raise ValueError("'conditions' must be a JSON array.")
+    return parsed
+
+
 async def search(request: Request) -> JSONResponse:
     query = (request.query_params.get("query") or "").strip()
-    if not query:
-        return _error(ValueError("Missing required query parameter 'query'."))
+    try:
+        conditions = _conditions(request)
+    except ValueError as exc:
+        return _error(exc)
+    if not query and not conditions:
+        return _error(
+            ValueError("Provide either 'query' or a non-empty 'conditions' array.")
+        )
     limit_per_source = _int(request, "limit_per_source", 10)
     year_from = _int(request, "year_from")
     year_to = _int(request, "year_to")
     tech_only = request.query_params.get("tech_only", "").lower() in ("1", "true", "yes")
     sources = _sources(request)
     offset = _int(request, "offset", 0)
+    author = _text(request, "author")
+    venue = _text(request, "venue")
     affiliation = _text(request, "affiliation")
     issn = _text(request, "issn")
     orcid = _text(request, "orcid")
@@ -73,8 +98,9 @@ async def search(request: Request) -> JSONResponse:
     sort = _text(request, "sort")
     order = _text(request, "order") or "desc"
     topic = _text(request, "topic")
-    key = ("search", query, limit_per_source, year_from, year_to, tech_only, sources,
-           offset, affiliation, issn, orcid, doi, sort, order, topic)
+    key = ("search", query, conditions, limit_per_source, year_from, year_to,
+           tech_only, sources, offset, author, venue, affiliation, issn, orcid,
+           doi, sort, order, topic)
     offline = _flag(request, "offline")
     try:
         payload = await _cached(
@@ -88,6 +114,8 @@ async def search(request: Request) -> JSONResponse:
                 tech_only=tech_only,
                 sources=sources,
                 offset=offset,
+                author=author,
+                venue=venue,
                 affiliation=affiliation,
                 issn=issn,
                 orcid=orcid,
@@ -95,13 +123,15 @@ async def search(request: Request) -> JSONResponse:
                 sort=sort,
                 order=order,
                 topic=topic,
+                conditions=conditions,
             ),
             offline=offline,
         )
     except Exception as exc:  # noqa: BLE001 - surfaced as a JSON error to the UI
         return _error(exc)
     if not offline:
-        filters = {"affiliation": affiliation, "issn": issn,
+        filters = {"author": author, "venue": venue,
+                   "affiliation": affiliation, "issn": issn,
                    "orcid": orcid, "doi": doi, "topic": topic}
         fingerprint = history.search_fingerprint(
             query=query,
@@ -111,6 +141,8 @@ async def search(request: Request) -> JSONResponse:
             year_to=year_to,
             tech_only=tech_only,
             offset=offset,
+            author=author,
+            venue=venue,
             affiliation=affiliation,
             issn=issn,
             orcid=orcid,
@@ -118,6 +150,7 @@ async def search(request: Request) -> JSONResponse:
             sort=sort,
             order=order,
             topic=topic,
+            conditions=conditions,
         )
         await history._remember(
             query=query,

@@ -431,6 +431,79 @@ async def test_search_route_records_history_with_a_fingerprint(
     assert recorded["sources"] == ["garuda"]
 
 
+async def test_search_route_passes_author_and_venue_to_aggregator(
+    monkeypatch, with_providers
+):
+    seen = {}
+
+    async def fake_search(providers, query, **kwargs):
+        seen.update(kwargs)
+        return {"results": [], "errors": {}, "counts": {}}
+
+    monkeypatch.setattr(api.aggregator, "search_all", fake_search)
+    with_providers([FakeProvider("scopus")])
+
+    req = FakeRequest(
+        query_params={"query": "q", "author": "Smith J", "venue": "ICIS"}
+    )
+    response = await api.search(req)
+
+    assert response.status_code == 200
+    assert seen["author"] == "Smith J"
+    assert seen["venue"] == "ICIS"
+
+
+async def test_search_route_parses_conditions_json(monkeypatch, with_providers):
+    seen = {}
+
+    async def fake_search(providers, query, **kwargs):
+        seen.update(kwargs)
+        return {"results": [], "errors": {}, "counts": {}}
+
+    monkeypatch.setattr(api.aggregator, "search_all", fake_search)
+    with_providers([FakeProvider("scopus")])
+
+    req = FakeRequest(
+        query_params={
+            "query": "",
+            "conditions": '[{"field":"title","value":"data quality","operator":"AND"}]',
+        }
+    )
+    response = await api.search(req)
+
+    assert response.status_code == 200
+    assert seen["conditions"] == [
+        {"field": "title", "value": "data quality", "operator": "AND"}
+    ]
+
+
+async def test_search_route_rejects_invalid_conditions_json(
+    monkeypatch, with_providers
+):
+    async def fake_search(providers, query, **kwargs):
+        return {"results": [], "errors": {}, "counts": {}}
+
+    monkeypatch.setattr(api.aggregator, "search_all", fake_search)
+    with_providers([FakeProvider("scopus")])
+
+    req = FakeRequest(query_params={"query": "q", "conditions": "not-json"})
+    response = await api.search(req)
+
+    assert response.status_code >= 400
+
+
+async def test_health_exposes_supports_filters(with_providers):
+    class FilterProvider(FakeProvider):
+        supports_filters = frozenset({"author", "venue"})
+
+    with_providers([FilterProvider("scopus")])
+    response = await api.health(FakeRequest())
+
+    assert response.status_code == 200
+    caps = _body(response)["capabilities"]["scopus"]
+    assert sorted(caps["filters"]) == ["author", "venue"]
+
+
 async def test_search_route_fingerprint_differs_for_different_filters(
     monkeypatch, with_providers
 ):

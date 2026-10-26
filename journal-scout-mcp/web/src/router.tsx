@@ -19,6 +19,8 @@ const searchRoute = createRoute({
   ): {
     q?: string;
     sources?: string;
+    author?: string;
+    venue?: string;
     affiliation?: string;
     issn?: string;
     orcid?: string;
@@ -30,6 +32,8 @@ const searchRoute = createRoute({
     return {
       q: text(search.q),
       sources: text(search.sources),
+      author: text(search.author),
+      venue: text(search.venue),
       affiliation: text(search.affiliation),
       issn: text(search.issn),
       orcid: text(search.orcid),

@@ -46,6 +46,56 @@ def test_search_all_schema_advertises_topic_filter():
     assert "topic" in schema["properties"]
 
 
+def test_search_all_schema_advertises_conditions():
+    schema = next(tool for tool in _tool_list() if tool.name == "search_all").inputSchema
+    conditions = schema["properties"]["conditions"]
+    assert conditions["type"] == "array"
+    item = conditions["items"]
+    assert set(item["properties"]) == {"field", "value", "operator"}
+    assert sorted(item["properties"]["field"]["enum"]) == [
+        "abstract",
+        "all",
+        "author",
+        "title",
+        "venue",
+    ]
+    assert item["required"] == ["field", "value"]
+
+
+class ScopingProvider(ProviderBase):
+    name = "scopus"
+    supports_search = True
+
+    def __init__(self):
+        super().__init__(None)
+        self.received = None
+
+    async def search(self, query, limit, **kwargs):
+        self.received = query
+        return [Paper(doi="10.1/s", title="Scoped", sources=["scopus"])]
+
+
+async def test_dispatch_search_all_forwards_conditions_without_query():
+    provider = ScopingProvider()
+
+    result = await build_json(
+        "search_all",
+        {
+            "conditions": [
+                {"field": "title", "value": "data quality", "operator": "AND"}
+            ]
+        },
+        [provider],
+        None,
+    )
+
+    assert provider.received == 'TITLE("data quality")'
+    assert result["query_scoping"]["scopus"] == {
+        "honored": ["title"],
+        "degraded": [],
+    }
+
+
 class TopicProvider(ProviderBase):
     name = "openalex"
     supports_search = True

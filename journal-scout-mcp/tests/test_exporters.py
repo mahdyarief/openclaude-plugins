@@ -267,7 +267,7 @@ def test_metrics_csv_labels_extended_keys_with_their_real_names():
 
 def test_metrics_csv_round_trips_a_real_extended_metrics_payload():
     # End-to-end guard: the labels must cover every key compute_metrics emits.
-    from josc.graph import compute_metrics
+    from josc.metrics import compute_metrics
     from josc.models import Paper
 
     papers = [

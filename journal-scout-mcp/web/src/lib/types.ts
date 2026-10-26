@@ -31,6 +31,19 @@ export type RelationResponse = {
   counts?: Record<string, number>;
 };
 
+export type SearchField = "title" | "abstract" | "author" | "venue" | "all";
+
+export type SearchCondition = {
+  field: SearchField;
+  value: string;
+  operator: "AND" | "OR" | "NOT";
+};
+
+export type SearchScoping = {
+  honored: SearchField[];
+  degraded: SearchField[];
+};
+
 export type SearchResponse = {
   results: Paper[];
   errors: Record<string, string>;
@@ -39,6 +52,7 @@ export type SearchResponse = {
   filters_ignored?: string[];
   query_warnings?: { source: string; operator: string; message: string }[];
   query_translated?: Record<string, string>;
+  query_scoping?: Record<string, SearchScoping>;
 };
 
 export type GraphNode = {

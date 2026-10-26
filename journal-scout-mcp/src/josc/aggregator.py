@@ -1,12 +1,14 @@
 import asyncio
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
-from .graph import _node_id, build_network, compute_metrics as _compute_metrics
+from .metrics import compute_metrics as _compute_metrics
+from .network import build_network, node_id
 from .merge import merge_papers
 from .models import Paper, ProviderError
 from .providers.base import ProviderBase
 from .query import operator_report, translate_query
+from .query_ast import compile_conditions, parse_conditions
 
 
 async def _gather(
@@ -204,9 +206,22 @@ async def search_all(
     sort: Optional[str] = None,
     order: str = "desc",
     topic: Optional[str] = None,
+    conditions: Optional[Iterable] = None,
 ) -> Dict[str, Any]:
     active = _select(providers, sources, "supports_search")
-    translated = {p.name: translate_query(query, p.name) for p in active}
+    clauses = parse_conditions(conditions)
+    if clauses:
+        compiled = {
+            p.name: compile_conditions(clauses, p.name) for p in active
+        }
+        translated = {name: result.query for name, result in compiled.items()}
+        scoping = {
+            name: {"honored": result.honored, "degraded": result.degraded}
+            for name, result in compiled.items()
+        }
+    else:
+        translated = {p.name: translate_query(query, p.name) for p in active}
+        scoping = {}
     requested = {"author": author, "venue": venue, "affiliation": affiliation,
                  "issn": issn, "orcid": orcid, "doi": doi}
     applied, ignored = _route_filters(active, requested, tech_only=tech_only)
@@ -228,6 +243,7 @@ async def search_all(
     report = operator_report([p.name for p in active], query)
     result["query_warnings"] = report["warnings"]
     result["query_translated"] = translated
+    result["query_scoping"] = scoping
     return result
 
 
@@ -427,7 +443,7 @@ async def build_citation_network(
     for citing in citations[:citing_limit]:
         related = _relation_identifier(citing)
         if related:
-            targets.append((_node_id(citing), related))
+            targets.append((node_id(citing), related))
 
     citing_references: Dict[str, List[Paper]] = {}
     if targets:
@@ -449,7 +465,7 @@ async def build_citation_network(
     for ref in references[:reference_limit]:
         related = _relation_identifier(ref)
         if related:
-            ref_targets.append((_node_id(ref), related))
+            ref_targets.append((node_id(ref), related))
 
     reference_references: Dict[str, List[Paper]] = {}
     if ref_targets:
@@ -483,7 +499,7 @@ async def build_citation_network(
     }
 
     if graph_format == "graphml":
-        from .graph import to_graphml
+        from .network import to_graphml
 
         return {
             "format": "graphml",

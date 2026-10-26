@@ -8,8 +8,8 @@ from josc.aggregator import (
     search_all,
     search_author,
 )
-from josc.graph import _node_id, build_network
 from josc.models import Paper, ProviderError
+from josc.network import build_network, node_id
 from josc.providers.base import ProviderBase
 
 
@@ -331,7 +331,7 @@ def test_build_network_caps_cocitation_edges():
     seed = _paper("10.1/seed", "Seed")
     citing = [_paper(f"10.1/c{i}", f"C{i}") for i in range(3)]
     refs = [_paper(f"10.1/r{i}", f"R{i}") for i in range(10)]
-    citing_references = {_node_id(paper): refs for paper in citing}
+    citing_references = {node_id(paper): refs for paper in citing}
 
     network = build_network(
         seed,

@@ -1,8 +1,7 @@
 from xml.etree import ElementTree
 
-from josc.graph import (
+from josc.metrics import (
     awcr,
-    build_network,
     citation_velocity,
     citations_by_year,
     compute_metrics,
@@ -14,9 +13,9 @@ from josc.graph import (
     hI_norm,
     hm_index,
     i10_index,
-    to_graphml,
 )
 from josc.models import Paper
+from josc.network import build_network, to_graphml
 
 
 def _paper(doi, title, year=2020, citations=0, **kwargs):
@@ -367,7 +366,7 @@ def test_nodes_carry_degree_metrics():
 
 
 def test_assign_communities_separates_disconnected_clusters():
-    from josc.graph import _assign_communities
+    from josc.network import _assign_communities
 
     nodes = {f"n{i}": {"id": f"n{i}"} for i in range(4)}
     edges = [

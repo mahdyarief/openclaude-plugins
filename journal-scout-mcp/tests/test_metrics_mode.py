@@ -3,7 +3,7 @@
 import pytest
 
 from josc.aggregator import compute_metrics
-from josc.graph import compute_metrics as graph_metrics
+from josc.metrics import compute_metrics as graph_metrics
 from josc.models import Paper
 from josc.providers.base import ProviderBase
 

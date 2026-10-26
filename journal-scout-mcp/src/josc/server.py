@@ -119,9 +119,40 @@ def _tool_list() -> List[types.Tool]:
                             "(case-insensitive substring, applied after merge)."
                         ),
                     },
+                    "conditions": {
+                        "type": "array",
+                        "description": (
+                            "Field-scoped clauses, compiled per provider. "
+                            "Use instead of, or alongside, 'query'. Fields the "
+                            "provider cannot scope degrade to free text and are "
+                            "reported in query_scoping."
+                        ),
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "field": {
+                                    "type": "string",
+                                    "enum": [
+                                        "title",
+                                        "abstract",
+                                        "author",
+                                        "venue",
+                                        "all",
+                                    ],
+                                },
+                                "value": {"type": "string"},
+                                "operator": {
+                                    "type": "string",
+                                    "enum": ["AND", "OR", "NOT"],
+                                    "default": "AND",
+                                },
+                            },
+                            "required": ["field", "value"],
+                        },
+                    },
                     **_SEARCH_FILTERS,
                 },
-                "required": ["query"],
+                "required": [],
             },
         ),
         types.Tool(
@@ -265,7 +296,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
     if name == "search_all":
         return await aggregator.search_all(
             providers,
-            arguments["query"],
+            arguments.get("query") or "",
             limit_per_source=arguments.get("limit_per_source", 5),
             year_from=arguments.get("year_from"),
             year_to=arguments.get("year_to"),
@@ -281,6 +312,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             sort=arguments.get("sort"),
             order=arguments.get("order", "desc"),
             topic=arguments.get("topic"),
+            conditions=arguments.get("conditions"),
         )
     if name == "get_paper":
         return await aggregator.get_paper(
@@ -349,7 +381,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         source = name.removeprefix("search_")
         return await aggregator.search_all(
             providers,
-            arguments["query"],
+            arguments.get("query") or "",
             limit_per_source=arguments.get("count", 5),
             year_from=arguments.get("year_from"),
             year_to=arguments.get("year_to"),
@@ -362,6 +394,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             issn=arguments.get("issn"),
             orcid=arguments.get("orcid"),
             doi=arguments.get("doi"),
+            conditions=arguments.get("conditions"),
         )
     if name == "get_abstract_details":
         paper = await scopus_provider.get(arguments["scopus_id"])

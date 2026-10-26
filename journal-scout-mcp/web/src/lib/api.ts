@@ -12,6 +12,7 @@ import type {
   RelationResponse,
   ReplayResponse,
   SearchArchive,
+  SearchCondition,
   SearchHistoryResponse,
   SearchResponse,
   SplitResponse,
@@ -43,6 +44,8 @@ export type SearchOptions = {
   techOnly?: boolean;
   offset?: number;
   sources?: string[];
+  author?: string;
+  venue?: string;
   affiliation?: string;
   issn?: string;
   orcid?: string;
@@ -50,10 +53,14 @@ export type SearchOptions = {
   sort?: "relevance" | "citations" | "year" | "title";
   order?: "asc" | "desc";
   topic?: string;
+  conditions?: SearchCondition[];
 };
 
 export function searchPapers(query: string, options: SearchOptions = {}): Promise<SearchResponse> {
   const sources = options.sources?.filter((source) => source.trim() !== "") ?? [];
+  const conditions = (options.conditions ?? []).filter(
+    (condition) => condition.value.trim() !== "",
+  );
   return getJson<SearchResponse>("/api/search", {
     query,
     limit_per_source: options.limitPerSource,
@@ -62,6 +69,8 @@ export function searchPapers(query: string, options: SearchOptions = {}): Promis
     tech_only: options.techOnly ? "true" : undefined,
     offset: options.offset,
     source: sources.length > 0 ? sources.join(",") : undefined,
+    author: options.author,
+    venue: options.venue,
     affiliation: options.affiliation,
     issn: options.issn,
     orcid: options.orcid,
@@ -69,6 +78,7 @@ export function searchPapers(query: string, options: SearchOptions = {}): Promis
     sort: options.sort,
     order: options.order,
     topic: options.topic,
+    conditions: conditions.length > 0 ? JSON.stringify(conditions) : undefined,
   });
 }
 

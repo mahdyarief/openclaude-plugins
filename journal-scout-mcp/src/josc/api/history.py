@@ -17,6 +17,8 @@ def search_fingerprint(
     year_to: Optional[int] = None,
     tech_only: bool = False,
     offset: int = 0,
+    author: Optional[str] = None,
+    venue: Optional[str] = None,
     affiliation: Optional[str] = None,
     issn: Optional[str] = None,
     orcid: Optional[str] = None,
@@ -24,6 +26,7 @@ def search_fingerprint(
     sort: Optional[str] = None,
     order: str = "desc",
     topic: Optional[str] = None,
+    conditions: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Hash everything that changes the result set.
 
@@ -38,6 +41,8 @@ def search_fingerprint(
         "year_to": year_to,
         "tech_only": bool(tech_only),
         "offset": offset,
+        "author": author,
+        "venue": venue,
         "affiliation": affiliation,
         "issn": issn,
         "orcid": orcid,
@@ -45,6 +50,7 @@ def search_fingerprint(
         "sort": sort,
         "order": order,
         "topic": topic,
+        "conditions": conditions,
     }
     encoded = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
