@@ -1,14 +1,16 @@
 # journal-scout-mcp
 
 Multi-source journal research **MCP server** for Anthropic Claude. Searches
-Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, and
-Unpaywall, then merges duplicate results into one entry per paper (DOI-first
-dedup) and reports partial failures. Citation links additionally come from
-OpenCitations (free, no key) for any known DOI.
+Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, and Garuda,
+then merges duplicate results into one entry per paper (DOI-first dedup) and
+reports partial failures. Unpaywall resolves open-access copies and
+OpenCitations (free, no key) supplies citation links for any known DOI.
 
-This is a **Claude skill** for using the `journal-scout-mcp` MCP server.
-Configure the MCP server in your Claude Code/plugin setup, then invoke any
-of the available tools.
+This file is the install and overview guide. The **callable skill** lives at
+`skills/journal-scout/SKILL.md` — that is the path the plugin loader reads, so
+that is the one registered as `journal-scout-mcp:journal-scout`. Configure the
+MCP server in your Claude Code/plugin setup, then invoke any of the available
+tools.
 
 ## Setup
 
@@ -33,11 +35,11 @@ of the available tools.
 3. **Enable** the plugin in your Claude session. The tool list includes:
 
    - **Unified:** `search_all`, `search_author`, `get_paper`, `get_citations`,
-     `get_references`, `build_citation_network`, `compute_metrics`,
-     `export_results`
+     `get_references`, `get_related_works`, `build_citation_network`,
+     `compute_metrics`, `export_results`
    - **Per-source:** `search_scopus`, `search_arxiv`, `search_openalex`,
      `search_semanticscholar`, `search_crossref`, `search_pubmed`,
-     `search_dblp`
+     `search_dblp`, `search_garuda`
    - **Scopus detail:** `get_abstract_details`, `get_author_profile`,
      `get_quota_status`
    - **SciVal:** `scival_author_metrics`,

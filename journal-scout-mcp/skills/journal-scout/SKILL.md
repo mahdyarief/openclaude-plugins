@@ -25,7 +25,7 @@ open-access links, not article bodies.
 
 | Tool | Purpose |
 |---|---|
-| `search_all` | Parallel search across all sources, merged and deduped |
+| `search_all` | Parallel search across all sources, merged and deduped; `topic=` narrows locally after the merge |
 | `search_author` | Papers by an author name |
 | `get_paper` | One record by identifier, with open-access resolution |
 | `get_references` | Papers the given paper cites |

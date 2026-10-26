@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 Historical entries are reconstructed from the upstream commit history
 (`3ae2bcc` → `92ae1b7`), not from the development branch.
 
+## [Unreleased]
+
+### Added
+- Garuda provider (Indonesian scholarly index) with `search_garuda`
+- `topic` filter on `search_all`, `GET /api/search`, and the web UI. It runs
+  after the merge and matches case-insensitively against `topics`; it is not
+  a provider capability because the three topic vocabularies are unrelated
+- Field enrichment parsed from payloads already fetched: retraction status,
+  citation percentile, per-year citations, topics, keywords, publication
+  types, institutions, funders, license, language, and TL;DR — merged across
+  duplicate sources at no extra request cost
+- Modular HTTP API package (`src/josc/api/`) replacing the single `api.py`,
+  with history import/export, replay, split, duplicate, BibTeX/RIS/CSV
+  import, cache control, and a Scopus quota endpoint
+- Second-hop reference expansion in `build_citation_network`
+- `skills/journal-scout/SKILL.md` so the plugin registers as a callable skill
+
+### Fixed
+- Crossref records now join `subtitle` into the title, fall back to
+  `publisher` for venue, and read `approved`/`created` when `issued` is
+  empty — BSI standards were rendering as identical bare rows
+- PubMed falls back to `VernacularTitle` when `ArticleTitle` is a placeholder
+- Crossref drops container records (`journal-issue`) and empty titles
+- Scopus paginates in chunks of 25 when `limit > 25`
+
+### Tests
+- 428 tests passing
+
 ## [2.3.0] - 2026-10-24
 
 Supersedes upstream v2.2.0 (2026-10-14), whose changes — prompt templates,
