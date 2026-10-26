@@ -42,6 +42,13 @@ def test_paper_to_csl_handles_single_token_author():
     assert item["author"] == [{"family": "Plato", "given": ""}]
 
 
+def test_paper_to_csl_coerces_iso_and_drops_unparseable_years():
+    assert paper_to_csl({"title": "ISO", "year": "2017-06"})["issued"] == {
+        "date-parts": [[2017]]
+    }
+    assert "issued" not in paper_to_csl({"title": "Junk", "year": "n.d."})
+
+
 SAMPLE = [
     {
         "doi": "10.1/a",
@@ -102,6 +109,26 @@ def test_render_rejects_a_style_missing_required_keys():
         render_csl(SAMPLE, {"author_format": "family"})
     except CSLStyleError as exc:
         assert "missing" in str(exc).lower()
+    else:
+        raise AssertionError("CSLStyleError was not raised")
+
+
+def test_render_rejects_unknown_part_order_entries():
+    style = {
+        "author_format": "family",
+        "author_join": "comma",
+        "author_limit": 0,
+        "title_quotes": False,
+        "title_suffix": ".",
+        "venue_wrap": "{v}.",
+        "year_wrap": "({v}).",
+        "include_doi": False,
+        "part_order": ["authors", "yaer", "title"],
+    }
+    try:
+        render_csl(SAMPLE, style)
+    except CSLStyleError as exc:
+        assert "part_order" in str(exc).lower()
     else:
         raise AssertionError("CSLStyleError was not raised")
 

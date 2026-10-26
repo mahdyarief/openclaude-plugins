@@ -9,7 +9,7 @@ scope and will render incorrectly.
 
 from typing import Any, Dict, List, Sequence
 
-from .utils import normalize_doi, normalize_title
+from .utils import normalize_doi, normalize_title, parse_year
 
 
 class CSLStyleError(ValueError):
@@ -39,9 +39,9 @@ def paper_to_csl(paper: Dict[str, Any]) -> Dict[str, Any]:
         item["container-title"] = paper["venue"]
     if paper.get("url"):
         item["URL"] = paper["url"]
-    year = paper.get("year")
+    year = parse_year(paper.get("year"))
     if year is not None:
-        item["issued"] = {"date-parts": [[int(year)]]}
+        item["issued"] = {"date-parts": [[year]]}
     authors: Sequence[str] = paper.get("authors") or []
     if authors:
         item["author"] = [_split_name(name) for name in authors]
@@ -97,6 +97,9 @@ CSL_STYLES: Dict[str, Dict[str, Any]] = {
 }
 
 
+_RENDERED_PARTS = frozenset({"authors", "year", "title", "venue", "doi"})
+
+
 def _resolve_style(style: Any) -> Dict[str, Any]:
     if isinstance(style, str):
         if style not in CSL_STYLES:
@@ -107,6 +110,11 @@ def _resolve_style(style: Any) -> Dict[str, Any]:
     missing = _REQUIRED_STYLE_KEYS - set(style)
     if missing:
         raise CSLStyleError(f"style missing keys: {sorted(missing)}")
+    order = style.get("part_order")
+    if order is not None:
+        unknown = [part for part in order if part not in _RENDERED_PARTS]
+        if unknown:
+            raise CSLStyleError(f"part_order has unknown entries: {unknown}")
     return style
 
 
