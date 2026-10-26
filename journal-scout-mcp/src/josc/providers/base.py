@@ -32,6 +32,10 @@ class ProviderBase:
     def __init__(self, fetcher: Any, config: Optional[Dict[str, Any]] = None):
         self.fetcher = fetcher
         self.config = config or {}
+        # Set by a provider when it had to alter the caller's query to get
+        # results (e.g. Garuda's strict AND matching). The aggregator surfaces
+        # it in ``query_warnings`` so a narrowed search is never silent.
+        self.last_query_note: Optional[str] = None
 
     async def _fetch_json(self, url, params=None, headers=None, provider=None) -> Dict[str, Any]:
         provider = provider or self.name

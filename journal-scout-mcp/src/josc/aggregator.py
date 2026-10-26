@@ -9,6 +9,16 @@ from .models import Paper, ProviderError
 from .providers.base import ProviderBase
 from .query import operator_report, translate_query
 from .query_ast import compile_conditions, parse_conditions
+from .utils import normalize_doi
+
+# A DOI starts with a registrant prefix (``10.xxxx/``). Used to decide whether
+# an identifier the caller passed can be checked against what a provider
+# resolved it to.
+_DOI_SHAPE = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:)?10\.\d{4,9}/\S+$", re.I)
+
+
+def _looks_like_doi(identifier: str) -> bool:
+    return bool(identifier and _DOI_SHAPE.match(identifier.strip()))
 
 
 async def _gather(
@@ -241,7 +251,14 @@ async def search_all(
     result["results"] = _filter_by_topic(result["results"], topic)
     _sort_results(result["results"], sort, order, query)
     report = operator_report([p.name for p in active], query)
-    result["query_warnings"] = report["warnings"]
+    warnings = list(report["warnings"])
+    # A provider that silently narrowed the query must say so, otherwise a
+    # fallback looks like a complete result set for the original query.
+    for provider in active:
+        note = getattr(provider, "last_query_note", None)
+        if note:
+            warnings.append(f"{provider.name}: {note}")
+    result["query_warnings"] = warnings
     result["query_translated"] = translated
     result["query_scoping"] = scoping
     return result
@@ -325,11 +342,22 @@ async def get_paper(
     outcomes = await asyncio.gather(*calls.values(), return_exceptions=True)
     papers: List[Paper] = []
     errors: Dict[str, str] = {}
+    requested_doi = normalize_doi(identifier) if _looks_like_doi(identifier) else None
+    mismatched: List[str] = []
     for name, outcome in zip(names, outcomes):
         if isinstance(outcome, Exception):
             errors[name] = getattr(outcome, "message", str(outcome))
         elif outcome is not None:
+            # A provider can resolve an identifier to a different work (a
+            # redirect, a wrong Crossref hit, a truncated DOI). Merging that
+            # record would attribute metadata to the wrong paper, so a
+            # mismatch is reported instead of silently accepted.
+            if requested_doi and normalize_doi(outcome.doi) not in (None, requested_doi):
+                mismatched.append(f"{name} returned {outcome.doi!r}")
+                continue
             papers.append(outcome)
+    if mismatched:
+        errors["doi_mismatch"] = "; ".join(mismatched)
     merged = merge_papers(papers)
     if not merged:
         return {"paper": None, "errors": errors}

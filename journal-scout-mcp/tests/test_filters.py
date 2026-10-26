@@ -111,7 +111,10 @@ async def test_crossref_merges_filter_params(monkeypatch):
     captured = {}
 
     async def fake_fetch_json(url, params=None, headers=None, provider_name=None):
-        captured["params"] = params
+        # A DOI search may follow the empty search result with a direct
+        # /works/<doi> lookup, which carries no filter. Only the first call
+        # is the search request this test is about.
+        captured.setdefault("params", params)
         return {"message": {"items": []}}
 
     monkeypatch.setattr(provider, "_fetch_json", fake_fetch_json)

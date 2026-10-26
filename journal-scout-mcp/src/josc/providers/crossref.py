@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from ..config import get_polite_email
-from ..models import Paper
+from ..models import Paper, ProviderError
 from ..retractions import RetractionInfo, normalize_reason
 from ..utils import first_of, normalize_doi, parse_year, strip_jats
 from .base import ProviderBase
@@ -115,7 +115,7 @@ class CrossrefProvider(ProviderBase):
             url=item.get("URL"),
             type=item.get("type"),
             sources=["crossref"],
-            ids={"crossref": item.get("DOI")} if item.get("DOI") else {},
+            ids={"crossref": doi} if doi else {},
             is_retracted=is_retracted or None,
             retraction=retraction,
             topics=list(item.get("subject") or []),
@@ -161,32 +161,73 @@ class CrossrefProvider(ProviderBase):
         return self._items_to_papers(data)
 
     async def search(self, query: str, limit: int, year_from=None, year_to=None, tech_only=False, author=None, venue=None, offset: int = 0, affiliation=None, issn=None, doi=None) -> List[Paper]:
-        params = {"query": query, "rows": limit, "offset": offset}
-        if author:
-            params["query.author"] = author
-        if venue:
-            params["query.container-title"] = venue
-        if affiliation:
-            params["query.affiliation"] = affiliation
+        params = {"rows": limit, "offset": offset}
+        # A DOI is an exact identifier. Crossref ANDs ``query`` into the
+        # relevance ranking, so sending both the text query and a doi filter
+        # returns zero rows for a DOI that does exist. Drop the text terms.
+        if not doi:
+            params["query"] = query
+            if author:
+                params["query.author"] = author
+            if venue:
+                params["query.container-title"] = venue
+            if affiliation:
+                params["query.affiliation"] = affiliation
         extra_filters = []
         if issn:
             extra_filters.append(f"issn:{issn}")
         if doi:
             extra_filters.append(f"doi:{doi}")
-        return await self._works(params, year_from, year_to, extra_filters)
+        papers = await self._works(params, year_from, year_to, extra_filters)
+        if not papers and doi and offset == 0:
+            return await self._doi_fallback(doi, limit, year_from, year_to)
+        return papers
 
     async def search_author(self, author: str, limit: int, year_from=None, year_to=None, venue=None, offset: int = 0, affiliation=None, issn=None, doi=None) -> List[Paper]:
-        params = {"query.author": author, "rows": limit, "offset": offset}
-        if venue:
-            params["query.container-title"] = venue
-        if affiliation:
-            params["query.affiliation"] = affiliation
+        params = {"rows": limit, "offset": offset}
+        if not doi:
+            params["query.author"] = author
+            if venue:
+                params["query.container-title"] = venue
+            if affiliation:
+                params["query.affiliation"] = affiliation
         extra_filters = []
         if issn:
             extra_filters.append(f"issn:{issn}")
         if doi:
             extra_filters.append(f"doi:{doi}")
-        return await self._works(params, year_from, year_to, extra_filters)
+        papers = await self._works(params, year_from, year_to, extra_filters)
+        if not papers and doi and offset == 0:
+            return await self._doi_fallback(doi, limit, year_from, year_to)
+        return papers
+
+    async def _doi_fallback(self, doi, limit, year_from, year_to) -> List[Paper]:
+        """Resolve a DOI directly when the search index reports no match.
+
+        ``filter=doi:`` is the correct way to look a work up, but the search
+        index can lag behind ``/works/<doi>`` (newly registered DOIs), and a
+        combined filter can still narrow the result away. A DOI is an exact
+        identifier, so an empty search result is not evidence that the work
+        is absent: ask the record endpoint before reporting a miss.
+        """
+        if limit is not None and limit < 1:
+            return []
+        try:
+            paper = await self.get(doi)
+        except ProviderError:
+            # The DOI really is unknown to Crossref, so the empty search
+            # result was accurate. Nothing to recover.
+            return []
+        if paper is None:
+            return []
+        # Honour the year bounds the search would have applied, but keep a
+        # record whose year is unknown: the caller named this exact DOI.
+        if paper.year is not None:
+            if year_from and paper.year < year_from:
+                return []
+            if year_to and paper.year > year_to:
+                return []
+        return [paper]
 
     async def get(self, identifier: str) -> Optional[Paper]:
         doi = normalize_doi(identifier)

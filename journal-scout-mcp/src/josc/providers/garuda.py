@@ -7,6 +7,7 @@ with ``a.title-article``, ``a.author-article`` and ``xmp.subtitle-article``.
 
 from __future__ import annotations
 
+import asyncio
 import re
 from typing import List, Optional
 
@@ -27,6 +28,32 @@ TRAILING_ID_RE = re.compile(r"/documents/detail/(\d+)")
 # Garuda appends " -" to authors that have no linked affiliation page.
 AUTHOR_TRAILER_RE = re.compile(r"\s*-\s*$")
 WS_RE = re.compile(r"\s+")
+
+# Garuda ANDs every whitespace-separated term, so a long natural-language query
+# matches nothing even when every term appears somewhere. The ladder below
+# shortens the query until the site returns hits, and always reaches a two-term
+# prefix: a six-word query can still match when the index only carries the
+# leading topic words.
+MAX_FALLBACK_TERMS = 6
+FALLBACK_PAUSE_SECONDS = 0.4
+
+
+def _query_variants(query: str) -> List[str]:
+    terms = [term for term in WS_RE.split(query.strip()) if term]
+    if len(terms) <= 1:
+        return [query]
+
+    n = len(terms)
+    variants = [query]
+    for keep in (n - 1, n // 2, 2, 1):
+        if not 1 <= keep < n:
+            continue
+        candidate = " ".join(terms[:keep])
+        if candidate not in variants:
+            variants.append(candidate)
+        if len(variants) >= MAX_FALLBACK_TERMS:
+            break
+    return variants
 
 
 def _text(node) -> str:
@@ -195,16 +222,32 @@ class GarudaProvider(ProviderBase):
         offset: int = 0,
     ) -> List[Paper]:
         page = offset // PAGE_SIZE + 1
-        html = await self._fetch_text(
-            f"{BASE}/documents",
-            params={"q": query, "page": page},
-        )
+        self.last_query_note = None
 
-        papers = [
-            paper
-            for item in BeautifulSoup(html, "lxml").select("div.article-item")
-            if (paper := _to_paper(item)) is not None
-        ]
+        used_query = query
+        papers: List[Paper] = []
+        for attempt, candidate in enumerate(_query_variants(query)):
+            if attempt:
+                # Garuda throttles rapid repeat queries; a short pause keeps a
+                # fallback ladder from tripping the rate limiter.
+                await asyncio.sleep(FALLBACK_PAUSE_SECONDS)
+            html = await self._fetch_text(
+                f"{BASE}/documents",
+                params={"q": candidate, "page": page},
+            )
+            papers = [
+                paper
+                for item in BeautifulSoup(html, "lxml").select("div.article-item")
+                if (paper := _to_paper(item)) is not None
+            ]
+            used_query = candidate
+            if papers:
+                break
+
+        if used_query != query:
+            self.last_query_note = (
+                f"no results for {query!r}; narrowed to {used_query!r}"
+            )
 
         if year_from is not None:
             papers = [p for p in papers if p.year is not None and p.year >= year_from]

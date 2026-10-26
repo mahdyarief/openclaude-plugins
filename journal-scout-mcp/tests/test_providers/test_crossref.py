@@ -65,6 +65,138 @@ async def test_search_author_sends_query_author():
         await client.aclose()
 
 
+async def test_search_by_doi_drops_text_query():
+    # Crossref ANDs ``query`` into the relevance ranking, so a doi filter plus
+    # a text query returns zero rows for a DOI that does exist. The DOI alone
+    # must be sent, with no ``query`` parameter at all.
+    captured = {}
+
+    def handler(request):
+        if request.url.path != "/works":
+            # Record endpoint for the fallback: this DOI is unknown, so the
+            # original empty search result stands.
+            return httpx.Response(404, json={"status": "error"})
+        captured["query"] = request.url.params.get("query")
+        captured["filter"] = request.url.params.get("filter")
+        return httpx.Response(200, json={"message": {"items": []}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        await provider.search("some long natural language title", 5, doi="10.1234/abc")
+        assert captured["query"] is None
+        assert captured["filter"] == "doi:10.1234/abc"
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_by_doi_drops_author_query():
+    captured = {}
+
+    def handler(request):
+        if request.url.path != "/works":
+            return httpx.Response(404, json={"status": "error"})
+        captured["query.author"] = request.url.params.get("query.author")
+        captured["filter"] = request.url.params.get("filter")
+        return httpx.Response(200, json={"message": {"items": []}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        await provider.search_author("Vaswani", 5, doi="10.1234/abc")
+        assert captured["query.author"] is None
+        assert captured["filter"] == "doi:10.1234/abc"
+    finally:
+        await client.aclose()
+
+
+def _record_payload(doi="10.1234/abc", title="A Recovered Record", year=2021):
+    return {
+        "message": {
+            "DOI": doi,
+            "title": [title],
+            "container-title": ["Journal of Testing"],
+            "issued": {"date-parts": [[year]]},
+            "author": [{"given": "Ada", "family": "Lovelace"}],
+            "type": "journal-article",
+        }
+    }
+
+
+async def test_search_by_doi_falls_back_to_record_endpoint():
+    # The search index can lag behind /works/<doi>; an empty filter result is
+    # not proof the DOI is absent.
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path == "/works":
+            return httpx.Response(200, json={"message": {"items": []}})
+        return httpx.Response(200, json=_record_payload())
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        papers = await provider.search("anything", 5, doi="10.1234/abc")
+        assert calls == ["/works", "/works/10.1234/abc"]
+        assert len(papers) == 1
+        assert papers[0].doi == "10.1234/abc"
+        assert papers[0].title == "A Recovered Record"
+        assert papers[0].year == 2021
+    finally:
+        await client.aclose()
+
+
+async def test_search_author_by_doi_falls_back_to_record_endpoint():
+    def handler(request):
+        if request.url.path == "/works":
+            return httpx.Response(200, json={"message": {"items": []}})
+        return httpx.Response(200, json=_record_payload())
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        papers = await provider.search_author("Lovelace", 5, doi="10.1234/abc")
+        assert len(papers) == 1
+        assert papers[0].title == "A Recovered Record"
+    finally:
+        await client.aclose()
+
+
+async def test_search_by_doi_does_not_fall_back_when_paginating():
+    # A fallback on a later page would re-return the same single record and
+    # corrupt pagination semantics.
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        return httpx.Response(200, json={"message": {"items": []}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        papers = await provider.search("anything", 5, doi="10.1234/abc", offset=5)
+        assert papers == []
+        assert calls == ["/works"]
+    finally:
+        await client.aclose()
+
+
+async def test_search_by_doi_fallback_honors_year_bounds():
+    def handler(request):
+        if request.url.path == "/works":
+            return httpx.Response(200, json={"message": {"items": []}})
+        return httpx.Response(200, json=_record_payload(year=2015))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = CrossrefProvider(client)
+    try:
+        papers = await provider.search("anything", 5, doi="10.1234/abc", year_from=2020)
+        assert papers == []
+    finally:
+        await client.aclose()
+
+
 async def test_search_sends_native_year_filter():
     captured = {}
 
