@@ -1,0 +1,24 @@
+{
+  "name": "Journal Scout · literature graph explorer",
+  "short_name": "Journal Scout",
+  "description": "Multi-source literature search, citation networks and bibliometrics powered by journal-scout-mcp",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080c13",
+  "theme_color": "#080c13",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
