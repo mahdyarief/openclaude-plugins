@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from .retractions import RetractionInfo
+
 
 @dataclass
 class Paper:
@@ -18,6 +20,7 @@ class Paper:
     sources: list[str] = field(default_factory=list)
     ids: dict[str, str] = field(default_factory=dict)
     is_retracted: bool | None = None
+    retraction: RetractionInfo | None = None
     cited_by_percentile: int | None = None
     citations_by_year: dict[int, int] = field(default_factory=dict)
     topics: list[str] = field(default_factory=list)
@@ -46,6 +49,7 @@ class Paper:
             "sources": self.sources,
             "ids": self.ids,
             "is_retracted": self.is_retracted,
+            "retraction": self.retraction.to_dict() if self.retraction else None,
             "cited_by_percentile": self.cited_by_percentile,
             "citations_by_year": self.citations_by_year,
             "topics": self.topics,

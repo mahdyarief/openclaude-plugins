@@ -1,3 +1,4 @@
+from josc.models import Paper
 from josc.retractions import (
     RETRACTION_REASON_KEYS,
     RetractionInfo,
@@ -37,5 +38,26 @@ def test_retraction_info_to_dict_is_json_safe():
         "notice_doi": "10.1/notice",
         "notice_url": "https://example.test/notice",
         "notice_date": "2024-03-01",
+        "source": "crossref",
+    }
+
+
+def test_paper_defaults_to_no_retraction_payload():
+    paper = Paper(title="A Paper")
+    assert paper.retraction is None
+    assert paper.to_dict()["retraction"] is None
+
+
+def test_paper_serializes_retraction_payload():
+    paper = Paper(
+        title="A Paper",
+        is_retracted=True,
+        retraction=RetractionInfo(reasons=["Paper Mill"], source="crossref"),
+    )
+    assert paper.to_dict()["retraction"] == {
+        "reasons": ["Paper Mill"],
+        "notice_doi": None,
+        "notice_url": None,
+        "notice_date": None,
         "source": "crossref",
     }
