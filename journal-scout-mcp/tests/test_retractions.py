@@ -1,3 +1,4 @@
+from josc.merge import merge_two
 from josc.models import Paper
 from josc.providers.crossref import build_retraction
 from josc.retractions import (
@@ -100,3 +101,50 @@ def test_build_retraction_ignores_unknown_reason_labels():
     info = build_retraction(item)
     assert info is not None
     assert info.reasons == []
+
+
+def test_crossref_provider_attaches_retraction_payload():
+    from josc.providers.crossref import CrossrefProvider
+
+    provider = CrossrefProvider(None)
+    paper = provider._to_paper(
+        {
+            "DOI": "10.1/a",
+            "title": ["A Paper"],
+            "update-to": [{"type": "retraction", "DOI": "10.1/n", "label": "Retraction"}],
+        }
+    )
+    assert paper.retraction is not None
+    assert paper.retraction.notice_doi == "10.1/n"
+
+
+def test_merge_two_keeps_the_richest_retraction_payload():
+    thin = Paper(
+        doi="10.1/a",
+        title="P",
+        retraction=RetractionInfo(reasons=["Updated to Retraction"], source="crossref"),
+    )
+    rich = Paper(
+        doi="10.1/a",
+        title="P",
+        retraction=RetractionInfo(
+            reasons=["Paper Mill", "Falsification/Fabrication of Data"],
+            notice_doi="10.1/n",
+            source="crossref",
+        ),
+    )
+    merged = merge_two(thin, rich)
+    assert merged.retraction is not None
+    assert merged.retraction.notice_doi == "10.1/n"
+    assert len(merged.retraction.reasons) == 2
+
+
+def test_merge_two_syncs_is_retracted_from_payload():
+    plain = Paper(doi="10.1/a", title="P")
+    flagged = Paper(
+        doi="10.1/a",
+        title="P",
+        retraction=RetractionInfo(reasons=["Paper Mill"], source="crossref"),
+    )
+    merged = merge_two(plain, flagged)
+    assert merged.is_retracted is True

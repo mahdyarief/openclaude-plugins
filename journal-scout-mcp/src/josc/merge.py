@@ -87,6 +87,15 @@ def _merge_retracted(a: Optional[bool], b: Optional[bool]) -> Optional[bool]:
     return None
 
 
+def _richest_retraction(left, right):
+    """Return the retraction payload carrying the most reason keys."""
+    if left is None:
+        return right
+    if right is None:
+        return left
+    return left if len(left.reasons) >= len(right.reasons) else right
+
+
 def merge_two(a: Paper, b: Paper) -> Paper:
     preferred, fallback = _ranked(a, b)
     counts = [c for c in (a.citation_count, b.citation_count) if c is not None]
@@ -96,7 +105,7 @@ def merge_two(a: Paper, b: Paper) -> Paper:
             sources.append(source)
     ids = dict(a.ids)
     ids.update(b.ids)
-    return Paper(
+    merged = Paper(
         doi=normalize_doi(_pick_text(a.doi, b.doi)),
         title=_pick_text(preferred.title, fallback.title) or "",
         isbn=_pick_text(preferred.isbn, fallback.isbn),
@@ -127,6 +136,11 @@ def merge_two(a: Paper, b: Paper) -> Paper:
         license=_pick_text(preferred.license, fallback.license),
         tldr=_pick_text(preferred.tldr, fallback.tldr),
     )
+    retraction = _richest_retraction(a.retraction, b.retraction)
+    if retraction is not None:
+        merged.retraction = retraction
+        merged.is_retracted = True
+    return merged
 
 
 def merge_papers(papers: List[Paper]) -> List[Paper]:

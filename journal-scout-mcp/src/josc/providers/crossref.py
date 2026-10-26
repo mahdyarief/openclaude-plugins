@@ -92,6 +92,7 @@ class CrossrefProvider(ProviderBase):
         is_retracted = any(
             (update.get("type") or "").lower() == "retraction" for update in updates
         )
+        retraction = build_retraction(item)
         funders = []
         for funder in item.get("funder") or []:
             name = funder.get("name")
@@ -116,6 +117,7 @@ class CrossrefProvider(ProviderBase):
             sources=["crossref"],
             ids={"crossref": item.get("DOI")} if item.get("DOI") else {},
             is_retracted=is_retracted or None,
+            retraction=retraction,
             topics=list(item.get("subject") or []),
             funders=funders,
             license=license_url,
