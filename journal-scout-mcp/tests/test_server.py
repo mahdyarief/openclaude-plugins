@@ -23,7 +23,8 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 25
+    assert len(TOOL_NAMES) == 26
+    assert "identify_paper" in TOOL_NAMES
     assert "search_all" in TOOL_NAMES
     assert "search_author" in TOOL_NAMES
     assert "search_openalex" in TOOL_NAMES
@@ -216,3 +217,24 @@ async def test_dispatch_build_citation_network_forwards_reference_limit():
     assert provider.reference_calls == ["10.1/seed"]
     assert network["counts"]["reference_references"] == 0
     assert network["stats"]["nodes"] == 2
+
+
+async def test_identify_paper_tool_is_registered():
+    assert "identify_paper" in TOOL_NAMES
+    schema = next(tool for tool in _tool_list() if tool.name == "identify_paper").inputSchema
+    assert schema["required"] == ["path"]
+
+
+async def test_identify_paper_dispatches_through_recognize(monkeypatch):
+    import josc.server as server
+
+    monkeypatch.setattr(server, "extract_pdf_text", lambda path: "doi 10.1/x")
+
+    async def fake_get_paper(providers, identifier, sources=None):
+        return {"paper": {"title": "Resolved"}, "errors": {}}
+
+    monkeypatch.setattr(server.aggregator, "get_paper", fake_get_paper)
+
+    result = await build_json("identify_paper", {"path": "x.pdf"}, [], None)
+    assert result["identifier"] == "10.1/x"
+    assert result["paper"]["title"] == "Resolved"
