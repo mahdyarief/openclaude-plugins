@@ -318,7 +318,10 @@ def _tool_list() -> List[types.Tool]:
 
 
 def _watch_store() -> WatchStore:
-    return WatchStore(_store())
+    store = _store()
+    if store is None:
+        raise RuntimeError("Persistent watch store is not configured.")
+    return WatchStore(store)
 
 
 async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_provider) -> Dict[str, Any]:

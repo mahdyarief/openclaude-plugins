@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from josc.server import TOOL_NAMES, _tool_list, build_json
 from josc.models import Paper
 from josc.providers.base import ProviderBase
@@ -285,3 +287,10 @@ async def test_check_watches_returns_new_items_per_watch(monkeypatch):
     result = await build_json("check_watches", {}, [], None)
     assert result["watches"][0]["checked"] == 1
     assert result["watches"][0]["new"][0]["title"] == "New"
+
+
+async def test_check_watches_without_store_raises(monkeypatch):
+    import josc.server as server
+    monkeypatch.setattr(server, "_store", lambda: None, raising=False)
+    with pytest.raises(RuntimeError, match="Persistent watch store is not configured"):
+        await build_json("check_watches", {}, [], None)
