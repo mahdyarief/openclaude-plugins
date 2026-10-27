@@ -4,6 +4,8 @@ The handlers under test do not touch the network, so calling them directly
 avoids spinning up the Starlette app (whose lifespan tries to reach Turso).
 """
 
+import base64
+
 import pytest
 
 from josc import api
@@ -562,3 +564,38 @@ async def test_paper_route_passes_source_to_aggregator(monkeypatch, with_provide
 
     assert response.status_code == 200
     assert seen == {"identifier": "6420654", "sources": ["garuda"]}
+
+
+async def test_identify_route_resolves_uploaded_pdf(monkeypatch):
+    monkeypatch.setattr(
+        api.recognize_routes,
+        "extract_pdf_text_from_bytes",
+        lambda data: "doi 10.1/x",
+    )
+
+    async def fake_get_paper(providers, identifier, sources=None):
+        return {"paper": {"title": "Resolved"}, "errors": {}}
+
+    monkeypatch.setattr(api.aggregator, "get_paper", fake_get_paper)
+
+    req = FakeRequest(body={"pdf_base64": base64.b64encode(b"%PDF-1.4").decode()})
+    response = await api.identify(req)
+
+    assert response.status_code == 200
+    payload = _body(response)
+    assert payload["identifier"] == "10.1/x"
+    assert payload["paper"]["title"] == "Resolved"
+
+
+async def test_identify_route_rejects_missing_pdf_base64():
+    response = await api.identify(FakeRequest(body={}))
+
+    assert response.status_code == 400
+    assert "pdf_base64" in _body(response)["error"]
+
+
+async def test_identify_route_rejects_invalid_base64():
+    response = await api.identify(FakeRequest(body={"pdf_base64": "not base64!!"}))
+
+    assert response.status_code == 400
+    assert "base64" in _body(response)["error"]

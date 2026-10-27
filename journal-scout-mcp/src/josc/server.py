@@ -11,6 +11,8 @@ from .cache import build_cache
 from .exporters import FORMATTERS, format_papers
 from .http import Fetcher
 from .models import ProviderError
+from .identify import resolve_document
+from .pdf_text import extract_pdf_text
 from .providers import build_providers, search_provider_names
 from .quota import quota_report
 from .store import build_store, cached_call
@@ -25,6 +27,7 @@ UNIFIED_TOOLS = [
     "build_citation_network",
     "compute_metrics",
     "export_results",
+    "identify_paper",
 ]
 PER_SOURCE_TOOLS = [f"search_{name}" for name in search_provider_names()]
 SCOPUS_DETAIL_TOOLS = ["get_abstract_details", "get_author_profile", "get_quota_status"]
@@ -272,6 +275,20 @@ def _tool_list() -> List[types.Tool]:
                 "required": ["papers", "format"],
             },
         ),
+        _search_tool(
+            "identify_paper",
+            "Identify a paper from a local PDF by resolving its DOI or title.",
+            {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Absolute path to a PDF file on this machine.",
+                    },
+                },
+                "required": ["path"],
+            },
+        ),
     ]
     for name in PER_SOURCE_TOOLS:
         tools.append(
@@ -371,6 +388,9 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             sources=arguments.get("sources"),
             mode=arguments.get("mode", "basic"),
         )
+    if name == "identify_paper":
+        text = extract_pdf_text(arguments["path"])
+        return await resolve_document(text, providers)
     if name == "export_results":
         fmt = arguments["format"]
         return {
