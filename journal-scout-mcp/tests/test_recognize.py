@@ -1,7 +1,9 @@
-import pytest  # noqa: F401 — used by Task 3 (pytest.raises)
+import builtins
+import pytest
 
 from josc.models import Paper
 from josc.recognize import find_doi, guess_title, recognize_document
+from josc.pdf_text import extract_pdf_text
 
 
 def test_find_doi_reads_a_plain_doi():
@@ -58,3 +60,18 @@ async def test_recognize_document_returns_none_without_identifier():
         raise AssertionError("resolver must not be called")
 
     assert await recognize_document("", resolver) is None
+
+
+def test_extract_pdf_text_explains_a_missing_dependency(monkeypatch):
+    real_import = builtins.__import__
+
+    def blocked(name, *args, **kwargs):
+        if name == "pypdf":
+            raise ImportError("no pypdf")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", blocked)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        extract_pdf_text("whatever.pdf")
+    assert "journal-scout-mcp[pdf]" in str(excinfo.value)
