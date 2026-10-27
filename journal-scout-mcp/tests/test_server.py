@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from josc.server import TOOL_NAMES, _tool_list, build_json
 from josc.models import Paper
 from josc.providers.base import ProviderBase
@@ -23,7 +25,7 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 26
+    assert len(TOOL_NAMES) == 27
     assert "identify_paper" in TOOL_NAMES
     assert "search_all" in TOOL_NAMES
     assert "search_author" in TOOL_NAMES
@@ -238,3 +240,57 @@ async def test_identify_paper_dispatches_through_recognize(monkeypatch):
     result = await build_json("identify_paper", {"path": "x.pdf"}, [], None)
     assert result["identifier"] == "10.1/x"
     assert result["paper"]["title"] == "Resolved"
+
+
+async def test_check_watches_tool_is_registered():
+    assert "check_watches" in TOOL_NAMES
+
+
+async def test_check_watches_returns_new_items_per_watch(monkeypatch):
+    import josc.server as server
+
+    class FakeWatchStore:
+        def __init__(self):
+            self.seen = set()
+            self.last_results = []
+
+        async def list(self):
+            return [
+                {
+                    "id": "w1",
+                    "query": "q",
+                    "seen": set(self.seen),
+                    "last_results": list(self.last_results),
+                }
+            ]
+
+        async def get(self, watch_id):
+            return {
+                "id": watch_id,
+                "query": "q",
+                "seen": set(self.seen),
+                "last_results": list(self.last_results),
+            }
+
+        async def mark_seen(self, watch_id, keys, results):
+            self.seen |= set(keys)
+            self.last_results = list(results)
+
+    fake_store = FakeWatchStore()
+    monkeypatch.setattr(server, "_watch_store", lambda: fake_store, raising=False)
+
+    async def fake_search_all(providers, **kwargs):
+        return {"results": [{"doi": "10.1/new", "title": "New"}]}
+
+    monkeypatch.setattr(server.aggregator, "search_all", fake_search_all)
+
+    result = await build_json("check_watches", {}, [], None)
+    assert result["watches"][0]["checked"] == 1
+    assert result["watches"][0]["new"][0]["title"] == "New"
+
+
+async def test_check_watches_without_store_raises(monkeypatch):
+    import josc.server as server
+    monkeypatch.setattr(server, "_store", lambda: None, raising=False)
+    with pytest.raises(RuntimeError, match="Persistent watch store is not configured"):
+        await build_json("check_watches", {}, [], None)

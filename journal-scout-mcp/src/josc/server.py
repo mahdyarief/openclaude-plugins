@@ -16,6 +16,8 @@ from .pdf_text import extract_pdf_text
 from .providers import build_providers, search_provider_names
 from .quota import quota_report
 from .store import build_store, cached_call
+from .api.state import _store
+from .watches import WatchStore, check_watch
 
 UNIFIED_TOOLS = [
     "search_all",
@@ -28,6 +30,7 @@ UNIFIED_TOOLS = [
     "compute_metrics",
     "export_results",
     "identify_paper",
+    "check_watches",
 ]
 PER_SOURCE_TOOLS = [f"search_{name}" for name in search_provider_names()]
 SCOPUS_DETAIL_TOOLS = ["get_abstract_details", "get_author_profile", "get_quota_status"]
@@ -289,6 +292,11 @@ def _tool_list() -> List[types.Tool]:
                 "required": ["path"],
             },
         ),
+        _search_tool(
+            "check_watches",
+            "Run every saved-search watch and return papers not reported before.",
+            {"type": "object", "properties": {}},
+        ),
     ]
     for name in PER_SOURCE_TOOLS:
         tools.append(
@@ -309,7 +317,36 @@ def _tool_list() -> List[types.Tool]:
     return tools
 
 
+def _watch_store() -> WatchStore:
+    store = _store()
+    if store is None:
+        raise RuntimeError("Persistent watch store is not configured.")
+    return WatchStore(store)
+
+
 async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_provider) -> Dict[str, Any]:
+    if name == "check_watches":
+        store = _watch_store()
+
+        async def runner(watch):
+            result = await aggregator.search_all(
+                providers,
+                query=watch["query"],
+                sources=watch.get("sources"),
+            )
+            return result["results"]
+
+        reports = []
+        for watch in await store.list():
+            result = await check_watch(watch, runner, store)
+            reports.append(
+                {
+                    "id": watch["id"],
+                    "checked": result["checked"],
+                    "new": result["new"],
+                }
+            )
+        return {"watches": reports}
     if name == "search_all":
         return await aggregator.search_all(
             providers,
