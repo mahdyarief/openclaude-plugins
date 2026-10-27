@@ -11,9 +11,9 @@ from .cache import build_cache
 from .exporters import FORMATTERS, format_papers
 from .http import Fetcher
 from .models import ProviderError
+from .identify import resolve_document
 from .pdf_text import extract_pdf_text
 from .providers import build_providers, search_provider_names
-from .recognize import find_doi, guess_title, recognize_document
 from .quota import quota_report
 from .store import build_store, cached_call
 
@@ -390,15 +390,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         )
     if name == "identify_paper":
         text = extract_pdf_text(arguments["path"])
-
-        async def resolve(identifier: str):
-            return (await aggregator.get_paper(providers, identifier)).get("paper")
-
-        paper = await recognize_document(text, resolve)
-        return {
-            "identifier": find_doi(text) or guess_title(text),
-            "paper": paper,
-        }
+        return await resolve_document(text, providers)
     if name == "export_results":
         fmt = arguments["format"]
         return {

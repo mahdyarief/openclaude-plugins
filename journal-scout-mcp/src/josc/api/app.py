@@ -23,6 +23,7 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
+from .recognize_routes import identify
 from .library_routes import (
     export,
     import_external,
@@ -119,6 +120,7 @@ routes = [
     Route("/api/merge", merge, methods=["POST"]),
     Route("/api/export/graphml", graphml_export),
     Route("/api/export", export, methods=["POST"]),
+    Route("/api/identify", identify, methods=["POST"]),
 ]
 
 if WEB_DIST.is_dir():

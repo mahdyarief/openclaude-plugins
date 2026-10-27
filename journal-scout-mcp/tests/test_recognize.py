@@ -1,9 +1,10 @@
 import builtins
 import pytest
 
+from josc import identify
 from josc.models import Paper
 from josc.recognize import find_doi, guess_title, recognize_document
-from josc.pdf_text import extract_pdf_text
+from josc.pdf_text import extract_pdf_text, extract_pdf_text_from_bytes
 
 
 def test_find_doi_reads_a_plain_doi():
@@ -74,4 +75,38 @@ def test_extract_pdf_text_explains_a_missing_dependency(monkeypatch):
 
     with pytest.raises(RuntimeError) as excinfo:
         extract_pdf_text("whatever.pdf")
+    assert "journal-scout-mcp[pdf]" in str(excinfo.value)
+
+
+async def test_resolve_document_returns_identifier_and_paper(monkeypatch):
+    async def fake_get_paper(providers, identifier, sources=None):
+        return {"paper": {"title": "Resolved", "doi": identifier}, "errors": {}}
+
+    monkeypatch.setattr(identify.aggregator, "get_paper", fake_get_paper)
+
+    result = await identify.resolve_document("doi 10.1/x", [])
+
+    assert result["identifier"] == "10.1/x"
+    assert result["paper"]["title"] == "Resolved"
+
+
+async def test_resolve_document_returns_none_without_identifier():
+    result = await identify.resolve_document("", [])
+
+    assert result == {"identifier": None, "paper": None}
+
+
+def test_extract_pdf_text_from_bytes_explains_a_missing_dependency(monkeypatch):
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "pypdf" or name.startswith("pypdf."):
+            raise ImportError("no pypdf")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        extract_pdf_text_from_bytes(b"%PDF-1.4")
+
     assert "journal-scout-mcp[pdf]" in str(excinfo.value)

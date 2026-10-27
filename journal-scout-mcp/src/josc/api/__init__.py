@@ -13,6 +13,7 @@ Module map:
 * :mod:`.discovery_routes`  - metrics (JSON/CSV/report) and GraphML export
 * :mod:`.library_routes`    - paper export/import, merge, search and workspace archives
 * :mod:`.cache_routes`      - cache clear/info, split, duplicate, replay
+* :mod:`.recognize_routes`  - identify a paper from an uploaded PDF
 * :mod:`.app`               - Starlette assembly, lifespan, CORS, ``start()``
 """
 
@@ -51,6 +52,7 @@ from .discovery_routes import (
     metrics_report,
 )
 from .history import _remember
+from .recognize_routes import identify
 from .responses import _cache_stats, _error, _store_stats
 from .search_routes import (
     citations,
@@ -103,6 +105,7 @@ __all__ = [
     "export",
     "graphml_export",
     "health",
+    "identify",
     "import_external",
     "lifespan",
     "merge",
