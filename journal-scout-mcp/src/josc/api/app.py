@@ -59,7 +59,9 @@ from .search_routes import (
     search_author,
     searches,
 )
-from .state import setup_state, teardown_state
+from .watch_routes import watch_delete, watch_feed, watches_list_create
+from ..watches import WatchStore
+from .state import _store, setup_state, teardown_state
 
 WEB_DIST = Path(__file__).resolve().parents[3] / "web" / "dist"
 
@@ -86,6 +88,7 @@ class SPAStaticFiles(StaticFiles):
 @asynccontextmanager
 async def lifespan(app: Starlette):
     await setup_state()
+    app.state.watches = WatchStore(_store()) if _store() is not None else None
     try:
         yield
     finally:
@@ -121,6 +124,9 @@ routes = [
     Route("/api/export/graphml", graphml_export),
     Route("/api/export", export, methods=["POST"]),
     Route("/api/identify", identify, methods=["POST"]),
+    Route("/api/watches", watches_list_create, methods=["GET", "POST"]),
+    Route("/api/watches/{watch_id}", watch_delete, methods=["DELETE"]),
+    Route("/api/watches/{watch_id}/feed", watch_feed),
 ]
 
 if WEB_DIST.is_dir():

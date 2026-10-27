@@ -14,6 +14,7 @@ Module map:
 * :mod:`.library_routes`    - paper export/import, merge, search and workspace archives
 * :mod:`.cache_routes`      - cache clear/info, split, duplicate, replay
 * :mod:`.recognize_routes`  - identify a paper from an uploaded PDF
+* :mod:`.watch_routes`     - saved-search watch CRUD and RSS feed
 * :mod:`.app`               - Starlette assembly, lifespan, CORS, ``start()``
 """
 
@@ -54,6 +55,7 @@ from .discovery_routes import (
 from .history import _remember
 from .recognize_routes import identify
 from .responses import _cache_stats, _error, _store_stats
+from .watch_routes import watch_delete, watch_feed, watches_list_create
 from .search_routes import (
     citations,
     health,
@@ -130,6 +132,9 @@ __all__ = [
     "setup_state",
     "start",
     "teardown_state",
+    "watch_delete",
+    "watch_feed",
+    "watches_list_create",
     "workspace_export",
     "workspace_import",
 ]
