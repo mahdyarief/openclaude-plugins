@@ -65,6 +65,9 @@ def test_supported_formats_are_advertised():
         "xls",
         "csv_plain",
         "xls_plain",
+        "csl-apa",
+        "csl-vancouver",
+        "csl-chicago",
     }
 
 

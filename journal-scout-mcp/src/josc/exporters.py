@@ -14,6 +14,8 @@ import json
 import re
 from typing import Any, Dict, Iterable, List, Tuple
 
+from .csl import render_csl
+
 # Single source of truth for the formats the server advertises. Adding a new
 # format = adding an entry here + a formatter function. No switch statement to
 # update in two places, no hand-rolled if/elif chain.
@@ -603,6 +605,21 @@ def _to_csiro(papers: List[Dict[str, Any]]) -> str:
             parts.append(f"doi:{paper['doi']}")
         lines.append(" ".join(parts))
     return "\n".join(lines) + "\n"
+
+
+@_register("csl-apa")
+def _to_csl_apa(papers: List[Dict[str, Any]]) -> str:
+    return render_csl(papers, "apa")
+
+
+@_register("csl-vancouver")
+def _to_csl_vancouver(papers: List[Dict[str, Any]]) -> str:
+    return render_csl(papers, "vancouver")
+
+
+@_register("csl-chicago")
+def _to_csl_chicago(papers: List[Dict[str, Any]]) -> str:
+    return render_csl(papers, "chicago")
 
 
 # --- public entry point -----------------------------------------------------
