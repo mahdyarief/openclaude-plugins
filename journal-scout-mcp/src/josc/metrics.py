@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import date
 from math import sqrt
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
 from .models import Paper
 

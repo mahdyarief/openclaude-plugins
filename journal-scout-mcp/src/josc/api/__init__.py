@@ -83,6 +83,7 @@ from .state import (
 )
 
 __all__ = [
+    "aggregator",
     "SPAStaticFiles",
     "OfflineMiss",
     "_cache_stats",

@@ -13,7 +13,6 @@ from starlette.requests import Request
 from ..config import get_api_key, get_cache_ttl
 from ..cache import build_cache
 from ..http import Fetcher
-from ..models import ProviderError
 from ..providers import build_providers
 from ..store import build_store, cached_call
 
