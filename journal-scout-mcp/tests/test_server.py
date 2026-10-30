@@ -25,7 +25,8 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 27
+    assert len(TOOL_NAMES) == 28
+    assert "search_corpus" in TOOL_NAMES
     assert "identify_paper" in TOOL_NAMES
     assert "search_all" in TOOL_NAMES
     assert "search_author" in TOOL_NAMES
@@ -294,3 +295,34 @@ async def test_check_watches_without_store_raises(monkeypatch):
     monkeypatch.setattr(server, "_store", lambda: None, raising=False)
     with pytest.raises(RuntimeError, match="Persistent watch store is not configured"):
         await build_json("check_watches", {}, [], None)
+
+
+async def test_search_corpus_tool_is_registered():
+    assert "search_corpus" in TOOL_NAMES
+    schema = next(tool for tool in _tool_list() if tool.name == "search_corpus").inputSchema
+    assert schema["required"] == ["query"]
+
+
+async def test_search_corpus_filters_the_archived_corpus(monkeypatch):
+    import josc.server as server
+
+    async def fake_load_corpus(archive, limit=20):
+        return [
+            {"title": "Deep Learning", "abstract": "neural networks"},
+            {"title": "Deep Learning", "abstract": "bayesian inference"},
+        ]
+
+    monkeypatch.setattr(server, "load_corpus", fake_load_corpus)
+    monkeypatch.setattr(server, "_store", lambda: object(), raising=False)
+
+    result = await build_json("search_corpus", {"query": "deep bayesian"}, [], None)
+    assert result["corpus_size"] == 2
+    assert len(result["results"]) == 1
+    assert result["results"][0]["abstract"] == "bayesian inference"
+
+
+async def test_search_corpus_without_store_raises(monkeypatch):
+    import josc.server as server
+    monkeypatch.setattr(server, "_store", lambda: None, raising=False)
+    with pytest.raises(RuntimeError, match="Persistent archive store is not configured"):
+        await build_json("search_corpus", {"query": "deep"}, [], None)

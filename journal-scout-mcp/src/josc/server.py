@@ -8,7 +8,10 @@ from mcp.server.stdio import stdio_server
 
 from . import aggregator, config, prompts
 from .cache import build_cache
+from .corpus import load_corpus
 from .exporters import FORMATTERS, format_papers
+from .fulltext import build_index, search_index
+from .search_archive import SearchArchive
 from .http import Fetcher
 from .models import ProviderError
 from .identify import resolve_document
@@ -31,6 +34,7 @@ UNIFIED_TOOLS = [
     "export_results",
     "identify_paper",
     "check_watches",
+    "search_corpus",
 ]
 PER_SOURCE_TOOLS = [f"search_{name}" for name in search_provider_names()]
 SCOPUS_DETAIL_TOOLS = ["get_abstract_details", "get_author_profile", "get_quota_status"]
@@ -297,6 +301,25 @@ def _tool_list() -> List[types.Tool]:
             "Run every saved-search watch and return papers not reported before.",
             {"type": "object", "properties": {}},
         ),
+        _search_tool(
+            "search_corpus",
+            "Search the locally archived search results by title, abstract, venue, author or keyword.",
+            {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Whitespace-separated terms; every term must match.",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "How many recent archived searches to include.",
+                        "default": 20,
+                    },
+                },
+                "required": ["query"],
+            },
+        ),
     ]
     for name in PER_SOURCE_TOOLS:
         tools.append(
@@ -428,6 +451,19 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
     if name == "identify_paper":
         text = extract_pdf_text(arguments["path"])
         return await resolve_document(text, providers)
+    if name == "search_corpus":
+        store = _store()
+        if store is None:
+            raise RuntimeError("Persistent archive store is not configured.")
+        archive = SearchArchive(store)
+        papers = await load_corpus(archive, limit=int(arguments.get("limit") or 20))
+        index = build_index(papers)
+        hits = search_index(index, papers, arguments["query"])
+        return {
+            "query": arguments["query"],
+            "corpus_size": len(papers),
+            "results": hits,
+        }
     if name == "export_results":
         fmt = arguments["format"]
         return {
