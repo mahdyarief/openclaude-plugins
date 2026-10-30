@@ -1,6 +1,6 @@
 [project]
 name = "journal-scout-mcp"
-version = "2.3.0"
+version = "2.4.0"
 description = "MCP server for multi-source journal research (Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, Garuda)"
 readme = "README.md"
 requires-python = ">=3.10"
