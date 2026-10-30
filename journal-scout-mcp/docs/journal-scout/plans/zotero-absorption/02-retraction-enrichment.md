@@ -50,7 +50,7 @@ Zotero menyimpan 111 kunci alasan **beserta paragraf penjelasan panjang**. Plan 
   - `RetractionInfo` dataclass dengan field `reasons: list[str]`, `notice_doi: str | None`, `notice_url: str | None`, `notice_date: str | None`, `source: str | None`.
   - `RetractionInfo.to_dict() -> dict`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_retractions.py`:
 
@@ -98,12 +98,12 @@ def test_retraction_info_to_dict_is_json_safe():
     }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.retractions'`.
 
-- [ ] **Step 3: Create `src/josc/retractions.py`**
+- [x] **Step 3: Create `src/josc/retractions.py`**
 
 Create the module with this exact content. The key list is the verbatim set of reason names from Zotero 10.0.6 (`retractions.js:1049-1160`).
 
@@ -263,17 +263,17 @@ class RetractionInfo:
         }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: PASS — 5 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/retractions.py tests/test_retractions.py
@@ -292,7 +292,7 @@ git commit -m "feat(retractions): add reason taxonomy and structured payload"
 - Consumes: `RetractionInfo` dari `josc.retractions`.
 - Produces: `Paper.retraction: RetractionInfo | None`, diekspor `Paper.to_dict()` sebagai kunci `"retraction"` berisi `dict | None`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_retractions.py`:
 
@@ -321,12 +321,12 @@ def test_paper_serializes_retraction_payload():
     }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: FAIL — `TypeError: Paper.__init__() got an unexpected keyword argument 'retraction'`.
 
-- [ ] **Step 3: Add the field**
+- [x] **Step 3: Add the field**
 
 In `src/josc/models.py`, add the import at the top:
 
@@ -348,17 +348,17 @@ Add the serialization immediately after `"is_retracted"` in `to_dict()`:
             "retraction": self.retraction.to_dict() if self.retraction else None,
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: PASS — 7 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/models.py tests/test_retractions.py
@@ -377,7 +377,7 @@ git commit -m "feat(retractions): carry structured retraction payload on Paper"
 - Consumes: `RetractionInfo`, `normalize_reason()` dari `josc.retractions`; `first_of()` dari `josc.utils`.
 - Produces: `build_retraction(item: dict) -> RetractionInfo | None` — fungsi modul-level yang dapat diuji tanpa instance provider.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_retractions.py`:
 
@@ -423,12 +423,12 @@ def test_build_retraction_ignores_unknown_reason_labels():
     assert info.reasons == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: FAIL — `ImportError: cannot import name 'build_retraction'`.
 
-- [ ] **Step 3: Add the parser**
+- [x] **Step 3: Add the parser**
 
 At the top of `src/josc/providers/crossref.py`, add:
 
@@ -464,17 +464,17 @@ def build_retraction(item: dict) -> Optional[RetractionInfo]:
     return None
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: PASS — 11 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/providers/crossref.py tests/test_retractions.py
@@ -494,7 +494,7 @@ git commit -m "feat(retractions): parse Crossref update-to notices"
 - Consumes: `build_retraction(item)` dari Task 3; `merge_two(a, b)` yang sudah ada.
 - Produces: `Paper.retraction` terisi dari Crossref; `merge_two` memilih payload dengan `reasons` terbanyak.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_retractions.py`:
 
@@ -550,12 +550,12 @@ def test_merge_two_syncs_is_retracted_from_payload():
     assert merged.is_retracted is True
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: FAIL — `paper.retraction is None`.
 
-- [ ] **Step 3: Attach in the provider**
+- [x] **Step 3: Attach in the provider**
 
 In `src/josc/providers/crossref.py`, inside `_to_paper`, add this line beside the other extracted locals:
 
@@ -575,7 +575,7 @@ If `_to_paper` does not currently set `is_retracted`, add it in the same constru
             is_retracted=True if retraction else None,
 ```
 
-- [ ] **Step 4: Merge the richest payload**
+- [x] **Step 4: Merge the richest payload**
 
 In `src/josc/merge.py`, inside `merge_two`, after the existing field merges and before `return`, add:
 
@@ -598,17 +598,17 @@ def _richest_retraction(left, right):
     return left if len(left.reasons) >= len(right.reasons) else right
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest tests/test_retractions.py -v`
 Expected: PASS — 14 passed.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/josc/providers/crossref.py src/josc/merge.py tests/test_retractions.py

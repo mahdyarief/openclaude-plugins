@@ -46,7 +46,7 @@ Mesin ini **bukan** implementasi CSL lengkap. Ia hanya mendukung elemen yang dip
   - `paper_to_csl(paper: Dict[str, Any]) -> Dict[str, Any]` — item CSL-JSON dengan kunci `type`, `id`, `title`, `author`, `issued`, `container-title`, `DOI`, `volume`, `issue`, `page`, `URL`.
   - `CSLStyleError(ValueError)` — dilempar saat spesifikasi gaya tidak valid.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_csl.py`:
 
@@ -94,12 +94,12 @@ def test_paper_to_csl_handles_single_token_author():
     assert item["author"] == [{"family": "Plato", "given": ""}]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_csl.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.csl'`.
 
-- [ ] **Step 3: Create `src/josc/csl.py`**
+- [x] **Step 3: Create `src/josc/csl.py`**
 
 ```python
 """A deliberately small CSL-JSON renderer.
@@ -153,17 +153,17 @@ def paper_to_csl(paper: Dict[str, Any]) -> Dict[str, Any]:
     return item
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_csl.py -v`
 Expected: PASS — 4 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/csl.py tests/test_csl.py
@@ -199,7 +199,7 @@ Bentuk spesifikasi gaya:
 }
 ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_csl.py`:
 
@@ -270,12 +270,12 @@ def test_render_rejects_a_style_missing_required_keys():
         raise AssertionError("CSLStyleError was not raised")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_csl.py -v`
 Expected: FAIL — `ImportError: cannot import name 'CSL_STYLES'`.
 
-- [ ] **Step 3: Append the renderer to `src/josc/csl.py`**
+- [x] **Step 3: Append the renderer to `src/josc/csl.py`**
 
 ```python
 _REQUIRED_STYLE_KEYS = frozenset(
@@ -404,17 +404,17 @@ def render_csl(papers: Sequence[Dict[str, Any]], style: Any) -> str:
     return "\n".join(lines) + "\n"
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_csl.py -v`
 Expected: PASS — 11 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/csl.py tests/test_csl.py
@@ -433,7 +433,7 @@ git commit -m "feat(csl): render CSL items with declarative style specs"
 - Consumes: `render_csl(papers, style)` dan `CSL_STYLES` dari `josc.csl`.
 - Produces: tiga entri baru di `FORMATTERS`: `"csl-apa"`, `"csl-vancouver"`, `"csl-chicago"`, semuanya `Callable[[List[Dict[str, Any]]], str]`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_csl.py`:
 
@@ -454,12 +454,12 @@ def test_legacy_formats_are_untouched():
     assert format_papers(SAMPLE, "apa").startswith("Vaswani, A.")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_csl.py -v`
 Expected: FAIL — `test_csl_formats_are_registered` asserts a missing key.
 
-- [ ] **Step 3: Add the registrations**
+- [x] **Step 3: Add the registrations**
 
 At the top of `src/josc/exporters.py`, add:
 
@@ -485,17 +485,17 @@ def _to_csl_chicago(papers: List[Dict[str, Any]]) -> str:
     return render_csl(papers, "chicago")
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_csl.py -v`
 Expected: PASS — 14 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — `tests/test_exporters.py` still green because the legacy 18 names are untouched.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/exporters.py tests/test_csl.py

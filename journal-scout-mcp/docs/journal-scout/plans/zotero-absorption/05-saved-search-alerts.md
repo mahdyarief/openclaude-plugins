@@ -51,7 +51,7 @@ Zotero punya `feedReader.js` dengan model feed penuh: sinkronisasi berkala, stat
   - `diff_results(previous: set[str], current: Sequence[dict]) -> list[dict]` — hanya paper yang key-nya belum ada di `previous`, urutan dipertahankan.
   - `render_rss(title: str, link: str, items: Sequence[dict]) -> str` — dokumen RSS 2.0 minimal, semua teks di-escape.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_watches.py`:
 
@@ -102,12 +102,12 @@ def test_render_rss_escapes_markup():
     assert "x=1&amp;y=2" in out
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_watches.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.watch_diff'`.
 
-- [ ] **Step 3: Create `src/josc/watch_diff.py`**
+- [x] **Step 3: Create `src/josc/watch_diff.py`**
 
 ```python
 """Pure helpers for saved-search watches.
@@ -185,17 +185,17 @@ def render_rss(title: str, link: str, items: Sequence[Dict[str, Any]]) -> str:
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_watches.py -v`
 Expected: PASS — 5 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/watch_diff.py tests/test_watches.py
@@ -217,7 +217,7 @@ git commit -m "feat(watches): add pure diff and RSS helpers"
   - `WatchStore(store)` dengan `async setup()`, `async create(query, author=None, sources=None, filters=None) -> str`, `async list() -> list[dict]`, `async delete(watch_id) -> bool`, `async get(watch_id) -> dict | None`, `async mark_seen(watch_id, keys: set[str], results: list[dict]) -> None`.
   - `check_watch(watch: dict, runner, store) -> dict` — async; `runner` adalah `Callable[[dict], Awaitable[list[dict]]]`. Selain mengembalikan paper baru, ia juga mempersist `last_results` agar feed REST bisa membacanya tanpa jaringan.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_watches.py`:
 
@@ -317,12 +317,12 @@ async def test_check_watch_reports_only_new_papers_and_marks_them_seen():
     assert "doi:10.1/new" in refreshed["seen"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_watches.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.watches'`.
 
-- [ ] **Step 3: Create `src/josc/watches.py`**
+- [x] **Step 3: Create `src/josc/watches.py`**
 
 ```python
 """Saved-search watches: persistence plus a network-free check function.
@@ -455,17 +455,17 @@ async def check_watch(
     return {"watch": watch, "new": fresh, "checked": len(current)}
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_watches.py -v`
 Expected: PASS — 8 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/watches.py tests/test_watches.py
@@ -486,7 +486,7 @@ git commit -m "feat(watches): persist watches and diff runs without network acce
 - Consumes: `WatchStore` dari `josc.watches`; `render_rss()` dari `josc.watch_diff`; `_error()` dari `josc.api.responses`.
 - Produces: handler `watches_list_create`, `watch_delete`, `watch_feed` yang dipakai `app.py`. Tidak ada handler check di REST karena runner pencarian hanya hidup di jalur MCP (`check_watches`); route check akan menjadi endpoint yang selalu mengembalikan data basi.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_watch_routes.py`:
 
@@ -514,12 +514,12 @@ def test_watch_feed_renders_persisted_results_without_network():
     assert b"Old Paper" in response.body
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_watch_routes.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.api.watch_routes'`.
 
-- [ ] **Step 3: Create `src/josc/api/watch_routes.py`**
+- [x] **Step 3: Create `src/josc/api/watch_routes.py`**
 
 ```python
 """REST handlers for saved-search watches.
@@ -582,12 +582,12 @@ async def watch_feed(request: Any):
     return Response(body, media_type="application/rss+xml")
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_watch_routes.py -v`
 Expected: PASS — 1 passed.
 
-- [ ] **Step 5: Register the routes**
+- [x] **Step 5: Register the routes**
 
 In `src/josc/api/app.py`, add these imports beside the other route imports:
 
@@ -603,12 +603,12 @@ Then add these entries to the `routes` list, after the search routes:
     Route("/api/watches/{watch_id}/feed", watch_feed),
 ```
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/josc/api/watch_routes.py src/josc/api/app.py tests/test_watch_routes.py
@@ -627,7 +627,7 @@ git commit -m "feat(watches): expose REST endpoints for saved-search watches"
 - Consumes: `WatchStore`, `check_watch()` dari `josc.watches`; `_store()` dari `josc.api.state`; parameter `providers` yang sudah diterima `build_json`; `aggregator.search_all` yang sudah ada.
 - Produces: tool MCP `check_watches` tanpa argumen wajib; hasilnya `{"watches": [{"id": str, "checked": int, "new": list[dict]}]}`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_server.py`:
 
@@ -679,12 +679,12 @@ async def test_check_watches_returns_new_items_per_watch(monkeypatch):
     assert result["watches"][0]["new"][0]["title"] == "New"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_server.py -v`
 Expected: FAIL — `assert "check_watches" in TOOL_NAMES`.
 
-- [ ] **Step 3: Register the tool name and schema**
+- [x] **Step 3: Register the tool name and schema**
 
 In `src/josc/server.py`, add `"check_watches",` to `UNIFIED_TOOLS`. Then inside `_tool_list()`, append:
 
@@ -696,7 +696,7 @@ In `src/josc/server.py`, add `"check_watches",` to `UNIFIED_TOOLS`. Then inside 
         ),
 ```
 
-- [ ] **Step 4: Add the dispatch branch**
+- [x] **Step 4: Add the dispatch branch**
 
 At the top of `src/josc/server.py`, add:
 
@@ -741,17 +741,17 @@ Inside `build_json`, before the `export_results` branch, add:
         return {"watches": reports}
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest tests/test_server.py -v`
 Expected: PASS — kedua test baru hijau.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — termasuk assertion jumlah tool yang sudah diperbarui di irisan 04.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/josc/server.py tests/test_server.py

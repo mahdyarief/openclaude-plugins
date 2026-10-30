@@ -43,7 +43,7 @@
 - Consumes: `Paper` dataclass; `first_of()` dari `josc.utils`.
 - Produces: `Paper.isbn: str | None`, diekspor `Paper.to_dict()` sebagai kunci `"isbn"`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 from josc.models import Paper
@@ -68,12 +68,12 @@ def test_crossref_reads_isbn_from_book_items():
     assert paper.isbn == "9783161484100"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_dedup.py -v`
 Expected: FAIL — `TypeError: Paper.__init__() got an unexpected keyword argument 'isbn'`.
 
-- [ ] **Step 3: Add the field to the model**
+- [x] **Step 3: Add the field to the model**
 
 In `src/josc/models.py`, add `isbn` immediately after `doi`:
 
@@ -89,7 +89,7 @@ Then add it to `to_dict()` immediately after `"doi"`:
             "isbn": self.isbn,
 ```
 
-- [ ] **Step 4: Populate ISBN in the Crossref provider**
+- [x] **Step 4: Populate ISBN in the Crossref provider**
 
 In `src/josc/providers/crossref.py`, inside `_to_paper`, add this line next to the existing `doi = normalize_doi(item.get("DOI"))`:
 
@@ -103,17 +103,17 @@ Then pass it to the `Paper(...)` constructor immediately after `doi=doi,`:
             isbn=isbn,
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest tests/test_dedup.py -v`
 Expected: PASS — 2 passed.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/josc/models.py src/josc/providers/crossref.py tests/test_dedup.py
@@ -132,7 +132,7 @@ git commit -m "feat(dedup): carry ISBN on papers and Crossref records"
 - Consumes: `Paper` dari `josc.models`; `normalize_doi()` dan `normalize_title()` dari `josc.utils`.
 - Produces: `same_work(a: Paper, b: Paper) -> bool` — `True` hanya bila dua record dengan judul ternormalisasi sama benar-benar karya yang sama.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_dedup.py`:
 
@@ -189,12 +189,12 @@ def test_same_work_rejects_disjoint_creator_lists():
     assert same_work(a, b) is False
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_dedup.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.dedup'`.
 
-- [ ] **Step 3: Create `src/josc/dedup.py`**
+- [x] **Step 3: Create `src/josc/dedup.py`**
 
 ```python
 """Duplicate guards ported from Zotero's ``duplicates.js``.
@@ -252,17 +252,17 @@ def same_work(a: Paper, b: Paper) -> bool:
     return False
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_dedup.py -v`
 Expected: PASS — 10 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/dedup.py tests/test_dedup.py
@@ -282,7 +282,7 @@ git commit -m "feat(dedup): port Zotero duplicate guards as same_work()"
 - Consumes: `same_work(a: Paper, b: Paper) -> bool` dari `josc.dedup`; `merge_two(a, b) -> Paper` yang sudah ada.
 - Produces: `merge_papers(papers: List[Paper]) -> List[Paper]` dengan signature dan urutan sort yang sama persis seperti sebelumnya.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_dedup.py`:
 
@@ -329,12 +329,12 @@ def test_merge_papers_joins_doi_less_record_to_its_doi_twin():
     assert merged[0].doi == "10.1/a"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_dedup.py -v`
 Expected: FAIL — `test_merge_papers_keeps_distinct_works_with_identical_titles` returns 1 merged record instead of 2.
 
-- [ ] **Step 3: Remove the superseded match keys**
+- [x] **Step 3: Remove the superseded match keys**
 
 Delete `_author_token` and `_match_keys` from `src/josc/merge.py` (the block currently spanning lines 28-51). No other module imports them; verify with:
 
@@ -344,7 +344,7 @@ grep -rn "_match_keys\|_author_token" src tests
 
 Expected: no matches after the deletion.
 
-- [ ] **Step 4: Replace `merge_papers`**
+- [x] **Step 4: Replace `merge_papers`**
 
 Replace the whole body of `merge_papers` in `src/josc/merge.py` with:
 
@@ -410,17 +410,17 @@ Then add the import at the top of `src/josc/merge.py`:
 from .dedup import same_work
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest tests/test_dedup.py -v`
 Expected: PASS — 14 passed.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — `tests/test_merge.py` and `tests/test_api_routes.py` unchanged and green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/josc/merge.py tests/test_dedup.py

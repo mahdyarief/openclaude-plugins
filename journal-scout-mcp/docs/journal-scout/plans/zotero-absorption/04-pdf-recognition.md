@@ -50,7 +50,7 @@ Zotero memakai mesin PDF.js penuh plus heuristik `recognizeDocument.js` yang san
 - Consumes: `normalize_doi()` dari `josc.utils`.
 - Produces: `find_doi(text: str) -> str | None` — DOI pertama yang ternormalisasi, atau `None`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_recognize.py`:
 
@@ -74,12 +74,12 @@ def test_find_doi_returns_none_when_absent():
     assert find_doi("No identifier on this page") is None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_recognize.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.recognize'`.
 
-- [ ] **Step 3: Create `src/josc/recognize.py`**
+- [x] **Step 3: Create `src/josc/recognize.py`**
 
 ```python
 """Recognize paper metadata from the text of a document.
@@ -109,17 +109,17 @@ def find_doi(text: str) -> Optional[str]:
     return normalize_doi(match.group(0).rstrip(".,;:)]}"))
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_recognize.py -v`
 Expected: PASS — 4 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/recognize.py tests/test_recognize.py
@@ -140,7 +140,7 @@ git commit -m "feat(recognize): extract DOIs from document text"
   - `guess_title(text: str) -> str | None` — baris kandidat judul terpanjang di antara 5 baris non-kosong pertama.
   - `recognize_document(text: str, resolver: Callable[[str], Awaitable[Optional[Paper]]]) -> Optional[Paper]` — async; memakai DOI bila ada, selain itu judul.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_recognize.py`:
 
@@ -191,12 +191,12 @@ async def test_recognize_document_returns_none_without_identifier():
     assert await recognize_document("", resolver) is None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_recognize.py -v`
 Expected: FAIL — `ImportError: cannot import name 'guess_title'`.
 
-- [ ] **Step 3: Extend `src/josc/recognize.py`**
+- [x] **Step 3: Extend `src/josc/recognize.py`**
 
 Add these imports at the top:
 
@@ -232,17 +232,17 @@ async def recognize_document(
     return await resolver(identifier)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_recognize.py -v`
 Expected: PASS — 9 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/recognize.py tests/test_recognize.py
@@ -262,7 +262,7 @@ git commit -m "feat(recognize): resolve document text via DOI then title"
 - Consumes: `pypdf` (opsional, diimpor di dalam fungsi).
 - Produces: `extract_pdf_text(path: str) -> str` — teks gabungan semua halaman; melempar `RuntimeError` bila `pypdf` tidak terpasang.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_recognize.py`:
 
@@ -287,12 +287,12 @@ def test_extract_pdf_text_explains_a_missing_dependency(monkeypatch):
     assert "journal-scout-mcp[pdf]" in str(excinfo.value)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_recognize.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.pdf_text'`.
 
-- [ ] **Step 3: Create `src/josc/pdf_text.py`**
+- [x] **Step 3: Create `src/josc/pdf_text.py`**
 
 ```python
 """Extract text from a PDF, importing ``pypdf`` only when actually needed.
@@ -317,7 +317,7 @@ def extract_pdf_text(path: str) -> str:
     return "\n".join(pages)
 ```
 
-- [ ] **Step 4: Add the optional dependency**
+- [x] **Step 4: Add the optional dependency**
 
 In `pyproject.toml`, inside `[project.optional-dependencies]`, add:
 
@@ -325,17 +325,17 @@ In `pyproject.toml`, inside `[project.optional-dependencies]`, add:
 pdf = ["pypdf>=4.0"]
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest tests/test_recognize.py -v`
 Expected: PASS — 10 passed.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression, dan `import josc.pdf_text` tetap berhasil tanpa `pypdf` terpasang.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/josc/pdf_text.py pyproject.toml tests/test_recognize.py
@@ -354,7 +354,7 @@ git commit -m "feat(recognize): extract PDF text behind an optional extra"
 - Consumes: `extract_pdf_text(path)` dari Task 3; `recognize_document(text, resolver)` dari Task 2; `aggregator.get_paper(providers, identifier, sources=None)` yang sudah ada.
 - Produces: tool MCP bernama `identify_paper` dengan argumen `{"path": str}`; hasilnya `{"paper": dict | null, "identifier": str | null}`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_server.py`:
 
@@ -380,16 +380,16 @@ async def test_identify_paper_dispatches_through_recognize(monkeypatch):
     assert result["paper"]["title"] == "Resolved"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_server.py -v`
 Expected: FAIL — `assert "identify_paper" in TOOL_NAMES`.
 
-- [ ] **Step 3: Register the tool name**
+- [x] **Step 3: Register the tool name**
 
 In `src/josc/server.py`, add `"identify_paper",` to the `UNIFIED_TOOLS` list next to `"export_results",`.
 
-- [ ] **Step 4: Add the tool schema**
+- [x] **Step 4: Add the tool schema**
 
 Inside `_tool_list()`, append this entry after the `export_results` entry:
 
@@ -410,7 +410,7 @@ Inside `_tool_list()`, append this entry after the `export_results` entry:
         ),
 ```
 
-- [ ] **Step 5: Add the imports and the dispatch branch**
+- [x] **Step 5: Add the imports and the dispatch branch**
 
 At the top of `src/josc/server.py`, add:
 
@@ -441,21 +441,21 @@ Add `find_doi` and `guess_title` to the recognize import:
 from .recognize import find_doi, guess_title, recognize_document
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `pytest tests/test_server.py -v`
 Expected: PASS — `test_identify_paper_tool_is_registered` dan `test_identify_paper_dispatches_through_recognize` hijau.
 
-- [ ] **Step 7: Run the full suite**
+- [x] **Step 7: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — termasuk `test_tool_names_count`, yang sekarang menghitung 26 tool.
 
-- [ ] **Step 8: Update the tool-count assertion**
+- [x] **Step 8: Update the tool-count assertion**
 
 In `tests/test_server.py`, change `assert len(TOOL_NAMES) == 25` to `assert len(TOOL_NAMES) == 26` and add `assert "identify_paper" in TOOL_NAMES`.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/josc/server.py tests/test_server.py
@@ -484,7 +484,7 @@ git commit -m "feat(recognize): expose identify_paper MCP tool"
 
 **Security note (binding):** the HTTP route must NOT accept a server-side filesystem path. It accepts `{"pdf_base64": "<base64 PDF>"}` in the JSON body and decodes it in memory.
 
-- [ ] **Step 1: Write the failing orchestration tests**
+- [x] **Step 1: Write the failing orchestration tests**
 
 Append to `tests/test_recognize.py` (imports go in the file's existing top import block — `import pytest` is already there; add `from josc import identify` at the top):
 
@@ -507,12 +507,12 @@ async def test_resolve_document_returns_none_without_identifier():
     assert result == {"identifier": None, "paper": None}
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/test_recognize.py -v`
 Expected: FAIL — `ImportError: cannot import name 'identify' from 'josc'` (or `ModuleNotFoundError: No module named 'josc.identify'`).
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 Create `src/josc/identify.py`:
 
@@ -545,12 +545,12 @@ async def resolve_document(text: str, providers) -> Dict[str, Any]:
     return {"identifier": identifier, "paper": paper}
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/test_recognize.py -v`
 Expected: PASS (12 tests).
 
-- [ ] **Step 5: Write the failing bytes-extraction test**
+- [x] **Step 5: Write the failing bytes-extraction test**
 
 Append to `tests/test_recognize.py` (add `extract_pdf_text_from_bytes` to the existing `from josc.pdf_text import ...` line at the top):
 
@@ -571,12 +571,12 @@ def test_extract_pdf_text_from_bytes_explains_a_missing_dependency(monkeypatch):
     assert "journal-scout-mcp[pdf]" in str(excinfo.value)
 ```
 
-- [ ] **Step 6: Run test to verify it fails**
+- [x] **Step 6: Run test to verify it fails**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/test_recognize.py::test_extract_pdf_text_from_bytes_explains_a_missing_dependency -v`
 Expected: FAIL — `ImportError: cannot import name 'extract_pdf_text_from_bytes'`.
 
-- [ ] **Step 7: Refactor `src/josc/pdf_text.py` to share the lazy reader**
+- [x] **Step 7: Refactor `src/josc/pdf_text.py` to share the lazy reader**
 
 Replace the whole module with:
 
@@ -616,12 +616,12 @@ def extract_pdf_text_from_bytes(data: bytes) -> str:
     return _pages_text(_pdf_reader(io.BytesIO(data)))
 ```
 
-- [ ] **Step 8: Run tests to verify they pass**
+- [x] **Step 8: Run tests to verify they pass**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/test_recognize.py -v`
 Expected: PASS (13 tests) — the existing missing-dependency test must still pass against the shared helper.
 
-- [ ] **Step 9: Write the failing route tests**
+- [x] **Step 9: Write the failing route tests**
 
 Append to `tests/test_api_routes.py` (add `import base64` at the top of the file):
 
@@ -661,12 +661,12 @@ async def test_identify_route_rejects_invalid_base64():
     assert "base64" in _body(response)["error"]
 ```
 
-- [ ] **Step 10: Run tests to verify they fail**
+- [x] **Step 10: Run tests to verify they fail**
 
 Run: `.venv/Scripts/python.exe -m pytest tests/test_api_routes.py -k identify -v`
 Expected: FAIL — `AttributeError: module 'josc.api' has no attribute 'identify'`.
 
-- [ ] **Step 11: Create the route handler**
+- [x] **Step 11: Create the route handler**
 
 Create `src/josc/api/recognize_routes.py`:
 
@@ -720,7 +720,7 @@ async def identify(request: Request) -> JSONResponse:
     return JSONResponse(result)
 ```
 
-- [ ] **Step 12: Register the route and re-export the handler**
+- [x] **Step 12: Register the route and re-export the handler**
 
 In `src/josc/api/app.py`, add to the relative-import block:
 
@@ -748,7 +748,7 @@ Also add a module-map line to the `__init__.py` docstring:
 * :mod:`.recognize_routes`  - identify a paper from an uploaded PDF
 ```
 
-- [ ] **Step 13: Point the MCP tool at the shared orchestration**
+- [x] **Step 13: Point the MCP tool at the shared orchestration**
 
 In `src/josc/server.py`, replace the imports
 
@@ -774,13 +774,13 @@ and replace the `identify_paper` dispatch branch with:
 
 The existing `test_identify_paper_dispatches_through_recognize` must keep passing unchanged: `server.aggregator` and `server.extract_pdf_text` are still the names it monkeypatches, and `identify.aggregator` is the same module object.
 
-- [ ] **Step 14: Run the full suite**
+- [x] **Step 14: Run the full suite**
 
 Run: `.venv/Scripts/python.exe -m pytest -q`
 Expected: PASS — 516 tests, no regressions (510 at Task 4 head + 6 new: 2 orchestration,
 1 bytes-extraction, 3 route).
 
-- [ ] **Step 15: Commit**
+- [x] **Step 15: Commit**
 
 ```bash
 git add src/josc/identify.py src/josc/pdf_text.py src/josc/api/recognize_routes.py src/josc/api/app.py src/josc/api/__init__.py src/josc/server.py tests/test_recognize.py tests/test_api_routes.py
