@@ -30,9 +30,10 @@ src/josc/
 | Kelompok | Tool |
 |---|---|
 | Unified (9) | `search_all`, `search_author`, `get_paper`, `get_citations`, `get_references`, `get_related_works`, `build_citation_network`, `compute_metrics`, `export_results` |
-| Per-source (7) | `search_scopus`, `search_arxiv`, `search_openalex`, `search_semanticscholar`, `search_crossref`, `search_pubmed`, `search_dblp` |
+| Per-source (8) | `search_scopus`, `search_arxiv`, `search_openalex`, `search_semanticscholar`, `search_crossref`, `search_pubmed`, `search_dblp`, `search_garuda` |
 | Scopus detail (3) | `get_abstract_details`, `get_author_profile`, `get_quota_status` |
 | SciVal (5) | `scival_author_metrics`, `scival_institution_metrics`, `scival_author_lookup`, `scival_institution_lookup`, `scival_topic_metrics` |
+| Local archive (3) | `search_corpus`, `identify_paper`, `check_watches` |
 
 Skema pencarian (`src/josc/server.py:41-62`) punya:
 `query`, `count`, `author`, `venue`, `year_from`, `year_to`, `tech_only`,
@@ -57,6 +58,15 @@ menebak dan bisa mengembalikan paper yang sama sekali berbeda
 Parameter `sources` yang sama juga ada di `get_citations`, `get_references`,
 dan `get_related_works` (`aggregator.py`), dan diteruskan lewat query param
 `source` di `GET /api/citations`, `GET /api/references`, `GET /api/related`.
+
+`search_corpus` menjawab pencarian teks penuh tanpa jaringan. `load_corpus()`
+(`src/josc/corpus.py`) membaca `list_searches()` lalu `get_search()` dari
+`SearchArchive`, menggabungkan `results`, dan membuang duplikat memakai
+DOI atau judul ternormalisasi. `build_index()`/`search_index()`
+(`src/josc/fulltext.py`) membangun inverted index di memori per request dan
+mewajibkan **semua** token kueri cocok. Tidak ada FTS5, tabel baru, atau
+reindex queue — konsekuensinya korpus dibangun ulang setiap panggilan, yang
+masih murah untuk hitungan ratusan sampai beberapa ribu record.
 
 Prompt template (`src/josc/prompts.py:62-91`): `literature_review`,
 `author_overview`, `citation_trace`.

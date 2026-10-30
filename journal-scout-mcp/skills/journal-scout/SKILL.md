@@ -35,6 +35,9 @@ open-access links, not article bodies.
 | `compute_metrics` | h-index, i10, g-index, AWCR, citation velocity |
 | `export_results` | BibTeX, RIS, EndNote, CSV, APA/Chicago/Harvard/Vancouver |
 | `search_<source>` | One provider only, e.g. `search_scopus`, `search_pubmed` |
+| `search_corpus` | AND search over saved search results already in the archive; no network calls |
+| `identify_paper` | Turn a local PDF into metadata plus a resolved record |
+| `check_watches` | Run saved-search watches and return papers not reported before |
 
 Scopus extras: `get_abstract_details`, `get_author_profile`,
 `get_quota_status`, plus the five `scival_*` metric tools.

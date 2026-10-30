@@ -20,6 +20,10 @@ Historical entries are reconstructed from the upstream commit history
   with history import/export, replay, split, duplicate, BibTeX/RIS/CSV
   import, cache control, and a Scopus quota endpoint
 - Second-hop reference expansion in `build_citation_network`
+- `search_corpus` MCP tool: tokenized AND search over the titles, abstracts,
+  venues, authors and keywords of every archived search, without provider
+  calls. The inverted index is rebuilt in memory per request (no FTS5, no
+  schema change) and rebuilt results are deduplicated by DOI, then by title
 - `skills/journal-scout/SKILL.md` so the plugin registers as a callable skill
 
 ### Fixed
@@ -31,7 +35,7 @@ Historical entries are reconstructed from the upstream commit history
 - Scopus paginates in chunks of 25 when `limit > 25`
 
 ### Tests
-- 428 tests passing
+- 540 tests passing
 
 ## [2.3.0] - 2026-10-24
 

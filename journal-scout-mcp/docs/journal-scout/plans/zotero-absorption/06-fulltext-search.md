@@ -43,11 +43,11 @@ Zotero memakai FTS5 contentless di database terpisah (`fulltext.sqlite`) dengan 
 **Interfaces:**
 - Consumes: hanya standard library (`re`, `typing`).
 - Produces:
-  - `tokenize(text: str) -> list[str]` — huruf kecil, hanya `[a-z0-9]`, kata dengan panjang ≥2.
+  - `tokenize(text: str) -> list[str]` — huruf kecil, hanya `[a-z0-9]`, kata dengan panjang ≥3.
   - `build_index(papers: Sequence[dict]) -> dict[str, list[int]]` — memetakan token ke daftar posisi paper.
   - `search_index(index: dict[str, list[int]], papers: Sequence[dict], query: str) -> list[dict]` — paper yang memuat **semua** token kueri, diurutkan berdasarkan jumlah kemunculan lalu judul.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_fulltext.py`:
 
@@ -103,12 +103,12 @@ def test_search_index_ranks_more_matches_higher():
     assert hits[0]["abstract"] == "learning learning"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_fulltext.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.fulltext'`.
 
-- [ ] **Step 3: Create `src/josc/fulltext.py`**
+- [x] **Step 3: Create `src/josc/fulltext.py`**
 
 ```python
 """In-memory full-text search over a paper corpus.
@@ -128,10 +128,10 @@ _SEARCHABLE_FIELDS = ("title", "abstract", "venue", "tldr")
 
 
 def tokenize(text: str) -> List[str]:
-    """Return lowercase alphanumeric tokens of length two or more."""
+    """Return lowercase alphanumeric tokens of length three or more."""
     if not text:
         return []
-    return [token for token in _TOKEN_PATTERN.findall(text.lower()) if len(token) >= 2]
+    return [token for token in _TOKEN_PATTERN.findall(text.lower()) if len(token) > 2]
 
 
 def _paper_tokens(paper: Dict[str, Any]) -> List[str]:
@@ -179,17 +179,17 @@ def search_index(
     return [papers[position] for _score, _title, position in scored]
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_fulltext.py -v`
 Expected: PASS — 7 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/fulltext.py tests/test_fulltext.py
@@ -208,7 +208,7 @@ git commit -m "feat(fulltext): add tokenizer, inverted index and AND search"
 - Consumes: objek `SearchArchive` dengan `async list_searches(limit: int) -> list[dict]` dan `async get_search(search_id: str) -> dict | None`.
 - Produces: `load_corpus(archive, limit: int = 20) -> list[dict]` — async; menggabungkan `results` dari semua arsip yang dimuat, membuang entri duplikat berdasarkan DOI/judul ternormalisasi, dan mempertahankan urutan kemunculan pertama.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_fulltext.py`:
 
@@ -254,12 +254,12 @@ async def test_load_corpus_returns_empty_when_archive_is_empty():
     assert await load_corpus(FakeArchive({})) == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_fulltext.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'josc.corpus'`.
 
-- [ ] **Step 3: Create `src/josc/corpus.py`**
+- [x] **Step 3: Create `src/josc/corpus.py`**
 
 ```python
 """Assemble a searchable paper corpus from the local search archive.
@@ -298,17 +298,17 @@ async def load_corpus(archive: Any, limit: int = 20) -> List[Dict[str, Any]]:
     return corpus
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/test_fulltext.py -v`
 Expected: PASS — 9 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — no regression.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/josc/corpus.py tests/test_fulltext.py
@@ -327,7 +327,7 @@ git commit -m "feat(fulltext): load a deduplicated corpus from the search archiv
 - Consumes: `load_corpus(archive, limit)` dari `josc.corpus`; `build_index()`, `search_index()` dari `josc.fulltext`; `_store()` dari `josc.api.state`; `SearchArchive` dari `josc.search_archive`.
 - Produces: tool MCP `search_corpus` dengan argumen `{"query": str, "limit": int}`; hasilnya `{"query": str, "corpus_size": int, "results": list[dict]}`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_server.py`:
 
@@ -355,12 +355,12 @@ async def test_search_corpus_filters_the_archived_corpus(monkeypatch):
     assert result["results"][0]["abstract"] == "bayesian inference"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/test_server.py -v`
 Expected: FAIL — `assert "search_corpus" in TOOL_NAMES`.
 
-- [ ] **Step 3: Register the tool name and schema**
+- [x] **Step 3: Register the tool name and schema**
 
 In `src/josc/server.py`, add `"search_corpus",` to `UNIFIED_TOOLS`. Then inside `_tool_list()`, append:
 
@@ -386,7 +386,7 @@ In `src/josc/server.py`, add `"search_corpus",` to `UNIFIED_TOOLS`. Then inside 
         ),
 ```
 
-- [ ] **Step 4: Add the imports and the dispatch branch**
+- [x] **Step 4: Add the imports and the dispatch branch**
 
 At the top of `src/josc/server.py`, add:
 
@@ -400,7 +400,10 @@ Inside `build_json`, before the `export_results` branch, add:
 
 ```python
     if name == "search_corpus":
-        archive = SearchArchive(_store())
+        store = _store()
+        if store is None:
+            raise RuntimeError("Persistent archive store is not configured.")
+        archive = SearchArchive(store)
         papers = await load_corpus(archive, limit=int(arguments.get("limit") or 20))
         index = build_index(papers)
         hits = search_index(index, papers, arguments["query"])
@@ -411,21 +414,21 @@ Inside `build_json`, before the `export_results` branch, add:
         }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest tests/test_server.py -v`
 Expected: PASS — kedua test baru hijau.
 
-- [ ] **Step 6: Update the tool-count assertion**
+- [x] **Step 6: Update the tool-count assertion**
 
-In `tests/test_server.py`, bump `assert len(TOOL_NAMES) == 26` to `== 27` and add `assert "search_corpus" in TOOL_NAMES`.
+In `tests/test_server.py`, bump `assert len(TOOL_NAMES) == 27` to `== 28` and add `assert "search_corpus" in TOOL_NAMES` (the count was already 27 after `check_watches` landed).
 
-- [ ] **Step 7: Run the full suite**
+- [x] **Step 7: Run the full suite**
 
 Run: `pytest -q`
 Expected: PASS — semua suite hijau.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/josc/server.py tests/test_server.py

@@ -28,7 +28,7 @@
 | 3 | [03-csl-citations.md](03-csl-citations.md) | A | Sedang — gaya sitasi baru tanpa menulis formatter | 02 (opsional) |
 | 4 | [04-pdf-recognition.md](04-pdf-recognition.md) | B | Sedang — input paper dari PDF lokal | — |
 | 5 | [05-saved-search-alerts.md](05-saved-search-alerts.md) | B | Sedang — pemantauan literatur berkelanjutan | — |
-| 6 | [06-fulltext-search.md](06-fulltext-search.md) | B | Rendah–Sedang — pencarian teks pada korpus tersimpan | 04 (opsional) |
+| 6 | [06-fulltext-search.md](06-fulltext-search.md) — selesai 2026-10-30 | B | Rendah–Sedang — pencarian teks pada korpus tersimpan | 04 (opsional) |
 | 7 | [07-not-absorbing.md](07-not-absorbing.md) | C | — | keputusan eksplisit |
 
 ## Bukti dari Zotero 10.0.6

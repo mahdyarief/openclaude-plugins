@@ -45,6 +45,9 @@ tools.
    - **SciVal:** `scival_author_metrics`,
      `scival_institution_metrics`, `scival_author_lookup`,
      `scival_institution_lookup`, `scival_topic_metrics`
+   - **Local archive:** `search_corpus` (full-text search over saved search
+     results, no network calls), `identify_paper` (PDF → metadata),
+     `check_watches` (saved-search alerts)
 
 4. **Restart** Claude / plugin if the tool list does not reload.
 
