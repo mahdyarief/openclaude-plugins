@@ -258,6 +258,18 @@ export function LandscapePage() {
                     {cluster.top_topics.join(" · ")}
                   </div>
                 ) : null}
+                {cluster.study_types && Object.keys(cluster.study_types).length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {Object.entries(cluster.study_types).map(([kind, count]) => (
+                      <span
+                        key={kind}
+                        className="rounded-full border border-emerald-700/40 bg-emerald-500/[0.07] px-1.5 py-0.5 text-[10px] text-emerald-300"
+                      >
+                        {kind} · {count}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </button>
             ))}
           </div>

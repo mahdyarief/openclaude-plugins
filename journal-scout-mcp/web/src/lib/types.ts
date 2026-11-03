@@ -23,6 +23,11 @@ export type Paper = {
   language?: string | null;
   license?: string | null;
   tldr?: string | null;
+  study_type?: string | null;
+  takeaway?: string | null;
+  study_count?: number | null;
+  sjr_best_quartile?: number | null;
+  is_preprint?: boolean | null;
 };
 
 export type RelationResponse = {
@@ -120,6 +125,7 @@ export type LandscapeCluster = {
   top_topics: string[];
   top_authors: string[];
   top_venues: string[];
+  study_types?: Record<string, number>;
 };
 
 export type LandscapeResponse = {

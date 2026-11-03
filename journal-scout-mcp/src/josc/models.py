@@ -33,6 +33,11 @@ class Paper:
     language: str | None = None
     license: str | None = None
     tldr: str | None = None
+    study_type: str | None = None
+    takeaway: str | None = None
+    study_count: int | None = None
+    sjr_best_quartile: int | None = None
+    is_preprint: bool | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -64,6 +69,11 @@ class Paper:
             "language": self.language,
             "license": self.license,
             "tldr": self.tldr,
+            "study_type": self.study_type,
+            "takeaway": self.takeaway,
+            "study_count": self.study_count,
+            "sjr_best_quartile": self.sjr_best_quartile,
+            "is_preprint": self.is_preprint,
         }
 
 

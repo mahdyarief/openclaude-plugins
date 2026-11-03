@@ -147,6 +147,23 @@ def merge_two(a: Paper, b: Paper) -> Paper:
         language=_pick_text(preferred.language, fallback.language),
         license=_pick_text(preferred.license, fallback.license),
         tldr=_pick_text(preferred.tldr, fallback.tldr),
+        study_type=_pick_text(preferred.study_type, fallback.study_type),
+        takeaway=_pick_text(preferred.takeaway, fallback.takeaway),
+        study_count=(
+            preferred.study_count
+            if preferred.study_count is not None
+            else fallback.study_count
+        ),
+        sjr_best_quartile=(
+            preferred.sjr_best_quartile
+            if preferred.sjr_best_quartile is not None
+            else fallback.sjr_best_quartile
+        ),
+        is_preprint=(
+            preferred.is_preprint
+            if preferred.is_preprint is not None
+            else fallback.is_preprint
+        ),
     )
     retraction = _richest_retraction(a.retraction, b.retraction)
     if retraction is not None:

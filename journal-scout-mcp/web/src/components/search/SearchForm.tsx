@@ -22,6 +22,7 @@ const PROVIDERS = [
   "pubmed",
   "dblp",
   "garuda",
+  "consensus",
 ];
 
 export function SearchForm({ controller }: { controller: SearchController }) {

@@ -20,6 +20,7 @@ def _provider_classes() -> List[type]:
         from .unpaywall import UnpaywallProvider
         from .opencitations import OpenCitationsProvider
         from .garuda import GarudaProvider
+        from .consensus import ConsensusProvider
 
         _CLASSES = [
             ScopusProvider,
@@ -32,6 +33,7 @@ def _provider_classes() -> List[type]:
             UnpaywallProvider,
             OpenCitationsProvider,
             GarudaProvider,
+            ConsensusProvider,
         ]
     return _CLASSES
 

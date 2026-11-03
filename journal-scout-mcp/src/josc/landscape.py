@@ -271,6 +271,9 @@ def build_landscape(papers: Iterable[Paper], n_clusters: Optional[int] = None) -
         topics = Counter(topic for i in members for topic in papers[i].topics)
         authors = Counter(author for i in members for author in papers[i].authors)
         venues = Counter(papers[i].venue for i in members if papers[i].venue)
+        study_types = Counter(
+            papers[i].study_type for i in members if papers[i].study_type
+        )
         clusters.append(
             {
                 "id": cid,
@@ -280,6 +283,7 @@ def build_landscape(papers: Iterable[Paper], n_clusters: Optional[int] = None) -
                 "top_topics": _top(topics),
                 "top_authors": _top(authors),
                 "top_venues": _top(venues),
+                "study_types": dict(study_types.most_common()),
             }
         )
 

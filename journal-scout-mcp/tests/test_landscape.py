@@ -4,7 +4,7 @@ from josc.landscape import build_landscape
 from josc.models import Paper
 
 
-def _paper(doi, title, abstract="", year=2020, topics=None, authors=None, venue=None, citations=0):
+def _paper(doi, title, abstract="", year=2020, topics=None, authors=None, venue=None, citations=0, study_type=None):
     return Paper(
         doi=doi,
         title=title,
@@ -14,6 +14,7 @@ def _paper(doi, title, abstract="", year=2020, topics=None, authors=None, venue=
         authors=authors or [],
         venue=venue,
         citation_count=citations,
+        study_type=study_type,
     )
 
 
@@ -170,3 +171,18 @@ def test_build_landscape_includes_edges_and_stats():
     assert "edges" in result
     assert result["stats"]["papers"] == 6
     assert result["stats"]["clusters"] == 2
+
+
+def test_build_landscape_summarizes_study_types():
+    corpus = [
+        _paper("10.1/a", "A trial", "rct study", year=2020, topics=["Med"],
+               study_type="rct"),
+        _paper("10.1/b", "B trial", "rct study", year=2021, topics=["Med"],
+               study_type="rct"),
+        _paper("10.1/c", "C review", "review study", year=2019, topics=["Med"],
+               study_type="meta-analysis"),
+    ]
+    result = build_landscape(corpus, n_clusters=1)
+    cluster = result["clusters"][0]
+    assert cluster["study_types"]["rct"] == 2
+    assert cluster["study_types"]["meta-analysis"] == 1

@@ -121,3 +121,23 @@ def test_merge_folds_doiless_records_by_title_author_without_year():
     merged = merge_papers([a, b])
     assert len(merged) == 1
     assert set(merged[0].sources) == {"arxiv", "dblp"}
+
+
+def test_merge_keeps_consensus_annotations():
+    preferred = Paper(doi="10.1/x", title="P", sources=["scopus"], study_type="rct")
+    fallback = Paper(
+        doi="10.1/x",
+        title="P",
+        sources=["consensus"],
+        takeaway="Exercise improves mood.",
+        study_type="meta-analysis",
+        study_count=16,
+        sjr_best_quartile=1,
+        is_preprint=False,
+    )
+    merged = merge_two(preferred, fallback)
+    assert merged.takeaway == "Exercise improves mood."
+    assert merged.study_type == "rct"
+    assert merged.study_count == 16
+    assert merged.sjr_best_quartile == 1
+    assert merged.is_preprint is False

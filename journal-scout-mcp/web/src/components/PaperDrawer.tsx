@@ -20,6 +20,7 @@ const ID_SOURCES = [
   "arxiv",
   "pubmed",
   "dblp",
+  "consensus",
 ];
 
 function identifierFor(paper: Paper): { identifier: string; source?: string } | null {
@@ -262,6 +263,27 @@ export function PaperDrawer({
                 )}
                 {detail.language && <Field label="Language">{detail.language}</Field>}
               </dl>
+
+              {detail.takeaway && (
+                <section className="mt-4">
+                  <h3 className="m-0 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    Consensus takeaway
+                    {detail.study_type && (
+                      <span className="rounded-full border border-emerald-700/50 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-normal normal-case tracking-normal text-emerald-300">
+                        {detail.study_type}
+                      </span>
+                    )}
+                    {detail.study_count ? (
+                      <span className="text-[10px] font-normal normal-case tracking-normal text-slate-500">
+                        {detail.study_count} studies
+                      </span>
+                    ) : null}
+                  </h3>
+                  <p className="mb-0 mt-1.5 rounded border border-emerald-800/50 bg-emerald-500/[0.07] px-2 py-1.5 text-[12px] leading-relaxed text-emerald-100">
+                    {detail.takeaway}
+                  </p>
+                </section>
+              )}
 
               {detail.tldr && (
                 <section className="mt-4">

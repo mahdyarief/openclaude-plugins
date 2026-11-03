@@ -38,6 +38,18 @@ def get_semantic_scholar_key() -> Optional[str]:
     )
 
 
+def get_consensus_key() -> str:
+    key = os.getenv("CONSENSUS_API_KEY") or load_config_file().get(
+        "consensus_api_key"
+    )
+    if not key:
+        raise ValueError(
+            "Consensus API key not found. Set 'CONSENSUS_API_KEY' or add "
+            "'consensus_api_key' to config.json next to this plugin."
+        )
+    return key
+
+
 def get_polite_email() -> str:
     return (
         os.getenv("JOURNAL_SCOUT_EMAIL")
