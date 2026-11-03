@@ -6,7 +6,7 @@ import mcp.types as types
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
-from . import aggregator, config, prompts
+from . import aggregator, config, consensus_key, prompts
 from .cache import build_cache
 from .corpus import load_corpus
 from .exporters import FORMATTERS, format_papers
@@ -46,7 +46,8 @@ SCIVAL_TOOLS = [
     "scival_institution_lookup",
     "scival_topic_metrics",
 ]
-TOOL_NAMES = UNIFIED_TOOLS + PER_SOURCE_TOOLS + SCOPUS_DETAIL_TOOLS + SCIVAL_TOOLS
+KEY_TOOLS = ["rotate_consensus_key"]
+TOOL_NAMES = UNIFIED_TOOLS + PER_SOURCE_TOOLS + SCOPUS_DETAIL_TOOLS + SCIVAL_TOOLS + KEY_TOOLS
 
 # Shared by the unified and per-source search tools so the two schemas can
 # never drift apart.
@@ -363,6 +364,26 @@ def _tool_list() -> List[types.Tool]:
     tools.append(types.Tool(name="scival_author_lookup", description="SciVal author lookup by name.", inputSchema=_lookup_schema()))
     tools.append(types.Tool(name="scival_institution_lookup", description="SciVal institution lookup by name.", inputSchema=_lookup_schema()))
     tools.append(types.Tool(name="scival_topic_metrics", description="SciVal topic metrics.", inputSchema=_id_metric_schema("topic_id")))
+    tools.append(
+        types.Tool(
+            name="rotate_consensus_key",
+            description=(
+                "Verify a new Consensus API key against the live API and, only "
+                "if accepted, persist it to config.json (consensus_api_key). "
+                "The old key survives a failed rotation."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "api_key": {
+                        "type": "string",
+                        "description": "The new Consensus API key to verify and store.",
+                    },
+                },
+                "required": ["api_key"],
+            },
+        )
+    )
     return tools
 
 
@@ -561,6 +582,8 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         return await scopus_provider.scival_topic_metrics(
             arguments["topic_id"], arguments.get("year_from"), arguments.get("year_to")
         )
+    if name == "rotate_consensus_key":
+        return await consensus_key.rotate_consensus_key(arguments["api_key"])
     raise ValueError(f"Unknown tool: {name}")
 
 

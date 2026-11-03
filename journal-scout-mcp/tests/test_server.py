@@ -25,8 +25,9 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 30
+    assert len(TOOL_NAMES) == 31
     assert "search_consensus" in TOOL_NAMES
+    assert "rotate_consensus_key" in TOOL_NAMES
     assert "search_corpus" in TOOL_NAMES
     assert "identify_paper" in TOOL_NAMES
     assert "search_all" in TOOL_NAMES
@@ -346,3 +347,20 @@ async def test_search_corpus_without_store_raises(monkeypatch):
     monkeypatch.setattr(server, "_store", lambda: None, raising=False)
     with pytest.raises(RuntimeError, match="Persistent archive store is not configured"):
         await build_json("search_corpus", {"query": "deep"}, [], None)
+
+
+async def test_rotate_consensus_key_tool_dispatches(monkeypatch):
+    import josc.server as server
+
+    calls = {}
+
+    async def fake_rotate(api_key, **kwargs):
+        calls["api_key"] = api_key
+        return {"rotated": True, "valid": True, "key_hint": "ak_NEW*"}
+
+    monkeypatch.setattr(server.consensus_key, "rotate_consensus_key", fake_rotate)
+
+    result = await build_json("rotate_consensus_key", {"api_key": "ak_NEW"}, [], None)
+    assert calls["api_key"] == "ak_NEW"
+    assert result["rotated"] is True
+    json.dumps(result)
