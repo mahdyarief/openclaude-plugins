@@ -69,6 +69,16 @@ def _union(*lists: Sequence[str]) -> List[str]:
     return merged
 
 
+def _union_paths(*lists: Sequence[Sequence[str]]) -> List[List[str]]:
+    """Order-preserving union of topic hierarchies across providers."""
+    merged: List[List[str]] = []
+    for values in lists:
+        for value in values:
+            if value and value not in merged:
+                merged.append(list(value))
+    return merged
+
+
 def _merge_citation_counts(*maps: Dict[int, int]) -> Dict[int, int]:
     merged: Dict[int, int] = {}
     for mapping in maps:
@@ -128,6 +138,8 @@ def merge_two(a: Paper, b: Paper) -> Paper:
         ),
         citations_by_year=_merge_citation_counts(a.citations_by_year, b.citations_by_year),
         topics=_union(a.topics, b.topics),
+        topic_ids=_union(a.topic_ids, b.topic_ids),
+        topic_paths=_union_paths(a.topic_paths, b.topic_paths),
         keywords=_union(a.keywords, b.keywords),
         institutions=_union(a.institutions, b.institutions),
         funders=_union(a.funders, b.funders),

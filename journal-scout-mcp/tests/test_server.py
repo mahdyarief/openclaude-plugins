@@ -25,7 +25,7 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 28
+    assert len(TOOL_NAMES) == 29
     assert "search_corpus" in TOOL_NAMES
     assert "identify_paper" in TOOL_NAMES
     assert "search_all" in TOOL_NAMES
@@ -36,6 +36,7 @@ def test_tool_names_count():
     assert "get_references" in TOOL_NAMES
     assert "get_related_works" in TOOL_NAMES
     assert "build_citation_network" in TOOL_NAMES
+    assert "build_research_landscape" in TOOL_NAMES
     assert "compute_metrics" in TOOL_NAMES
     assert "get_citing_papers" not in TOOL_NAMES
 
@@ -131,6 +132,24 @@ async def test_dispatch_search_all_forwards_topic_filter():
         None,
     )
     assert filtered_out["results"] == []
+
+
+async def test_dispatch_build_research_landscape(monkeypatch):
+    import josc.server as server
+
+    async def fake_landscape(query, **kwargs):
+        return {"query": query, "nodes": [], "clusters": [], "edges": [], "stats": {"papers": 0}}
+
+    monkeypatch.setattr(server.aggregator, "build_landscape", fake_landscape)
+
+    result = await build_json(
+        "build_research_landscape",
+        {"query": "deep learning", "n_clusters": 3},
+        [SearchProvider(None)],
+        None,
+    )
+    assert result["query"] == "deep learning"
+    assert result["stats"]["papers"] == 0
 
 
 async def test_dispatch_per_source_search():

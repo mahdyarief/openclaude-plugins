@@ -24,6 +24,8 @@ class Paper:
     cited_by_percentile: int | None = None
     citations_by_year: dict[int, int] = field(default_factory=dict)
     topics: list[str] = field(default_factory=list)
+    topic_ids: list[str] = field(default_factory=list)
+    topic_paths: list[list[str]] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
     institutions: list[str] = field(default_factory=list)
     funders: list[str] = field(default_factory=list)
@@ -53,6 +55,8 @@ class Paper:
             "cited_by_percentile": self.cited_by_percentile,
             "citations_by_year": self.citations_by_year,
             "topics": self.topics,
+            "topic_ids": self.topic_ids,
+            "topic_paths": self.topic_paths,
             "keywords": self.keywords,
             "institutions": self.institutions,
             "funders": self.funders,

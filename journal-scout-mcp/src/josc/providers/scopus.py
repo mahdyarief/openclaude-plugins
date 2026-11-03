@@ -118,6 +118,8 @@ class ScopusProvider(ProviderBase):
             ids["scopus"] = scopus_id
         if doi:
             ids["doi"] = doi
+        topics, topic_ids = ScopusProvider._subject_areas(entry)
+        keywords = ScopusProvider._authkeywords(entry)
         return Paper(
             doi=doi,
             title=entry.get("dc:title") or "",
@@ -131,7 +133,34 @@ class ScopusProvider(ProviderBase):
             sources=["scopus"],
             ids=ids,
             is_open_access=ScopusProvider._is_open_access(entry),
+            topics=topics,
+            topic_ids=topic_ids,
+            keywords=keywords,
         )
+
+    @staticmethod
+    def _subject_areas(entry):
+        topics: List[str] = []
+        topic_ids: List[str] = []
+        for area in entry.get("subject-area") or []:
+            if not isinstance(area, dict):
+                continue
+            name = area.get("$") or area.get("displayName")
+            if name and name not in topics:
+                topics.append(name)
+            code = area.get("code")
+            if code and code not in topic_ids:
+                topic_ids.append(code)
+        return topics, topic_ids
+
+    @staticmethod
+    def _authkeywords(entry):
+        keywords: List[str] = []
+        for value in entry.get("authkeywords") or []:
+            text = value.get("$") if isinstance(value, dict) else value
+            if text and text not in keywords:
+                keywords.append(text)
+        return keywords
 
     @staticmethod
     def _reference_authors(entry) -> List[str]:

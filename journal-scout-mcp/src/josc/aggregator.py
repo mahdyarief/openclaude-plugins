@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from .metrics import compute_metrics as _compute_metrics
 from .network import build_network, node_id
+from .landscape import build_landscape as _build_landscape
 from .merge import merge_papers
 from .models import Paper, ProviderError
 from .providers.base import ProviderBase
@@ -262,6 +263,38 @@ async def search_all(
     result["query_translated"] = translated
     result["query_scoping"] = scoping
     return result
+
+
+async def build_landscape(
+    query: str,
+    providers: Optional[List[ProviderBase]] = None,
+    n_clusters: Optional[int] = None,
+    limit_per_source: int = 50,
+    year_from: Optional[int] = None,
+    year_to: Optional[int] = None,
+    sources: Optional[List[str]] = None,
+    tech_only: bool = False,
+    topic: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Search ``query`` and cluster the merged corpus into a research map."""
+    if providers is None:
+        from .providers import build_providers
+
+        providers = build_providers(None)
+    payload = await search_all(
+        providers,
+        query,
+        limit_per_source=limit_per_source,
+        year_from=year_from,
+        year_to=year_to,
+        tech_only=tech_only,
+        sources=sources,
+        topic=topic,
+    )
+    landscape = _build_landscape(payload["results"], n_clusters=n_clusters)
+    landscape["query"] = query
+    landscape["query_warnings"] = payload.get("query_warnings", [])
+    return landscape
 
 
 async def search_author(

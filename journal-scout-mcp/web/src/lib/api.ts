@@ -4,6 +4,7 @@ import type {
   DeleteSearchResponse,
   DuplicateResponse,
   ImportResponse,
+  LandscapeResponse,
   MergeResponse,
   MetricsResponse,
   NetworkResponse,
@@ -79,6 +80,31 @@ export function searchPapers(query: string, options: SearchOptions = {}): Promis
     order: options.order,
     topic: options.topic,
     conditions: conditions.length > 0 ? JSON.stringify(conditions) : undefined,
+  });
+}
+
+export function fetchLandscape(
+  query: string,
+  options: {
+    nClusters?: number;
+    limitPerSource?: number;
+    yearFrom?: number;
+    yearTo?: number;
+    techOnly?: boolean;
+    sources?: string[];
+    topic?: string;
+  } = {},
+): Promise<LandscapeResponse> {
+  const sources = options.sources?.filter((source) => source.trim() !== "") ?? [];
+  return getJson<LandscapeResponse>("/api/landscape", {
+    query,
+    n_clusters: options.nClusters,
+    limit_per_source: options.limitPerSource,
+    year_from: options.yearFrom,
+    year_to: options.yearTo,
+    tech_only: options.techOnly ? "true" : undefined,
+    source: sources.length > 0 ? sources.join(",") : undefined,
+    topic: options.topic,
   });
 }
 

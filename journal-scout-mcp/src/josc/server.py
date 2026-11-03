@@ -30,6 +30,7 @@ UNIFIED_TOOLS = [
     "get_references",
     "get_related_works",
     "build_citation_network",
+    "build_research_landscape",
     "compute_metrics",
     "export_results",
     "identify_paper",
@@ -247,6 +248,31 @@ def _tool_list() -> List[types.Tool]:
             },
         ),
         types.Tool(
+            name="build_research_landscape",
+            description=(
+                "Search a keyword and cluster the merged corpus into a research "
+                "landscape: TF-IDF clustering, c-TF-IDF cluster labels, 2D "
+                "coordinates and per-cluster topic/author/venue stats."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "n_clusters": {
+                        "type": "integer",
+                        "description": "Number of clusters; defaults to sqrt(paper count), capped at 8.",
+                    },
+                    "limit_per_source": {"type": "integer", "default": 50},
+                    "sources": {"type": "array", "items": {"type": "string"}},
+                    "year_from": {"type": "integer"},
+                    "year_to": {"type": "integer"},
+                    "tech_only": {"type": "boolean", "default": False},
+                    "topic": {"type": "string"},
+                },
+                "required": ["query"],
+            },
+        ),
+        types.Tool(
             name="compute_metrics",
             description="Publish-or-Perish style metrics (papers, total citations, h-index, i10, g-index, citation velocity) for an author name or a search query.",
             inputSchema={
@@ -436,6 +462,18 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             max_nodes=arguments.get("max_nodes", 200),
             graph_format=arguments.get("graph_format", "json"),
             reference_limit=arguments.get("reference_limit", 10),
+        )
+    if name == "build_research_landscape":
+        return await aggregator.build_landscape(
+            arguments["query"],
+            providers=providers,
+            n_clusters=arguments.get("n_clusters"),
+            limit_per_source=arguments.get("limit_per_source", 50),
+            year_from=arguments.get("year_from"),
+            year_to=arguments.get("year_to"),
+            sources=arguments.get("sources"),
+            tech_only=arguments.get("tech_only", False),
+            topic=arguments.get("topic"),
         )
     if name == "compute_metrics":
         return await aggregator.compute_metrics(

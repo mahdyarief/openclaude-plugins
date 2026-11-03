@@ -103,6 +103,35 @@ export type NetworkResponse = {
   format?: string;
 };
 
+export type LandscapeNode = {
+  id: string;
+  title: string;
+  year: number | null;
+  cluster: number;
+  x: number;
+  y: number;
+};
+
+export type LandscapeCluster = {
+  id: number;
+  label: string;
+  size: number;
+  median_year: number;
+  top_topics: string[];
+  top_authors: string[];
+  top_venues: string[];
+};
+
+export type LandscapeResponse = {
+  query?: string;
+  nodes: LandscapeNode[];
+  clusters: LandscapeCluster[];
+  edges: { source: number; target: number; weight: number }[];
+  stats: { papers: number; clusters: number; terms: number };
+  query_warnings?: { source: string; operator: string; message: string }[];
+  error?: string;
+};
+
 export type SearchHistoryRow = {
   id: string;
   query: string;

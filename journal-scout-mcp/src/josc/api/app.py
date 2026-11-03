@@ -51,6 +51,7 @@ from .discovery_routes import (
 from .search_routes import (
     citations,
     health,
+    landscape,
     network,
     paper,
     references,
@@ -100,6 +101,7 @@ routes = [
     Route("/api/quota", quota),
     Route("/api/search", search),
     Route("/api/search-author", search_author),
+    Route("/api/landscape", landscape),
     Route("/api/paper", paper),
     Route("/api/citations", citations),
     Route("/api/references", references),

@@ -9,6 +9,7 @@ import { cn } from "./ui";
 import {
   GraphIcon,
   HistoryIcon,
+  LandscapeIcon,
   MetricsIcon,
   PanelToggleIcon,
   SearchIcon,
@@ -16,6 +17,7 @@ import {
 
 const NAV = [
   { to: "/", label: "Search", Icon: SearchIcon },
+  { to: "/landscape", label: "Landscape", Icon: LandscapeIcon },
   { to: "/graph", label: "Citation graph", Icon: GraphIcon },
   { to: "/metrics", label: "Metrics", Icon: MetricsIcon },
   { to: "/history", label: "History", Icon: HistoryIcon },

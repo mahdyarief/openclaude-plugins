@@ -38,6 +38,19 @@ export function GraphIcon({ className }: IconProps) {
   );
 }
 
+export function LandscapeIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <circle cx="7" cy="8" r="2" />
+      <circle cx="12" cy="14" r="2" />
+      <circle cx="17" cy="7" r="2" />
+      <circle cx="6" cy="17" r="2" />
+      <circle cx="18" cy="16" r="2" />
+      <path d="M8.6 9.1 10.8 12.5M13.7 12.9l2.1-4.3M7.5 15.3l3.2-1.1" opacity="0.6" />
+    </svg>
+  );
+}
+
 export function MetricsIcon({ className }: IconProps) {
   return (
     <svg {...base(className)}>

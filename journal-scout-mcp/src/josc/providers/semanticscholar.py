@@ -46,6 +46,15 @@ class SemanticScholarProvider(ProviderBase):
         if external.get("ArXiv"):
             ids["arxiv"] = external["ArXiv"]
         tldr = (item.get("tldr") or {}).get("text")
+        topics: List[str] = []
+        for field in item.get("fieldsOfStudy") or []:
+            if field and field not in topics:
+                topics.append(field)
+        for field in item.get("s2FieldsOfStudy") or []:
+            category = (field or {}).get("category") if isinstance(field, dict) else field
+            if category and category not in topics:
+                topics.append(category)
+        topic_ids = [f"s2:{field}" for field in topics]
         return Paper(
             doi=doi,
             title=item.get("title") or "",
@@ -60,6 +69,8 @@ class SemanticScholarProvider(ProviderBase):
             type=", ".join(item.get("publicationTypes") or []) or None,
             sources=["semanticscholar"],
             ids=ids,
+            topics=topics,
+            topic_ids=topic_ids,
             tldr=tldr,
         )
 

@@ -162,6 +162,27 @@ async def search(request: Request) -> JSONResponse:
     return JSONResponse(payload)
 
 
+async def landscape(request: Request) -> JSONResponse:
+    query = (request.query_params.get("query") or "").strip()
+    if not query:
+        return _error(ValueError("Missing required query parameter 'query'."))
+    try:
+        payload = await aggregator.build_landscape(
+            query,
+            providers=_providers(),
+            n_clusters=_int(request, "n_clusters"),
+            limit_per_source=_int(request, "limit_per_source", 50),
+            year_from=_int(request, "year_from"),
+            year_to=_int(request, "year_to"),
+            sources=_sources(request),
+            tech_only=_flag(request, "tech_only"),
+            topic=_text(request, "topic"),
+        )
+    except Exception as exc:  # noqa: BLE001
+        return _error(exc)
+    return JSONResponse(payload)
+
+
 async def search_author(request: Request) -> JSONResponse:
     author = (request.query_params.get("author") or "").strip()
     if not author:

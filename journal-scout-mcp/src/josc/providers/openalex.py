@@ -26,6 +26,19 @@ def reconstruct_abstract(inverted_index):
     return " ".join(word for _, word in positions)
 
 
+def _topic_path(topic: dict) -> List[str]:
+    """Collapse domain → field → subfield → topic into an ordered breadcrumb."""
+    path: List[str] = []
+    for level in ("domain", "field", "subfield"):
+        name = (topic.get(level) or {}).get("display_name")
+        if name and name not in path:
+            path.append(name)
+    name = topic.get("display_name")
+    if name and name not in path:
+        path.append(name)
+    return path
+
+
 class OpenAlexProvider(ProviderBase):
     name = "openalex"
     supports_search = True
@@ -52,6 +65,30 @@ class OpenAlexProvider(ProviderBase):
         source = primary.get("source") or {}
         oa = work.get("open_access") or {}
         topic = (work.get("primary_topic") or {}).get("display_name")
+        topics: List[str] = []
+        topic_ids: List[str] = []
+        topic_paths: List[List[str]] = []
+        primary_topic = work.get("primary_topic") or {}
+        if primary_topic.get("display_name"):
+            primary_path = _topic_path(primary_topic)
+            topic_paths.append(primary_path)
+            if primary_topic.get("id"):
+                topic_ids.append(primary_topic["id"])
+            for name in primary_path:
+                if name not in topics:
+                    topics.append(name)
+        for topic_entry in work.get("topics") or []:
+            name = topic_entry.get("display_name")
+            if name:
+                if name not in topics:
+                    topics.append(name)
+                topic_ids.append(topic_entry.get("id") or name)
+                topic_paths.append(_topic_path(topic_entry))
+        keywords: List[str] = []
+        for keyword in work.get("keywords") or []:
+            value = keyword.get("display_name")
+            if value:
+                keywords.append(value)
         percentile = (work.get("cited_by_percentile_year") or {}).get("min")
         citations_by_year = {}
         for entry in work.get("counts_by_year") or []:
@@ -76,7 +113,10 @@ class OpenAlexProvider(ProviderBase):
             is_retracted=work.get("is_retracted"),
             cited_by_percentile=percentile,
             citations_by_year=citations_by_year,
-            topics=[topic] if topic else [],
+            topics=topics,
+            topic_ids=topic_ids,
+            topic_paths=topic_paths,
+            keywords=keywords,
             institutions=institutions,
             language=work.get("language"),
         )

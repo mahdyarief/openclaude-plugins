@@ -6,6 +6,7 @@ import {
 import { AppShell } from "./components/AppShell";
 import { GraphPage } from "./routes/graph";
 import { HistoryPage } from "./routes/history";
+import { LandscapePage } from "./routes/landscape";
 import { MetricsPage } from "./routes/metrics";
 import { SearchPage } from "./routes/search";
 
@@ -66,7 +67,19 @@ const historyRoute = createRoute({
   component: HistoryPage,
 });
 
-const routeTree = rootRoute.addChildren([searchRoute, graphRoute, metricsRoute, historyRoute]);
+const landscapeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/landscape",
+  component: LandscapePage,
+});
+
+const routeTree = rootRoute.addChildren([
+  searchRoute,
+  graphRoute,
+  metricsRoute,
+  historyRoute,
+  landscapeRoute,
+]);
 
 export const router = createRouter({ routeTree });
 
