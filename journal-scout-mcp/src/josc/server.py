@@ -49,6 +49,29 @@ SCIVAL_TOOLS = [
 KEY_TOOLS = ["rotate_consensus_key"]
 TOOL_NAMES = UNIFIED_TOOLS + PER_SOURCE_TOOLS + SCOPUS_DETAIL_TOOLS + SCIVAL_TOOLS + KEY_TOOLS
 
+# MCP hosts reject a single tool result past their token cap (the transcript
+# keeps ~100k chars before erroring). Search payloads embed full abstracts and
+# topic hierarchies, so a 25-paper page can blow the cap on its own. We keep
+# results under this character budget and shrink gracefully instead of failing.
+MAX_TOOL_RESULT_CHARS = 80_000
+
+# Dropped in this order when a payload is too large. Heavy, least-essential
+# fields go first so titles/years/DOIs (what a landscape pass actually needs)
+# survive as long as possible.
+_SHRINK_FIELDS = (
+    "topic_paths",
+    "abstract",
+    "keywords",
+    "topics",
+    "topic_ids",
+    "institutions",
+    "funders",
+    "citations_by_year",
+    "ids",
+    "url",
+    "pdf_url",
+)
+
 # Shared by the unified and per-source search tools so the two schemas can
 # never drift apart.
 _SEARCH_FILTERS = {
@@ -64,12 +87,27 @@ _SEARCH_FILTERS = {
     "doi": {"type": "string", "description": "Restrict to a specific DOI."},
 }
 
+# Lets an agent request only the columns it needs, which is the cheapest way to
+# stay under the MCP result budget (see MAX_TOOL_RESULT_CHARS).
+_FIELDS_ARG = {
+    "fields": {
+        "type": "array",
+        "items": {"type": "string"},
+        "description": (
+            "Return only these Paper keys (e.g. ['title','year','doi']). "
+            "Omit to include everything; large fields like abstract/topic_paths "
+            "are then dropped automatically if the payload nears the size cap."
+        ),
+    }
+}
+
 _SEARCH_ARGUMENTS = {
     "type": "object",
     "properties": {
         "query": {"type": "string", "description": "Search query."},
         "count": {"type": "integer", "description": "Max results.", "default": 5},
         **_SEARCH_FILTERS,
+        **_FIELDS_ARG,
     },
     "required": ["query"],
 }
@@ -109,6 +147,84 @@ def _lookup_schema() -> Dict[str, Any]:
 
 def _search_tool(name: str, description: str, schema: Dict[str, Any]) -> types.Tool:
     return types.Tool(name=name, description=description, inputSchema=schema)
+
+
+# Lets an agent request only the columns it needs, which is the cheapest way to
+# stay under the MCP result budget (see MAX_TOOL_RESULT_CHARS).
+_FIELDS_ARG = {
+    "fields": {
+        "type": "array",
+        "items": {"type": "string"},
+        "description": (
+            "Return only these Paper keys (e.g. ['title','year','doi']). "
+            "Omit to include everything; large fields like abstract/topic_paths "
+            "are then dropped automatically if the payload nears the size cap."
+        ),
+    }
+}
+
+
+def _finalize_payload(arguments: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Apply the ``fields`` filter and keep the payload under the size budget.
+
+    Returns ``payload`` unchanged when both conditions already hold, so small
+    responses are never rebuilt and callers can compare identity if needed.
+    """
+    results = payload.get("results")
+    if not isinstance(results, list):
+        return payload
+
+    requested = arguments.get("fields")
+    if requested:
+        selected = [x for x in requested if isinstance(x, str)]
+        payload = {
+            **payload,
+            "results": [
+                {key: paper.get(key) for key in selected} for paper in results
+            ],
+        }
+        return payload
+
+    if len(json.dumps(payload, ensure_ascii=False)) <= MAX_TOOL_RESULT_CHARS:
+        return payload
+
+    return _trim_search_payload(payload, results)
+
+
+def _trim_search_payload(payload: Dict[str, Any], results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Shrink ``payload`` under the budget without losing the result count.
+
+    Strategy: drop heavy fields one at a time (cheapest first), then, if still
+    too large, cut trailing results while preserving ``total_results`` so the
+    agent knows what was omitted. Trimming results uses a measured per-item
+    size rather than repeated serialisation to stay cheap on large pages.
+    """
+    working = [dict(paper) for paper in results]
+    total = len(working)
+
+    for field in _SHRINK_FIELDS:
+        if len(json.dumps({**payload, "results": working}, ensure_ascii=False)) <= MAX_TOOL_RESULT_CHARS:
+            break
+        for paper in working:
+            paper.pop(field, None)
+
+    if len(json.dumps({**payload, "results": working}, ensure_ascii=False)) > MAX_TOOL_RESULT_CHARS:
+        base = len(json.dumps({**payload, "results": []}, ensure_ascii=False))
+        per_item = max(1, len(json.dumps(working, ensure_ascii=False)) // max(1, len(working)))
+        keep = max(1, (MAX_TOOL_RESULT_CHARS - base) // per_item)
+        working = working[:keep]
+
+    return {
+        **payload,
+        "results": working,
+        "total_results": total,
+        "truncated": True,
+        "truncation_note": (
+            "Payload exceeded the MCP result size cap; heavy fields were dropped "
+            "and/or trailing results omitted. Use the 'fields' argument to request "
+            "fewer columns, or a smaller 'count'/'limit_per_source'."
+        ),
+    }
 
 
 def _tool_list() -> List[types.Tool]:
@@ -163,6 +279,7 @@ def _tool_list() -> List[types.Tool]:
                         },
                     },
                     **_SEARCH_FILTERS,
+                    **_FIELDS_ARG,
                 },
                 "required": [],
             },
@@ -418,7 +535,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             )
         return {"watches": reports}
     if name == "search_all":
-        return await aggregator.search_all(
+        result = await aggregator.search_all(
             providers,
             arguments.get("query") or "",
             limit_per_source=arguments.get("limit_per_source", 5),
@@ -438,6 +555,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             topic=arguments.get("topic"),
             conditions=arguments.get("conditions"),
         )
+        return _finalize_payload(arguments, result)
     if name == "get_paper":
         return await aggregator.get_paper(
             providers, arguments["identifier"], sources=arguments.get("sources")
@@ -531,7 +649,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         }
     if name in PER_SOURCE_TOOLS:
         source = name.removeprefix("search_")
-        return await aggregator.search_all(
+        result = await aggregator.search_all(
             providers,
             arguments.get("query") or "",
             limit_per_source=arguments.get("count", 5),
@@ -548,6 +666,7 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             doi=arguments.get("doi"),
             conditions=arguments.get("conditions"),
         )
+        return _finalize_payload(arguments, result)
     if name == "get_abstract_details":
         paper = await scopus_provider.get(arguments["scopus_id"])
         # ``get`` returns a Paper, which is not JSON-serializable; the tool
