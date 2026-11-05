@@ -52,6 +52,13 @@ try {
     New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
     Copy-Item -Path $ExtractedExe.FullName -Destination $ExePath
     Write-Host "Installed: $ExePath"
+
+    # Watcher + auto-index on large repos caused full-disk I/O saturation
+    # (jbd2 stuck in D-state, host hang). Watcher registration is opt-in now;
+    # re-index explicitly with index_repository instead.
+    & $ExePath config set auto_watch false | Out-Null
+    & $ExePath config set auto_index_limit 1000 | Out-Null
+    Write-Host "Applied safe defaults: auto_watch=false, auto_index_limit=1000"
 }
 finally {
     Remove-Item -Path $TempDir -Recurse -Force -ErrorAction SilentlyContinue
