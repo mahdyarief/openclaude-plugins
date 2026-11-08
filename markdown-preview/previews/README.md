@@ -8,6 +8,9 @@ Every theme rendered from the same [`sample.md`](sample.md). Click a thumbnail f
 |---|---|---|
 | [![academic](academic.png)](academic.pdf)<br>**academic** — thesis / report | [![jurnal](jurnal.png)](jurnal.pdf)<br>**jurnal** — two-column paper | [![tugas-kuliah](tugas-kuliah.png)](tugas-kuliah.pdf)<br>**tugas-kuliah** — laporan kampus |
 | [![artikel](artikel.png)](artikel.pdf)<br>**artikel** — magazine long-form | [![catatan-buku](catatan-buku.png)](catatan-buku.pdf)<br>**catatan-buku** — notes | [![default](default.png)](default.pdf)<br>**default** |
+| [![tufte](tufte.png)](tufte.pdf)<br>**tufte** — lecture notes, sidenotes | [![proposal](proposal.png)](proposal.pdf)<br>**proposal** — research / grant | [![naskah](naskah.png)](naskah.pdf)<br>**naskah** — submission manuscript |
+| [![surat-dinas](surat-dinas.png)](surat-dinas.pdf)<br>**surat-dinas** — official letter | [![memo](memo.png)](memo.pdf)<br>**memo** — executive briefing | [![teknis](teknis.png)](teknis.pdf)<br>**teknis** — technical docs / SOP |
+| [![notulen](notulen.png)](notulen.pdf)<br>**notulen** — meeting minutes | [![zine](zine.png)](zine.pdf)<br>**zine** — brutalist essay | |
 
 ## md2pdf built-in themes
 

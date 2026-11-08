@@ -1,0 +1,55 @@
+/* Zine — "Brutalist". Essays and opinion pieces: Arial Black display type,
+   pure black/white with one signal yellow, inverted heading slabs, heavy rules. */
+:root {
+  --md2pdf-font-family-body: 'Rockwell', 'Roboto Slab', 'Courier New', serif;
+  --md2pdf-font-family-heading: 'Arial Black', 'Helvetica Neue', Impact, sans-serif;
+  --md2pdf-font-family-mono: 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 10.5pt;
+  --md2pdf-line-height: 1.55;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #000000;
+  --md2pdf-color-heading: #000000;
+  --md2pdf-color-text-muted: #000000;
+  --md2pdf-color-link: #000000;
+  --md2pdf-color-code-bg: #000000;
+  --md2pdf-color-code-text: #ffe500;
+  --md2pdf-color-border: #000000;
+  --md2pdf-color-hr: #000000;
+  --md2pdf-accent-color: #ffe500;
+  --md2pdf-table-header-bg: #000000;
+  --md2pdf-table-stripe-bg: transparent;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+h1, h2, h3, h4 { border: none !important; font-family: var(--md2pdf-font-family-heading);
+  font-weight: 900; text-transform: uppercase; page-break-after: avoid; }
+h1 { font-size: 40pt; line-height: 0.92; letter-spacing: -0.035em; margin: 0 0 0.25em;
+  padding-bottom: 0.15em; border-bottom: 8pt solid #000000 !important; }
+h1 + p { display: inline-block; background: var(--md2pdf-accent-color); font-family: var(--md2pdf-font-family-heading);
+  text-transform: uppercase; font-size: 9pt; letter-spacing: 0.06em; padding: 2pt 6pt; margin: 0 0 1.4em; }
+
+h1 + p + blockquote, h1 + blockquote { border: 3pt solid #000000 !important; margin: 0 0 2em;
+  padding: 10pt 12pt; font-size: 12pt; font-weight: bold; line-height: 1.4; box-shadow: 6pt 6pt 0 #000000; }
+h2 { display: inline-block; background: #000000; color: #ffffff; font-size: 16pt;
+  letter-spacing: -0.01em; padding: 3pt 8pt; margin: 2em 0 0.7em; }
+h3 { font-size: 12pt; margin: 1.4em 0 0.4em; text-decoration: underline;
+  text-decoration-color: var(--md2pdf-accent-color); text-decoration-thickness: 5pt; text-underline-offset: -1pt; }
+strong { background: var(--md2pdf-accent-color); padding: 0 2pt; }
+
+h2 ~ blockquote { border: none !important; margin: 1.6em 0; padding: 0; font-family: var(--md2pdf-font-family-heading);
+  text-transform: uppercase; font-size: 22pt; line-height: 1.05; letter-spacing: -0.02em; color: #000000; }
+h2 ~ blockquote p { margin: 0; }
+
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 9.5pt; border: 3pt solid #000000; }
+table th, table td { border: 1pt solid #000000 !important; padding: 5pt 7pt; text-align: left; }
+table th { background: #000000 !important; color: #ffffff; font-family: var(--md2pdf-font-family-heading);
+  text-transform: uppercase; font-size: 8pt; letter-spacing: 0.04em; }
+pre { background: #000000 !important; color: var(--md2pdf-accent-color); border: none; padding: 10pt; font-size: 8.75pt; }
+pre code { background: none !important; color: inherit; }
+pre code span, pre code * { color: inherit !important; font-style: normal !important; }
+ol li::marker { font-family: var(--md2pdf-font-family-heading); }
+hr { border: none; height: 8pt; background: #000000; margin: 2em 0; }
+.mermaid, img, figure { break-inside: avoid; border: 3pt solid #000000; padding: 8pt; }
+a { text-decoration: underline; text-decoration-thickness: 2pt; }
+.toc-title { background: none !important; color: #000000 !important; }

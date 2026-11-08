@@ -1,0 +1,56 @@
+/* Proposal — "Grant". Constantia with a cover-style title block, the abstract
+   boxed as a summary panel, numbered sections hung on a left margin rule. */
+:root {
+  --md2pdf-font-family-body: 'Constantia', 'Cambria', 'Georgia', serif;
+  --md2pdf-font-family-heading: 'Corbel', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --md2pdf-font-family-mono: 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 11pt;
+  --md2pdf-line-height: 1.55;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #22262b;
+  --md2pdf-color-heading: #22262b;
+  --md2pdf-color-text-muted: #66707a;
+  --md2pdf-color-link: #4a3a8c;
+  --md2pdf-color-code-bg: #f5f4f9;
+  --md2pdf-color-code-text: #2d2a3a;
+  --md2pdf-color-border: #d7d4e3;
+  --md2pdf-color-hr: #d7d4e3;
+  --md2pdf-accent-color: #4a3a8c;
+  --md2pdf-table-header-bg: transparent;
+  --md2pdf-table-stripe-bg: transparent;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+.markdown-body { counter-reset: part; }
+h1, h2, h3, h4 { border: none !important; page-break-after: avoid; }
+h1 { font-size: 24pt; font-weight: 300; line-height: 1.2; margin: 3.5em 0 0.4em;
+  padding-top: 0.6em; border-top: 5pt solid var(--md2pdf-accent-color) !important; }
+h1 + p { font-family: var(--md2pdf-font-family-heading); text-transform: uppercase;
+  letter-spacing: 0.16em; font-size: 8.5pt; color: var(--md2pdf-color-text-muted); margin: 0 0 3em; }
+
+h1 + p + blockquote, h1 + blockquote { border: 0.6pt solid var(--md2pdf-accent-color) !important;
+  background: #f7f6fb; margin: 0 0 3em; padding: 12pt 16pt; font-size: 10pt; }
+
+h2:not(.toc-title) { counter-increment: part; counter-reset: sub; position: relative;
+  font-family: var(--md2pdf-font-family-heading); font-size: 13pt; font-weight: 600;
+  margin: 2.2em 0 0.7em; padding-left: 14mm; }
+h2:not(.toc-title)::before { content: counter(part, decimal-leading-zero); position: absolute; left: 0;
+  font-weight: 300; color: var(--md2pdf-accent-color); }
+h3 { counter-increment: sub; font-family: var(--md2pdf-font-family-heading); font-size: 10.5pt;
+  font-weight: 600; color: var(--md2pdf-accent-color); margin: 1.5em 0 0.4em 14mm; }
+h3::before { content: counter(part) "." counter(sub) "\2002"; font-weight: 300; }
+h2:not(.toc-title) ~ p, h2:not(.toc-title) ~ ul, h2:not(.toc-title) ~ ol, h2:not(.toc-title) ~ table,
+h2:not(.toc-title) ~ pre, h2:not(.toc-title) ~ .mermaid { margin-left: 14mm; }
+h2:not(.toc-title) ~ blockquote { margin-left: 14mm; padding-left: 10pt;
+  border-left: 2pt solid var(--md2pdf-accent-color) !important; font-style: italic; }
+
+table { border-collapse: collapse; font-size: 9.5pt; width: calc(100% - 14mm); }
+table th, table td { border: none !important; border-bottom: 0.5pt solid var(--md2pdf-color-border) !important;
+  background: none !important; padding: 5pt 8pt; text-align: left; }
+table th { font-family: var(--md2pdf-font-family-heading); font-size: 8pt; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--md2pdf-accent-color); border-bottom: 1pt solid var(--md2pdf-accent-color) !important; }
+pre { border-left: 2pt solid var(--md2pdf-color-border); font-size: 8.8pt; }
+hr { border: none; height: 0.6pt; background: var(--md2pdf-color-border); margin: 2em 0 2em 14mm; }
+.mermaid, img, figure { break-inside: avoid; }
+.toc-title { font-family: var(--md2pdf-font-family-heading); font-weight: 300; }

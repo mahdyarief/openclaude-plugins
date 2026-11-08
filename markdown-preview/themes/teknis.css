@@ -1,0 +1,60 @@
+/* Teknis — "Spec". Technical documentation / SOP: monospace headings with
+   section numbers hung in the margin, dense sans body, dark code blocks,
+   blockquotes rendered as NOTE callouts. */
+:root {
+  --md2pdf-font-family-body: 'Segoe UI', 'Noto Sans', Arial, sans-serif;
+  --md2pdf-font-family-heading: 'Cascadia Mono', 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-family-mono: 'Cascadia Mono', 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 9.75pt;
+  --md2pdf-line-height: 1.5;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #24292f;
+  --md2pdf-color-heading: #0b1220;
+  --md2pdf-color-text-muted: #6e7781;
+  --md2pdf-color-link: #1a7f37;
+  --md2pdf-color-code-bg: #f6f8fa;
+  --md2pdf-color-code-text: #24292f;
+  --md2pdf-color-border: #d0d7de;
+  --md2pdf-color-hr: #d0d7de;
+  --md2pdf-accent-color: #1a7f37;
+  --md2pdf-table-header-bg: #f2f4f6;
+  --md2pdf-table-stripe-bg: transparent;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+.markdown-body { counter-reset: s1; }
+h1, h2, h3, h4 { border: none !important; font-family: var(--md2pdf-font-family-heading);
+  font-weight: 600; page-break-after: avoid; }
+h1 { font-size: 17pt; letter-spacing: -0.01em; margin: 0 0 0.3em; }
+h1::before { content: "DOC"; display: inline-block; vertical-align: 0.4em; margin-right: 8pt; font-size: 7pt;
+  font-weight: 400; color: #ffffff; background: var(--md2pdf-accent-color); padding: 1pt 4pt; }
+h1 + p { font-family: var(--md2pdf-font-family-mono); font-size: 8pt; color: var(--md2pdf-color-text-muted);
+  margin: 0 0 1.6em; padding-bottom: 8pt; border-bottom: 0.75pt solid var(--md2pdf-color-border); }
+
+h2:not(.toc-title) { counter-increment: s1; counter-reset: s2; font-size: 12pt; margin: 2em 0 0.6em; }
+h2:not(.toc-title)::before { content: counter(s1, decimal-leading-zero); display: inline-block; min-width: 11mm;
+  color: var(--md2pdf-accent-color); font-weight: 400; }
+h3 { counter-increment: s2; font-size: 10pt; margin: 1.4em 0 0.4em; }
+h3::before { content: counter(s1) "." counter(s2); display: inline-block; min-width: 11mm;
+  color: var(--md2pdf-color-text-muted); font-weight: 400; }
+
+blockquote { border: none !important; border-left: 3pt solid var(--md2pdf-accent-color) !important;
+  background: #eef7f0; margin: 1.2em 0; padding: 8pt 12pt; color: #24292f; font-style: normal; }
+blockquote::before { content: "NOTE"; display: block; font-family: var(--md2pdf-font-family-mono);
+  font-size: 7.5pt; font-weight: 700; letter-spacing: 0.12em; color: var(--md2pdf-accent-color); margin-bottom: 3pt; }
+blockquote p { margin: 0; }
+
+pre { background: #f6f8fa !important; color: #24292f;
+  border: none; border-left: 3pt solid #0b1220; padding: 10pt 12pt; font-size: 8.5pt; line-height: 1.5; }
+pre code { background: none !important; color: inherit; }
+:not(pre) > code { background: #eff1f3; color: #0b1220; padding: 0.5pt 3pt; font-size: 0.9em; }
+
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 8.75pt; }
+table th, table td { border: 0.5pt solid var(--md2pdf-color-border) !important; padding: 4pt 7pt; }
+table th { font-family: var(--md2pdf-font-family-mono); font-weight: 600; text-align: left; }
+table td:not(:first-child) { font-family: var(--md2pdf-font-family-mono); }
+ol li::marker { font-family: var(--md2pdf-font-family-mono); color: var(--md2pdf-accent-color); }
+hr { border: none; border-top: 0.5pt dashed var(--md2pdf-color-border); margin: 1.6em 0; }
+.mermaid, img, figure { break-inside: avoid; }
+.toc-title { font-family: var(--md2pdf-font-family-heading); }

@@ -1,0 +1,55 @@
+/* Notulen — "Minutes". Compact meeting minutes: Calibri, tight spacing, a
+   boxed header strip, list items as decision checkboxes, zebra action table. */
+:root {
+  --md2pdf-font-family-body: 'Calibri', 'Carlito', 'Segoe UI', sans-serif;
+  --md2pdf-font-family-heading: 'Calibri', 'Carlito', 'Segoe UI', sans-serif;
+  --md2pdf-font-family-mono: 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 10.5pt;
+  --md2pdf-line-height: 1.38;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #1e2a2e;
+  --md2pdf-color-heading: #1e2a2e;
+  --md2pdf-color-text-muted: #5f6f74;
+  --md2pdf-color-link: #2b6e6a;
+  --md2pdf-color-code-bg: #f1f5f4;
+  --md2pdf-color-code-text: #1e2a2e;
+  --md2pdf-color-border: #c5d3d1;
+  --md2pdf-color-hr: #c5d3d1;
+  --md2pdf-accent-color: #2b6e6a;
+  --md2pdf-table-header-bg: #2b6e6a;
+  --md2pdf-table-stripe-bg: #eef4f3;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+p { margin: 0 0 0.5em; }
+h1, h2, h3, h4 { border: none !important; page-break-after: avoid; }
+h1 { font-size: 16pt; font-weight: 700; margin: 0; padding: 8pt 10pt;
+  background: var(--md2pdf-accent-color); color: #ffffff; }
+h1 + p { margin: 0 0 1.2em; padding: 5pt 10pt; font-size: 9pt; color: var(--md2pdf-color-text-muted);
+  border: 0.75pt solid var(--md2pdf-accent-color); border-top: none; }
+h2 { font-size: 11pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--md2pdf-accent-color); margin: 1.3em 0 0.4em; padding-bottom: 2pt;
+  border-bottom: 0.75pt solid var(--md2pdf-color-border) !important; }
+h3 { font-size: 10.5pt; font-weight: 700; margin: 0.9em 0 0.25em; }
+
+ul, ol { margin: 0.2em 0 0.6em; padding-left: 0; list-style: none; counter-reset: item; }
+ul > li, ol > li { position: relative; padding-left: 18pt; margin: 0.15em 0; }
+ul > li::before { content: ""; position: absolute; left: 2pt; top: 0.32em; width: 7pt; height: 7pt;
+  border: 0.9pt solid var(--md2pdf-accent-color); }
+ol > li { counter-increment: item; }
+ol > li::before { content: counter(item, decimal-leading-zero); position: absolute; left: 0;
+  font-weight: 700; font-size: 9pt; color: var(--md2pdf-accent-color); }
+
+table { border-collapse: collapse; width: 100%; margin: 0.6em 0 1em; font-size: 9.5pt; }
+table th, table td { border: none !important; padding: 3.5pt 7pt; text-align: left; }
+table th { background: var(--md2pdf-accent-color) !important; color: #ffffff; font-weight: 700; }
+table tr:nth-child(even) td { background: var(--md2pdf-table-stripe-bg) !important; }
+
+blockquote { border: none !important; border-left: 2.5pt solid var(--md2pdf-accent-color) !important;
+  background: #f4f8f7; margin: 0.6em 0; padding: 5pt 10pt; font-style: normal; color: var(--md2pdf-color-text); }
+blockquote p { margin: 0; }
+pre { border: none; font-size: 8.5pt; padding: 6pt 8pt; }
+hr { border: none; border-top: 0.75pt solid var(--md2pdf-color-border); margin: 1em 0; }
+.mermaid, img, figure { break-inside: avoid; margin: 0.6em auto; }
+a { text-decoration: none; }

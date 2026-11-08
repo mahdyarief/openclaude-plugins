@@ -1,0 +1,48 @@
+/* Tufte — "Handout". Georgia on warm ivory ink, a wide right margin where
+   blockquotes become sidenotes, italic headings, no rules. For lecture notes. */
+:root {
+  --md2pdf-font-family-body: 'Georgia', 'ET Book', 'Charter', serif;
+  --md2pdf-font-family-heading: 'Georgia', 'ET Book', 'Charter', serif;
+  --md2pdf-font-family-mono: 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 11pt;
+  --md2pdf-line-height: 1.6;
+  --md2pdf-color-bg: #fffff8;
+  --md2pdf-color-text: #111111;
+  --md2pdf-color-heading: #111111;
+  --md2pdf-color-text-muted: #555555;
+  --md2pdf-color-link: #111111;
+  --md2pdf-color-code-bg: transparent;
+  --md2pdf-color-code-text: #333333;
+  --md2pdf-color-border: #bbbbbb;
+  --md2pdf-color-hr: #bbbbbb;
+  --md2pdf-accent-color: #a00000;
+  --md2pdf-table-header-bg: transparent;
+  --md2pdf-table-stripe-bg: transparent;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+html, body { background: #fffff8; }
+.markdown-body { width: 64%; margin: 0; }
+h1, h2, h3, h4 { border: none !important; font-weight: normal; font-style: italic; page-break-after: avoid; }
+h1 { font-size: 26pt; line-height: 1.1; margin: 0.2em 0 0.3em; }
+h1 + p { font-style: italic; font-size: 13pt; color: var(--md2pdf-color-text-muted); margin-top: 0; }
+h2 { font-size: 16pt; margin: 1.8em 0 0.4em; }
+h3 { font-size: 12.5pt; margin: 1.4em 0 0.3em; }
+p { margin: 0 0 0.9em; }
+
+blockquote { float: right; clear: right; width: 50%; margin: 0.2em -56% 0.8em 0; padding: 0;
+  border: none !important; font-size: 9pt; line-height: 1.4; color: #333333; }
+blockquote p { margin: 0 0 0.4em; }
+blockquote strong { font-weight: normal; font-variant: small-caps; letter-spacing: 0.05em; color: var(--md2pdf-accent-color); }
+
+table { border-collapse: collapse; margin: 1.2em 0; font-size: 9.5pt; font-variant-numeric: tabular-nums; }
+table th, table td { border: none !important; background: none !important; padding: 3pt 12pt 3pt 0; text-align: left; }
+table th { font-style: italic; font-weight: normal; border-bottom: 0.5pt solid #111111 !important; }
+pre { border: none; padding: 0 0 0 1.2em; font-size: 8.8pt; }
+code { background: none; }
+hr { border: none; height: 0; margin: 2em 0; }
+img, .mermaid, figure { display: block; margin: 1.2em 0; break-inside: avoid; }
+figcaption { font-size: 9pt; font-style: italic; color: var(--md2pdf-color-text-muted); }
+a { text-decoration: underline; text-decoration-thickness: 0.4pt; text-underline-offset: 2pt; }
+.toc-title { font-style: italic; }

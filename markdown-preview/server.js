@@ -34,7 +34,7 @@ const TOOLS = [
         theme: {
           type: "string",
           description:
-            "Theme. Plugin themes: academic (thesis/report, Palatino), jurnal (two-column journal/conference paper, auto I/II/III sections), tugas-kuliah (Indonesian campus report: Times 12pt, spasi 1.5, auto BAB I / 1.1 numbering — write headings without manual numbers), artikel (magazine long-form), catatan-buku, default. md2pdf built-ins: github, obsidian-light, obsidian-dark, dracula, nord. Or an absolute path to a .css file. Defaults to 'default'.",
+            "Theme. Plugin themes: academic (thesis/report, Palatino), jurnal (two-column journal/conference paper, auto I/II/III sections), tugas-kuliah (Indonesian campus report: Times 12pt, spasi 1.5, auto BAB I / 1.1 numbering — write headings without manual numbers), artikel (magazine long-form), tufte (lecture notes; blockquotes become margin sidenotes), proposal (research/grant proposal; first blockquote is a boxed summary), naskah (plain Courier double-spaced submission manuscript), surat-dinas (Indonesian official letter: H1 = kop surat, next line = address), memo (executive briefing; first blockquote = executive summary), teknis (technical docs/SOP; blockquotes become NOTE callouts), notulen (compact meeting minutes; bullets render as checkboxes), zine (brutalist essay/opinion), catatan-buku, default. md2pdf built-ins: github, obsidian-light, obsidian-dark, dracula, nord. Or an absolute path to a .css file. Defaults to 'default'.",
           default: "default",
         },
         mermaidTheme: {

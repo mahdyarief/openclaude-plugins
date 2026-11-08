@@ -1,0 +1,54 @@
+/* Surat Dinas — "Kop". Indonesian official letter/memo: H1 is the letterhead
+   over a double rule, h1+p the address line, the abstract-style blockquote
+   becomes the Nomor/Perihal block, closing paragraph sits to the right. */
+:root {
+  --md2pdf-font-family-body: 'Book Antiqua', 'Palatino Linotype', 'Bookman Old Style', serif;
+  --md2pdf-font-family-heading: 'Book Antiqua', 'Palatino Linotype', 'Bookman Old Style', serif;
+  --md2pdf-font-family-mono: 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 12pt;
+  --md2pdf-line-height: 1.45;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #111111;
+  --md2pdf-color-heading: #111111;
+  --md2pdf-color-text-muted: #444444;
+  --md2pdf-color-link: #111111;
+  --md2pdf-color-code-bg: #f4f4f4;
+  --md2pdf-color-code-text: #111111;
+  --md2pdf-color-border: #111111;
+  --md2pdf-color-hr: #111111;
+  --md2pdf-accent-color: #7a5c12;
+  --md2pdf-table-header-bg: transparent;
+  --md2pdf-table-stripe-bg: transparent;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+body { text-align: justify; }
+p { margin: 0 0 0.7em; }
+h1, h2, h3, h4 { border: none !important; page-break-after: avoid; }
+h1 { text-align: center; text-transform: uppercase; font-size: 15pt; font-weight: bold;
+  letter-spacing: 0.06em; line-height: 1.3; margin: 0; padding: 0; }
+h1 + p { text-align: center; font-size: 9.5pt; color: var(--md2pdf-color-text-muted); margin: 0.2em 0 0;
+  padding-bottom: 6pt; border-bottom: 3pt double #111111; }
+h1 + p::after { content: ""; display: block; height: 0; }
+
+h1 + p + blockquote, h1 + blockquote { border: none !important; margin: 1.6em 0 1.6em; padding: 0;
+  font-size: 11pt; color: #111111; }
+h1 + p + blockquote strong:first-child, h1 + blockquote strong:first-child {
+  display: inline-block; min-width: 26mm; font-weight: normal; }
+
+h2 { font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 1.5em 0 0.4em; }
+h3 { font-size: 12pt; font-weight: bold; margin: 1.1em 0 0.3em; }
+h3::before { content: "\2014\2002"; color: var(--md2pdf-accent-color); }
+
+ol, ul { padding-left: 1.6em; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10.5pt; }
+table th, table td { border: 0.6pt solid #111111 !important; background: none !important; padding: 4pt 7pt; }
+table th { text-align: center; font-weight: bold; }
+pre { border: 0.6pt solid #bbbbbb; font-size: 9.5pt; }
+h2 ~ blockquote { border: none !important; margin: 1.2em 0 1.2em 50%; padding: 0;
+  text-align: center; font-style: normal; color: #111111; }
+hr { border: none; border-top: 0.6pt solid #111111; margin: 1.4em 0; }
+.markdown-body > ol:last-child { font-size: 10pt; color: var(--md2pdf-color-text-muted); }
+.mermaid, img, figure { break-inside: avoid; }
+a { text-decoration: none; }

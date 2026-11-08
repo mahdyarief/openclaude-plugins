@@ -98,15 +98,25 @@ const MERMAID_THEMES = {
   jurnal: "neutral",
   "tugas-kuliah": "neutral",
   artikel: "base",
+  tufte: "neutral",
+  proposal: "base",
+  naskah: "neutral",
+  "surat-dinas": "neutral",
+  memo: "base",
+  teknis: "default",
+  notulen: "neutral",
+  zine: "neutral",
 };
 
-// A table of contents breaks the layout of papers and articles.
-const NO_TOC_THEMES = new Set(["jurnal", "artikel"]);
+// A table of contents breaks the layout of these document types.
+const NO_TOC_THEMES = new Set(["jurnal", "artikel", "tufte", "naskah", "surat-dinas", "memo", "notulen", "zine"]);
 
 const TOC_TITLES = {
   "tugas-kuliah": "Daftar Isi",
   "catatan-buku": "Daftar Isi",
   academic: "Contents",
+  proposal: "Daftar Isi",
+  teknis: "Contents",
 };
 
 // Resolve a theme string to an md2pdf CLI --theme value.
