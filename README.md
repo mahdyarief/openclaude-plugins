@@ -11,9 +11,9 @@ All plugins run on **Windows** and **Linux/Ubuntu**.
 
 ### markdown-preview (PDF)
 
-- **pandoc 3.x** (with `--pdf-engine` support)
-- **LaTeX engine** (MiKTeX on Windows / TeX Live on Linux)
-- Fonts: **Times New Roman, Arial, Courier New** on Windows; **Liberation Serif, Liberation Sans, DejaVu Sans Mono** on Linux (usually preinstalled, or `sudo apt install fonts-liberation fonts-dejavu`)
+- **@amitdevx/md2pdf**: `npm install -g @amitdevx/md2pdf`
+- **Playwright Chromium** (or a configured Chromium executable); headless mode uses `chrome-headless-shell`
+- Theme fonts vary; install the specified fonts for consistent typography across platforms.
 
 ### markdown-preview (PNG)
 
@@ -30,7 +30,7 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 
 | Plugin | Tools | Deps | Description |
 |---|---|---|---|
-| [markdown-preview](./markdown-preview) | `markdown_to_pdf`, `markdown_to_html`, `markdown_to_png` | `@modelcontextprotocol/sdk` + `@amitdevx/md2pdf` (Playwright/Chromium) + Python `DrissionPage` (PNG) | Markdown → PDF/HTML/PNG. PDF: Mermaid, KaTeX, syntax highlighting, callouts, TOC, page numbers, custom CSS themes, headless mode (via `MD2PDF_BROWSER`/`MD2PDF_NO_SANDBOX`) |
+| [markdown-preview](./markdown-preview) | `markdown_to_pdf`, `markdown_to_html`, `markdown_to_png` | `@modelcontextprotocol/sdk` + `@amitdevx/md2pdf` (Playwright/Chromium) + Python `DrissionPage` (PNG) | Markdown → PDF/HTML/PNG. PDF: Mermaid, KaTeX, syntax highlighting, callouts, TOC, page numbers, 19 themes, custom CSS themes, headless mode (via `MD2PDF_BROWSER`/`MD2PDF_NO_SANDBOX`) |
 | [context7](./context7) | `ctx7_resolve_library`, `ctx7_query_docs`, `ctx7_add_key`, `ctx7_remove_key`, `ctx7_list_keys`, `ctx7_set_strategy`, `ctx7_set_limit`, `ctx7_reset_stats`, `ctx7_current_key` | none | Library documentation lookup with API key rotation |
 | [web-access](./web-access) | `web_search`, `web_get_contents`, `github_search`, `web_search_exa` | none | Web search, URL fetching, GitHub search |
 | [vision-ocr](./vision-ocr) | `vision-ocr` | `@modelcontextprotocol/sdk` + Python `rapidocr-onnxruntime`, `pymupdf`, `Pillow`, `numpy` | Extract text from images/PDFs (RapidOCR, CPU) |

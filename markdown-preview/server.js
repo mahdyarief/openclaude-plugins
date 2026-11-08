@@ -164,7 +164,7 @@ async function dispatchTool(name, args) {
 }
 
 const server = new Server(
-  { name: "markdown-preview", version: "1.0.0" },
+  { name: "markdown-preview", version: "2.1.0" },
   { capabilities: { tools: {} } }
 );
 
