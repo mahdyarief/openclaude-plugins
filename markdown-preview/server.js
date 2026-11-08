@@ -34,7 +34,7 @@ const TOOLS = [
         theme: {
           type: "string",
           description:
-            "md2pdf theme: default, github, obsidian-light, obsidian-dark, dracula, nord, academic, or a path to a custom .css theme file. Defaults to 'default'.",
+            "Theme. Plugin themes: academic (thesis/report, Palatino), jurnal (two-column journal/conference paper, auto I/II/III sections), tugas-kuliah (Indonesian campus report: Times 12pt, spasi 1.5, auto BAB I / 1.1 numbering — write headings without manual numbers), artikel (magazine long-form), catatan-buku, default. md2pdf built-ins: github, obsidian-light, obsidian-dark, dracula, nord. Or an absolute path to a .css file. Defaults to 'default'.",
           default: "default",
         },
         mermaidTheme: {

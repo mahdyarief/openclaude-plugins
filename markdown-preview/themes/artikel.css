@@ -1,0 +1,71 @@
+/* Artikel — "Editorial". Magazine long-form: Sitka/Georgia body on a narrow
+   reading measure, Bahnschrift display headings, deep-teal ink, kicker-style
+   section labels, oversized pull quotes, hanging figure captions. */
+:root {
+  --md2pdf-font-family-body: 'Sitka Text', 'Georgia', 'Source Serif 4', serif;
+  --md2pdf-font-family-heading: 'Bahnschrift', 'DIN Alternate', 'Segoe UI', Arial, sans-serif;
+  --md2pdf-font-family-mono: 'Cascadia Mono', 'Consolas', monospace;
+  --md2pdf-font-size: 11pt;
+  --md2pdf-line-height: 1.68;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #1d2424;
+  --md2pdf-color-heading: #0b1f20;
+  --md2pdf-color-text-muted: #5b6b6b;
+  --md2pdf-color-link: #0f5257;
+  --md2pdf-color-code-bg: #eef4f3;
+  --md2pdf-color-code-text: #0b1f20;
+  --md2pdf-color-border: #d3dedc;
+  --md2pdf-color-hr: #0f5257;
+  --md2pdf-accent-color: #0f5257;
+  --md2pdf-table-header-bg: transparent;
+  --md2pdf-table-stripe-bg: #f5f9f8;
+  --md2pdf-code-border-radius: 3px;
+  --md2pdf-callout-border-radius: 3px;
+}
+
+.markdown-body { max-width: 150mm; margin: 0 auto; }
+
+h1, h2, h3, h4 { font-family: var(--md2pdf-font-family-heading); border: none !important;
+  color: var(--md2pdf-color-heading); page-break-after: avoid; }
+h1 { font-size: 30pt; font-weight: 600; line-height: 1.05; letter-spacing: -0.02em;
+  margin: 0 0 0.35em; }
+/* Standfirst: first paragraph after the headline */
+h1 + p { font-family: var(--md2pdf-font-family-heading); font-size: 13pt; font-weight: 300;
+  line-height: 1.45; color: var(--md2pdf-color-text-muted);
+  padding-bottom: 1em; margin-bottom: 1.4em; border-bottom: 0.6pt solid var(--md2pdf-color-border); }
+/* Opening paragraph gets a lead-in in small caps */
+h1 + p + p::first-line { font-variant: small-caps; letter-spacing: 0.04em; }
+
+/* Kicker: section labels read like magazine department heads */
+h2 { font-size: 9pt; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--md2pdf-accent-color); margin: 2.2em 0 0.8em;
+  padding-top: 0.6em; border-top: 1.6pt solid var(--md2pdf-accent-color) !important; display: inline-block; }
+h3 { font-size: 14pt; font-weight: 600; letter-spacing: -0.01em; margin: 1.4em 0 0.4em; }
+h4 { font-size: 11pt; font-weight: 600; margin: 1em 0 0.3em; }
+
+p { margin: 0 0 0.85em; }
+
+/* Pull quote */
+blockquote { border: none !important; margin: 1.6em 0; padding: 0 0 0 2.2em; position: relative;
+  font-family: var(--md2pdf-font-family-heading); font-size: 15pt; font-weight: 300;
+  line-height: 1.35; color: var(--md2pdf-color-heading); }
+blockquote::before { content: "\201C"; position: absolute; left: 0; top: -0.15em;
+  font-size: 3em; line-height: 1; color: var(--md2pdf-accent-color); }
+
+img, .mermaid, figure { display: block; margin: 1.6em auto 0.4em; max-width: 100%; break-inside: avoid; }
+figcaption { font-family: var(--md2pdf-font-family-heading); font-size: 8.5pt;
+  color: var(--md2pdf-color-text-muted); border-left: 1.6pt solid var(--md2pdf-accent-color);
+  padding-left: 0.6em; text-align: left; }
+
+table { font-family: var(--md2pdf-font-family-heading); font-size: 9.5pt; border-collapse: collapse;
+  width: 100%; margin: 1.2em 0; font-variant-numeric: tabular-nums; }
+table th, table td { border: none !important; border-bottom: 0.5pt solid var(--md2pdf-color-border) !important;
+  padding: 5pt 8pt; }
+table th { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.1em; text-align: left;
+  color: var(--md2pdf-accent-color); border-bottom: 1.2pt solid var(--md2pdf-accent-color) !important; }
+
+pre { font-size: 8.5pt; border: none; }
+code { font-size: 0.9em; }
+a { color: var(--md2pdf-color-link); text-decoration: none; border-bottom: 0.5pt solid currentColor; }
+hr { border: none; height: 0; margin: 2em auto; width: 30%; border-top: 0.6pt solid var(--md2pdf-color-hr); }
+ul li::marker { color: var(--md2pdf-accent-color); }

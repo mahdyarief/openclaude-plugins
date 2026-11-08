@@ -89,12 +89,24 @@ const DEFAULT_THEME = "default";
 const MERMAID_THEMES = {
   default: "default",
   github: "base",
-  obsidian_light: "default",
-  obsidian_dark: "dark",
+  "obsidian-light": "default",
+  "obsidian-dark": "dark",
   dracula: "dark",
   nord: "neutral",
   academic: "neutral",
   "catatan-buku": "neutral",
+  jurnal: "neutral",
+  "tugas-kuliah": "neutral",
+  artikel: "base",
+};
+
+// A table of contents breaks the layout of papers and articles.
+const NO_TOC_THEMES = new Set(["jurnal", "artikel"]);
+
+const TOC_TITLES = {
+  "tugas-kuliah": "Daftar Isi",
+  "catatan-buku": "Daftar Isi",
+  academic: "Contents",
 };
 
 // Resolve a theme string to an md2pdf CLI --theme value.
@@ -130,22 +142,24 @@ async function renderPdf(markdown, outputPath, options = {}) {
 
   await writeFile(mdPath, markdown, "utf-8");
 
-  let theme = options.theme || DEFAULT_THEME;
-  if (typeof theme === "string") {
-    theme = theme.trim();
-  }
-  const resolvedTheme = resolveTheme(theme);
-  theme = resolvedTheme;
+  const themeName = (typeof options.theme === "string" && options.theme.trim()) || DEFAULT_THEME;
+  const theme = resolveTheme(themeName);
   const mermaidTheme =
-    options.mermaidTheme || MERMAID_THEMES[theme] || MERMAID_THEMES.default;
+    options.mermaidTheme || MERMAID_THEMES[themeName] || MERMAID_THEMES.default;
+  const toc = options.toc ?? !NO_TOC_THEMES.has(themeName);
 
   const args = [
     mdPath,
     "-o", pdfPath,
     "--theme", theme,
     "--mermaid-theme", mermaidTheme,
-    "--toc",
+    ...(toc ? ["--toc"] : []),
+    ...(toc && TOC_TITLES[themeName] ? ["--toc-title", TOC_TITLES[themeName]] : []),
     "--page-numbers",
+    // md2pdf's cache keys on markdown content only, so edited theme CSS would be ignored.
+    "--no-cache",
+    // Without --force md2pdf silently skips an existing outputPath and still exits 0.
+    "--force",
   ];
 
   const argsFull = [...MD2PDF_EXTRA_ARGS, ...args];

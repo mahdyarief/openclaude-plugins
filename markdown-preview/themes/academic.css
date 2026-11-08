@@ -1,29 +1,56 @@
-/* Academic theme - serif, formal, print-optimized (research paper style).
-   Base typography: Source Serif 4 (via system serif fallback). */
+/* Academic — "Monograph". Old-style Palatino, oxblood ink, small-caps hierarchy,
+   booktabs tables, drop cap after the chapter title. For theses, reports, essays. */
 :root {
-  --md2pdf-font-family-body: 'Georgia', 'Times New Roman', serif;
-  --md2pdf-font-family-heading: 'Georgia', 'Times New Roman', serif;
-  --md2pdf-font-family-code: 'Courier New', monospace;
+  --md2pdf-font-family-body: 'Palatino Linotype', 'Book Antiqua', 'TeX Gyre Pagella', Palatino, serif;
+  --md2pdf-font-family-heading: 'Palatino Linotype', 'Book Antiqua', 'TeX Gyre Pagella', Palatino, serif;
+  --md2pdf-font-family-mono: 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 11.5pt;
+  --md2pdf-line-height: 1.55;
   --md2pdf-color-bg: #ffffff;
-  --md2pdf-color-text: #111111;
-  --md2pdf-color-muted: #555555;
-  --md2pdf-accent-color: #7a1f1f;
-  --md2pdf-accent-color-hover: #5c1515;
-  --md2pdf-table-header-bg: #e8e8e8;
-  --md2pdf-table-stripe-bg: #f5f5f5;
-  --md2pdf-border-color: #cccccc;
-  --md2pdf-code-bg: #f4f4f4;
-  --md2pdf-code-color: #8c1d1d;
-  --md2pdf-heading-color: #0c0c0c;
-  --md2pdf-footnote-color: #666666;
-  --md2pdf-callout-bg: #fafafa;
-  --md2pdf-callout-border: #dddddd;
-  --md2pdf-callout-text: #111111;
-  --md2pdf-page-size: A4;
-  --md2pdf-page-margin: 22mm;
-  --md2pdf-body-font-size: 10.5pt;
-  --md2pdf-line-height: 1.75;
-  --md2pdf-list-indent: 1.7em;
-  --md2pdf-blockquote-border: #999999;
-  --md2pdf-page-break-after: avoid;
+  --md2pdf-color-text: #1c1a17;
+  --md2pdf-color-heading: #1c1a17;
+  --md2pdf-color-text-muted: #6a625a;
+  --md2pdf-color-link: #6d1a1a;
+  --md2pdf-color-code-bg: #f7f5f1;
+  --md2pdf-color-code-text: #3b2f2a;
+  --md2pdf-color-border: #cfc8bd;
+  --md2pdf-color-hr: #6d1a1a;
+  --md2pdf-accent-color: #6d1a1a;
+  --md2pdf-table-header-bg: transparent;
+  --md2pdf-table-stripe-bg: transparent;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
 }
+
+body { text-align: justify; hyphens: auto; font-variant-numeric: oldstyle-nums; }
+p { margin: 0; text-indent: 1.5em; }
+h1 + p, h2 + p, h3 + p, h4 + p, li p, td p, blockquote p, figure + p, pre + p, table + p { text-indent: 0; }
+
+h1, h2, h3, h4 { border: none !important; font-weight: normal; page-break-after: avoid; }
+h1 { font-size: 21pt; text-align: center; letter-spacing: 0.02em; line-height: 1.25;
+  margin: 0.4em 0 1.6em; padding-bottom: 0.7em;
+  border-bottom: 0.6pt solid var(--md2pdf-accent-color) !important; }
+h1 + p::first-letter { float: left; font-size: 3.4em; line-height: 0.85;
+  padding: 0.06em 0.08em 0 0; color: var(--md2pdf-accent-color); }
+h2 { font-size: 13pt; font-variant: small-caps; letter-spacing: 0.08em;
+  color: var(--md2pdf-accent-color); margin: 1.8em 0 0.6em; }
+h3 { font-size: 11.5pt; font-style: italic; margin: 1.3em 0 0.4em; }
+h4 { font-size: 11.5pt; font-variant: small-caps; letter-spacing: 0.05em; margin: 1em 0 0.3em; }
+
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 10pt;
+  font-variant-numeric: lining-nums tabular-nums;
+  border-top: 1.2pt solid #1c1a17; border-bottom: 1.2pt solid #1c1a17; }
+table th, table td { border: none !important; padding: 4pt 9pt; background: none !important; }
+table th { border-bottom: 0.5pt solid #1c1a17 !important; font-variant: small-caps;
+  letter-spacing: 0.04em; font-weight: normal; text-align: left; }
+
+blockquote { border: none !important; margin: 1.2em 2.4em; padding: 0;
+  font-size: 10.5pt; line-height: 1.45; color: #3a342e; }
+pre { border: none; border-top: 0.5pt solid var(--md2pdf-color-border);
+  border-bottom: 0.5pt solid var(--md2pdf-color-border); font-size: 9pt; }
+hr { border: none; height: auto; background: none; text-align: center; margin: 1.6em 0; }
+hr::after { content: "\2042"; color: var(--md2pdf-accent-color); font-size: 13pt; }
+img, .mermaid, figure { display: block; margin: 1.2em auto; break-inside: avoid; }
+figcaption { font-size: 9.5pt; font-style: italic; text-align: center; color: var(--md2pdf-color-text-muted); }
+a { color: var(--md2pdf-color-link); text-decoration: none; }
+.toc-title { font-variant: small-caps; letter-spacing: 0.1em; text-align: center; border: none !important; }

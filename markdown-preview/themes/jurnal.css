@@ -1,0 +1,67 @@
+/* Jurnal — "Proceedings". Two-column Cambria, auto Roman-numbered sections
+   (I. II. III.), A./B. subsections, hairline column rule, abstract block spanning
+   both columns. For journal articles and conference papers. */
+:root {
+  --md2pdf-font-family-body: 'Cambria', 'Caladea', 'Liberation Serif', serif;
+  --md2pdf-font-family-heading: 'Cambria', 'Caladea', 'Liberation Serif', serif;
+  --md2pdf-font-family-mono: 'Consolas', 'DejaVu Sans Mono', monospace;
+  --md2pdf-font-size: 9.75pt;
+  --md2pdf-line-height: 1.32;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #111111;
+  --md2pdf-color-heading: #111111;
+  --md2pdf-color-text-muted: #4a4a4a;
+  --md2pdf-color-link: #14365c;
+  --md2pdf-color-code-bg: #f4f6f8;
+  --md2pdf-color-code-text: #111111;
+  --md2pdf-color-border: #9aa5b1;
+  --md2pdf-color-hr: #111111;
+  --md2pdf-accent-color: #14365c;
+  --md2pdf-table-header-bg: transparent;
+  --md2pdf-table-stripe-bg: transparent;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+.markdown-body { column-count: 2; column-gap: 7mm; column-rule: 0.4pt solid #c9ced4;
+  counter-reset: sec; }
+body { text-align: justify; hyphens: auto; }
+p { margin: 0 0 0.3em; text-indent: 1.1em; }
+h1 + p, h2 + p, h3 + p, li p, td p, blockquote p { text-indent: 0; }
+
+/* Title block and abstract span both columns */
+h1, h1 + p, h1 + blockquote, h1 + p + blockquote, .toc { column-span: all; }
+h1 { font-size: 20pt; font-weight: bold; text-align: center; line-height: 1.2;
+  border: none !important; margin: 0 0 0.35em; }
+h1 + p { text-align: center; font-size: 10.5pt; font-style: italic; margin-bottom: 1em; }
+h1 + blockquote, h1 + p + blockquote {
+  border: none !important; border-top: 0.8pt solid #111 !important; border-bottom: 0.8pt solid #111 !important;
+  margin: 0 0 1.4em; padding: 0.6em 0; font-size: 9pt; font-style: normal; color: #111; }
+h1 + blockquote p:first-child strong:first-child,
+h1 + p + blockquote p:first-child strong:first-child { font-style: italic; color: var(--md2pdf-accent-color); }
+
+h2:not(.toc-title) { counter-increment: sec; counter-reset: sub; font-size: 9.75pt; font-weight: normal;
+  font-variant: small-caps; letter-spacing: 0.06em; text-align: center;
+  border: none !important; margin: 1.1em 0 0.45em; }
+h2:not(.toc-title)::before { content: counter(sec, upper-roman) ".\2002"; }
+h3 { counter-increment: sub; font-size: 9.75pt; font-style: italic; font-weight: normal;
+  border: none !important; margin: 0.8em 0 0.3em; }
+h3::before { content: counter(sub, upper-alpha) ".\2002"; font-style: normal; }
+h4 { font-size: 9.75pt; font-style: italic; font-weight: normal; margin: 0.6em 0 0.2em; }
+
+table { width: 100%; font-size: 8pt; border-collapse: collapse; margin: 0.7em 0; break-inside: avoid;
+  border-top: 0.8pt solid #111; border-bottom: 0.8pt solid #111; }
+table th, table td { border: none !important; padding: 2pt 4pt; background: none !important; text-align: center; }
+table th { border-bottom: 0.4pt solid #111 !important; font-variant: small-caps; font-weight: normal; }
+
+figure, img, .mermaid, pre, .katex-display, table { break-inside: avoid; max-width: 100%; }
+img, .mermaid { display: block; margin: 0.6em auto; }
+figcaption { font-size: 8pt; text-align: center; }
+pre { font-size: 7.5pt; line-height: 1.25; border-left: 1.5pt solid var(--md2pdf-accent-color);
+  padding: 4pt 6pt; white-space: pre-wrap; }
+blockquote { border-left: 0.8pt solid #111 !important; margin: 0.5em 0; padding-left: 0.6em; font-size: 9pt; }
+ol, ul { padding-left: 1.3em; }
+li { margin: 0.1em 0; }
+a { color: var(--md2pdf-color-link); text-decoration: none; }
+/* Last list (references) compact */
+.markdown-body > ol:last-child { font-size: 8pt; line-height: 1.25; }

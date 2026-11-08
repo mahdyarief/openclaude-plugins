@@ -1,0 +1,58 @@
+/* Tugas Kuliah — "Laporan". Indonesian campus format: Times New Roman 12pt,
+   spasi 1.5, rata kanan-kiri. Auto-numbered: "# Pendahuluan" renders as
+   BAB I / PENDAHULUAN, "##" as 1.1, "###" as 1.1.1. Navy table headers.
+   Write chapter headings WITHOUT manual "BAB I" / "1.1" prefixes. */
+:root {
+  --md2pdf-font-family-body: 'Times New Roman', 'Liberation Serif', Times, serif;
+  --md2pdf-font-family-heading: 'Times New Roman', 'Liberation Serif', Times, serif;
+  --md2pdf-font-family-mono: 'Consolas', 'Courier New', monospace;
+  --md2pdf-font-size: 12pt;
+  --md2pdf-line-height: 1.5;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #000000;
+  --md2pdf-color-heading: #000000;
+  --md2pdf-color-text-muted: #3d4451;
+  --md2pdf-color-link: #1f3a68;
+  --md2pdf-color-code-bg: #f3f5f9;
+  --md2pdf-color-code-text: #0f172a;
+  --md2pdf-color-border: #1f3a68;
+  --md2pdf-color-hr: #1f3a68;
+  --md2pdf-accent-color: #1f3a68;
+  --md2pdf-table-header-bg: #1f3a68;
+  --md2pdf-table-stripe-bg: #f3f5f9;
+  --md2pdf-code-border-radius: 0;
+  --md2pdf-callout-border-radius: 0;
+}
+
+.markdown-body { counter-reset: bab; }
+body { text-align: justify; }
+p { margin: 0 0 0.4em; text-indent: 1.25cm; }
+h1 + p, h2 + p, h3 + p, h4 + p, li p, td p, blockquote p { text-indent: 0; }
+
+h1, h2, h3, h4 { border: none !important; page-break-after: avoid; color: #000; }
+h1 { counter-increment: bab; counter-reset: subbab; font-size: 14pt; font-weight: bold;
+  text-align: center; text-transform: uppercase; line-height: 1.5; margin: 0 0 1.8em; }
+h1::before { content: "BAB " counter(bab, upper-roman); display: block; }
+h1 ~ h1 { page-break-before: always; }
+h2:not(.toc-title) { counter-increment: subbab; counter-reset: subsub; font-size: 12pt; font-weight: bold; margin: 1.1em 0 0.3em; }
+h2:not(.toc-title)::before { content: counter(bab) "." counter(subbab) "\2003"; }
+h3 { counter-increment: subsub; font-size: 12pt; font-weight: bold; margin: 0.9em 0 0.3em; }
+h3::before { content: counter(bab) "." counter(subbab) "." counter(subsub) "\2003"; }
+h4 { font-size: 12pt; font-weight: normal; font-style: italic; margin: 0.8em 0 0.2em; }
+
+table { border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 11pt;
+  line-height: 1.25; break-inside: avoid; }
+table th, table td { border: 0.6pt solid #1f3a68 !important; padding: 4pt 7pt; }
+table th { background: var(--md2pdf-table-header-bg) !important; color: #ffffff !important;
+  font-weight: bold; text-align: center; }
+table tr:nth-child(even) td { background: var(--md2pdf-table-stripe-bg) !important; }
+
+img, .mermaid, figure { display: block; margin: 1em auto 0.3em; text-align: center; break-inside: avoid; }
+figcaption { font-size: 11pt; text-align: center; font-weight: bold; }
+blockquote { border-left: none !important; margin: 0.6em 1.25cm; padding: 0;
+  font-size: 11pt; line-height: 1.15; color: #000; }
+pre { font-size: 10pt; line-height: 1.3; border: none; border-left: 2.5pt solid #1f3a68; }
+ol, ul { padding-left: 1.25cm; }
+li { margin: 0.1em 0; }
+a { color: var(--md2pdf-color-link); text-decoration: none; }
+.toc-title { text-align: center; text-transform: uppercase; font-size: 14pt; border: none !important; }
