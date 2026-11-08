@@ -38,7 +38,7 @@ h3 { font-size: 12pt; margin: 1.4em 0 0.4em; text-decoration: underline;
 strong { background: var(--md2pdf-accent-color); padding: 0 2pt; }
 
 h2 ~ blockquote { border: none !important; margin: 1.6em 0; padding: 0; font-family: var(--md2pdf-font-family-heading);
-  text-transform: uppercase; font-size: 22pt; line-height: 1.05; letter-spacing: -0.02em; color: #000000; }
+  text-transform: uppercase; font-size: 22pt; line-height: 1.05; letter-spacing: -0.02em; color: #000000; font-style: normal; }
 h2 ~ blockquote p { margin: 0; }
 
 table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 9.5pt; border: 3pt solid #000000; }
@@ -47,7 +47,8 @@ table th { background: #000000 !important; color: #ffffff; font-family: var(--md
   text-transform: uppercase; font-size: 8pt; letter-spacing: 0.04em; }
 pre { background: #000000 !important; color: var(--md2pdf-accent-color); border: none; padding: 10pt; font-size: 8.75pt; }
 pre code { background: none !important; color: inherit; }
-pre code span, pre code * { color: inherit !important; font-style: normal !important; }
+pre, pre *, pre .hljs { color: #ffe500 !important; background: transparent !important; font-style: normal !important; }
+pre { background: #000000 !important; }
 ol li::marker { font-family: var(--md2pdf-font-family-heading); }
 hr { border: none; height: 8pt; background: #000000; margin: 2em 0; }
 .mermaid, img, figure { break-inside: avoid; border: 3pt solid #000000; padding: 8pt; }
