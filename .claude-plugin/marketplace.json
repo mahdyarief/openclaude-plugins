@@ -27,7 +27,7 @@
     {
       "name": "markdown-preview",
       "source": "./markdown-preview",
-      "description": "Markdown to PDF/HTML/PNG conversion via pandoc + LaTeX + DrissionPage. 3 MCP tools: markdown_to_pdf, markdown_to_html, markdown_to_png.",
+      "description": "Markdown to PDF/HTML/PNG conversion. PDF engine absorbed from @amitdevx/md2pdf (Playwright/Chromium): Mermaid, KaTeX, syntax highlighting, callouts, TOC, page numbers, custom CSS themes, headless mode. 3 MCP tools: markdown_to_pdf, markdown_to_html, markdown_to_png.",
       "category": "development"
     },
     {

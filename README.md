@@ -30,7 +30,7 @@ Check: `node --version`, `python --version`, `pandoc --version`.
 
 | Plugin | Tools | Deps | Description |
 |---|---|---|---|
-| [markdown-preview](./markdown-preview) | `markdown_to_pdf`, `markdown_to_html`, `markdown_to_png` | `@modelcontextprotocol/sdk` + pandoc/LaTeX + Python `DrissionPage` + Chrome/Edge | Markdown → PDF/HTML/PNG via pandoc + LaTeX + DrissionPage |
+| [markdown-preview](./markdown-preview) | `markdown_to_pdf`, `markdown_to_html`, `markdown_to_png` | `@modelcontextprotocol/sdk` + `@amitdevx/md2pdf` (Playwright/Chromium) + Python `DrissionPage` (PNG) | Markdown → PDF/HTML/PNG. PDF: Mermaid, KaTeX, syntax highlighting, callouts, TOC, page numbers, custom CSS themes, headless mode (via `MD2PDF_BROWSER`/`MD2PDF_NO_SANDBOX`) |
 | [context7](./context7) | `ctx7_resolve_library`, `ctx7_query_docs`, `ctx7_add_key`, `ctx7_remove_key`, `ctx7_list_keys`, `ctx7_set_strategy`, `ctx7_set_limit`, `ctx7_reset_stats`, `ctx7_current_key` | none | Library documentation lookup with API key rotation |
 | [web-access](./web-access) | `web_search`, `web_get_contents`, `github_search`, `web_search_exa` | none | Web search, URL fetching, GitHub search |
 | [vision-ocr](./vision-ocr) | `vision-ocr` | `@modelcontextprotocol/sdk` + Python `rapidocr-onnxruntime`, `pymupdf`, `Pillow`, `numpy` | Extract text from images/PDFs (RapidOCR, CPU) |
