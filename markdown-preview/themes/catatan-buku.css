@@ -1,0 +1,29 @@
+/* Catatan Buku (Karya) - clean note-taking style, low contrast for reading.
+   Inspired by modern note apps: comfortable, readable, minimal distraction. */
+:root {
+  --md2pdf-font-family-body: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  --md2pdf-font-family-heading: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  --md2pdf-font-family-code: 'Fira Code', 'Courier New', monospace;
+  --md2pdf-color-bg: #faf9f6;
+  --md2pdf-color-text: #2b2b2b;
+  --md2pdf-color-muted: #6b6b6b;
+  --md2pdf-accent-color: #2456a6;
+  --md2pdf-accent-color-hover: #1d4078;
+  --md2pdf-table-header-bg: #eceae3;
+  --md2pdf-table-stripe-bg: #f4f3ef;
+  --md2pdf-border-color: #d8d4c8;
+  --md2pdf-code-bg: #f0ede3;
+  --md2pdf-code-color: #6b4a1e;
+  --md2pdf-heading-color: #1f1f1f;
+  --md2pdf-footnote-color: #7a7a7a;
+  --md2pdf-callout-bg: #f4f1ea;
+  --md2pdf-callout-border: #d8d0b8;
+  --md2pdf-callout-text: #3a3a3a;
+  --md2pdf-page-size: A4;
+  --md2pdf-page-margin: 22mm;
+  --md2pdf-body-font-size: 11pt;
+  --md2pdf-line-height: 1.7;
+  --md2pdf-list-indent: 1.6em;
+  --md2pdf-blockquote-border: #cdc9b4;
+  --md2pdf-page-break-after: avoid;
+}

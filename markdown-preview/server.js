@@ -6,7 +6,7 @@ const {
 } = require("@modelcontextprotocol/sdk/types.js");
 
 const { readFile } = require("node:fs/promises");
-const { resolve } = require("node:path");
+const { resolve } = require("path");
 const { renderPdf } = require("./lib/render-pdf.js");
 const { renderHtml } = require("./lib/render-html.js");
 const { renderPng } = require("./lib/render-png.js");
@@ -15,7 +15,7 @@ const TOOLS = [
   {
     name: "markdown_to_pdf",
     description:
-      "Convert markdown content to a PDF file using pandoc + xelatex. Supports LaTeX math, syntax highlighting, tables, and Mermaid diagrams. Returns the path to the generated PDF file.",
+      "Convert markdown content to a PDF file using md2pdf (Playwright/Chromium engine). Supports Mermaid diagrams, KaTeX math, syntax highlighting, tables, callouts, TOC, page numbers, and multiple built-in themes (default, github, obsidian-light, obsidian-dark, dracula, nord, academic) plus custom CSS themes. Returns the path to the generated PDF file.",
     inputSchema: {
       type: "object",
       properties: {
@@ -30,6 +30,17 @@ const TOOLS = [
         outputPath: {
           type: "string",
           description: "Optional output path for the PDF file. Defaults to a temp file.",
+        },
+        theme: {
+          type: "string",
+          description:
+            "md2pdf theme: default, github, obsidian-light, obsidian-dark, dracula, nord, academic, or a path to a custom .css theme file. Defaults to 'default'.",
+          default: "default",
+        },
+        mermaidTheme: {
+          type: "string",
+          description:
+            "Optional Mermaid diagram theme override (default, base, dark, neutral). Auto-matched to the selected theme when omitted.",
         },
         open: {
           type: "boolean",
@@ -126,7 +137,10 @@ async function dispatchTool(name, args) {
 
   switch (name) {
     case "markdown_to_pdf": {
-      const pdfPath = await renderPdf(markdown, args.outputPath);
+      const pdfPath = await renderPdf(markdown, args.outputPath, {
+        theme: args.theme,
+        mermaidTheme: args.mermaidTheme,
+      });
       if (args.open) openPath(pdfPath);
       return `PDF generated from ${sourceDescription}:\n- ${pdfPath}`;
     }

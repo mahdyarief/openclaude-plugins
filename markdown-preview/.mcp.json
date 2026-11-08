@@ -3,8 +3,9 @@
     "command": "node",
     "args": ["${CLAUDE_PLUGIN_ROOT}/server.js"],
     "env": {
-      "PANDOC_PATH": "pandoc",
-      "PDF_ENGINE": "xelatex"
+      "MD2PDF_PATH": "md2pdf",
+      "MD2PDF_NO_SANDBOX": "1",
+      "PANDOC_PATH": "pandoc"
     }
   }
 }

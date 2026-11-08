@@ -1,0 +1,30 @@
+/* Default theme - clean, print-optimized (baseline reference)
+   Variables: https://github.com/amitdevx/md2pdf/blob/main/src/themes/theme.css
+*/
+:root {
+  --md2pdf-font-family-body: Inter, system-ui, -apple-system, sans-serif;
+  --md2pdf-font-family-heading: Inter, system-ui, -apple-system, sans-serif;
+  --md2pdf-font-family-code: JetBrains Mono, Consolas, monospace;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #1a1a1a;
+  --md2pdf-color-muted: #6b7280;
+  --md2pdf-accent-color: #2563eb;
+  --md2pdf-accent-color-hover: #1d4ed8;
+  --md2pdf-table-header-bg: #f3f4f6;
+  --md2pdf-table-stripe-bg: #fafafa;
+  --md2pdf-border-color: #e5e7eb;
+  --md2pdf-code-bg: #f8fafc;
+  --md2pdf-code-color: #be185d;
+  --md2pdf-heading-color: #111827;
+  --md2pdf-footnote-color: #6b7280;
+  --md2pdf-callout-bg: #f0f9ff;
+  --md2pdf-callout-border: #bae6fd;
+  --md2pdf-callout-text: #1e40af;
+  --md2pdf-page-size: A4;
+  --md2pdf-page-margin: 20mm;
+  --md2pdf-body-font-size: 11pt;
+  --md2pdf-line-height: 1.65;
+  --md2pdf-list-indent: 1.6em;
+  --md2pdf-blockquote-border: #d1d5db;
+  --md2pdf-page-break-after: avoid;
+}

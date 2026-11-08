@@ -1,0 +1,29 @@
+/* Academic theme - serif, formal, print-optimized (research paper style).
+   Base typography: Source Serif 4 (via system serif fallback). */
+:root {
+  --md2pdf-font-family-body: 'Georgia', 'Times New Roman', serif;
+  --md2pdf-font-family-heading: 'Georgia', 'Times New Roman', serif;
+  --md2pdf-font-family-code: 'Courier New', monospace;
+  --md2pdf-color-bg: #ffffff;
+  --md2pdf-color-text: #111111;
+  --md2pdf-color-muted: #555555;
+  --md2pdf-accent-color: #7a1f1f;
+  --md2pdf-accent-color-hover: #5c1515;
+  --md2pdf-table-header-bg: #e8e8e8;
+  --md2pdf-table-stripe-bg: #f5f5f5;
+  --md2pdf-border-color: #cccccc;
+  --md2pdf-code-bg: #f4f4f4;
+  --md2pdf-code-color: #8c1d1d;
+  --md2pdf-heading-color: #0c0c0c;
+  --md2pdf-footnote-color: #666666;
+  --md2pdf-callout-bg: #fafafa;
+  --md2pdf-callout-border: #dddddd;
+  --md2pdf-callout-text: #111111;
+  --md2pdf-page-size: A4;
+  --md2pdf-page-margin: 22mm;
+  --md2pdf-body-font-size: 10.5pt;
+  --md2pdf-line-height: 1.75;
+  --md2pdf-list-indent: 1.7em;
+  --md2pdf-blockquote-border: #999999;
+  --md2pdf-page-break-after: avoid;
+}

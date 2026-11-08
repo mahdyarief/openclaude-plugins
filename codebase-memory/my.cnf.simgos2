@@ -1,0 +1,31 @@
+# For advice on how to change settings please see
+# http://dev.mysql.com/doc/refman/8.0/en/server-configuration-defaults.html
+
+[mysqld]
+#
+# Remove leading # and set to the amount of RAM for the most important data
+# cache in MySQL. Start at 70% of total RAM for dedicated server, else 10%.
+# Aspire has 14.89 GB RAM and zswap is active; 1 GB pool keeps mysqld
+# out of swap on the rotational HDD instead of the default 128 MB.
+innodb_buffer_pool_size = 1G
+#
+# Remove leading # to turn on a very important data integrity option: logging
+# changes to the binary log between backups.
+# log_bin
+#
+# Remove leading # to set options mainly useful for reporting servers.
+# Adjust sizes as needed, experiment to find the optimal values.
+# join_buffer_size = 128M
+# sort_buffer_size = 2M
+# read_rnd_buffer_size = 2M
+default-authentication-plugin=caching_sha2_password
+
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+
+event_scheduler=ON
+#skip_name_resolve=ON
+sql_mode=NO_ENGINE_SUBSTITUTION
