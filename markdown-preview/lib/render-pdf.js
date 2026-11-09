@@ -1,7 +1,7 @@
-const { writeFile, mkdtemp } = require("node:fs/promises");
+const { writeFile, mkdtemp, readFile } = require("node:fs/promises");
 const { execFile, spawn } = require("node:child_process");
 const { tmpdir } = require("node:os");
-const { join } = require("node:path");
+const { join, basename } = require("node:path");
 
 const { existsSync, readdirSync, statSync } = require("node:fs");
 const { createRequire } = require("node:module");
@@ -111,6 +111,51 @@ const MERMAID_THEMES = {
 // A table of contents breaks the layout of these document types.
 const NO_TOC_THEMES = new Set(["jurnal", "artikel", "tufte", "naskah", "surat-dinas", "memo", "notulen", "zine"]);
 
+// Themes that number headings themselves through CSS counters + ::before.
+// When the document already carries its own numbers, both appear ("I. 1. ...").
+const AUTO_NUMBERED_THEMES = {
+  jurnal: ['h2:not(.toc-title)::before', "h3::before"],
+  "tugas-kuliah": ["h1::before", "h2:not(.toc-title)::before", "h3::before"],
+  teknis: ["h2:not(.toc-title)::before", "h3::before"],
+  proposal: ["h2:not(.toc-title)::before", "h3::before"],
+};
+
+// A heading whose text already starts with its own number: "1.", "1.2",
+// "1.2.1", "I.", "BAB I", "1)". Requires punctuation or a dotted level so a
+// heading such as "2026 Outlook" or "3D Printing" is not mistaken for one.
+const MANUAL_HEADING_RE =
+  /^#{1,6}\s+(BAB\s+[IVXLC]+\b|[IVXLC]+[.)]\s|\d+(?:\.\d+)+[.)]?\s|\d+[.)]\s)(.*)$/i;
+
+// A quantity reads like a number but continues with a lowercase word
+// ("4.5 juta pengguna"); a real heading continues with a title word.
+const QUANTITY_TAIL_RE = /^[a-z]/;
+
+function hasManualHeadingNumbers(markdown) {
+  const matches = [];
+  for (const line of markdown.split(/\r?\n/)) {
+    const m = MANUAL_HEADING_RE.exec(line);
+    if (m) matches.push(m[2] || "");
+  }
+  // Two or more numbered headings is conclusive on its own.
+  if (matches.length >= 2) return true;
+  if (matches.length === 1) {
+    return !QUANTITY_TAIL_RE.test(matches[0].trim());
+  }
+  return false;
+}
+
+// Neutralise the theme's own counter-based numbering so a document that
+// numbers its headings by hand does not end up double-numbered.
+async function suppressAutoNumbering(themePath, selectors, tmpDir) {
+  const css = await readFile(themePath, "utf-8");
+  const rules = selectors
+    .map((sel) => `${sel} { content: none !important; }`)
+    .join("\n");
+  const overridePath = join(tmpDir, "theme-no-auto-numbering.css");
+  await writeFile(overridePath, `${css}\n\n/* headings already numbered by the author */\n${rules}\n`, "utf-8");
+  return overridePath;
+}
+
 const TOC_TITLES = {
   "tugas-kuliah": "Daftar Isi",
   "catatan-buku": "Daftar Isi",
@@ -132,7 +177,8 @@ function resolveTheme(theme) {
   }
 
   // Plugin-shipped custom theme: themes/<name>.css
-  const pluginTheme = path.join(THEMES_DIR, `${trimmed}.css`);
+  const bare = trimmed.replace(/\.css$/i, "");
+  const pluginTheme = path.join(THEMES_DIR, `${bare}.css`);
   if (existsSync(pluginTheme)) return pluginTheme;
 
   // Relative .css path resolved against the plugin root.
@@ -153,7 +199,18 @@ async function renderPdf(markdown, outputPath, options = {}) {
   await writeFile(mdPath, markdown, "utf-8");
 
   const themeName = (typeof options.theme === "string" && options.theme.trim()) || DEFAULT_THEME;
-  const theme = resolveTheme(themeName);
+  let theme = resolveTheme(themeName);
+
+  // Look up by bare theme name so "jurnal", "jurnal.css" and a path to
+  // themes/jurnal.css all map to the same entry.
+  const themeKey = basename(themeName).replace(/\.css$/i, "");
+
+  // Avoid double numbering: themes that add their own counters are neutralised
+  // when the markdown headings already carry numbers.
+  const autoSelectors = AUTO_NUMBERED_THEMES[themeKey];
+  if (autoSelectors && existsSync(theme) && hasManualHeadingNumbers(markdown)) {
+    theme = await suppressAutoNumbering(theme, autoSelectors, tmpDir);
+  }
   const mermaidTheme =
     options.mermaidTheme || MERMAID_THEMES[themeName] || MERMAID_THEMES.default;
   const toc = options.toc ?? !NO_TOC_THEMES.has(themeName);
@@ -224,4 +281,4 @@ async function renderPdf(markdown, outputPath, options = {}) {
   return pdfPath;
 }
 
-module.exports = { renderPdf, DEFAULT_THEME, MERMAID_THEMES };
+module.exports = { renderPdf, DEFAULT_THEME, MERMAID_THEMES, hasManualHeadingNumbers };
