@@ -165,18 +165,38 @@ p:has(+ img),
 p:has(+ .mermaid) {
   break-after: avoid-page;
   page-break-after: avoid;
-  margin-bottom: 0.15em;
+  /* Keterangan memakai spasi 1,0 dan rapat ke objeknya. */
+  line-height: 1.0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+p:has(+ table) + table {
+  margin-top: 0.1em !important;
+  break-before: avoid-page !important;
+  page-break-before: avoid !important;
 }
 table, pre, img, .mermaid, figure {
   break-before: avoid-page;
   page-break-before: avoid;
 }
+/* Pemutus halaman eksplisit dari Markdown (<div class="page-break"></div>). */
+.page-break {
+  break-before: page;
+  page-break-before: always;
+  height: 0;
+  margin: 0;
+}
 
 /* Gambar dan diagram. */
 img, .mermaid, figure {
   display: block;
-  margin: 0.6em auto 0.2em;
+  margin: 0.4em auto 0.2em;
   max-width: 100%;
+  /* Batasi tinggi agar gambar tidak terbelah antar dua halaman. */
+  max-height: 19cm;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   text-align: center;
   break-inside: avoid;
   page-break-inside: avoid;
@@ -259,3 +279,6 @@ hr {
 .toc-list li { margin: 0.1em 0; text-align: left; }
 .toc-list a { color: #000; }
 .toc-separator { border-top: none; margin: 0.8em 0; }
+
+/* Paksa semua tautan hitam (tanpa warna) */
+a, .toc a, .toc-list a, nav a, .markdown-body a { color: #000 !important; text-decoration: none !important; }
