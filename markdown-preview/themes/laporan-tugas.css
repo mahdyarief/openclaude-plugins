@@ -72,6 +72,23 @@ h1 {
 }
 h1::before { content: none; }
 
+/* Judul Daftar Isi (h2.toc-title dari md2pdf) bukan BAB:
+   tidak dinomori, tidak dihitung counter, dan tidak memaksa halaman baru. */
+h2.toc-title {
+  counter-increment: none;
+  break-before: auto;
+  page-break-before: auto;
+}
+h2.toc-title::before { content: none; }
+
+/* Hindari halaman kosong: page-break ganda antara akhir TOC
+   (div toc-break) dan heading pertama setelahnya. */
+.table-of-contents + h1,
+.table-of-contents + h2 {
+  break-before: auto;
+  page-break-before: auto;
+}
+
 /* BAB (h2): 14pt, kapital, rata tengah, halaman baru, nomor romawi otomatis. */
 h2 {
   counter-increment: bab;
