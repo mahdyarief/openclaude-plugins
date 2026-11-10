@@ -89,6 +89,21 @@ const TOOLS = [
           type: "boolean",
           description: "Enable the default running footer.",
         },
+        headerTemplate: {
+          type: "string",
+          description:
+            "Custom HTML template for the running header. Tokens: {title}, {pageNumber}, {totalPages}, {date}. Overrides `header` when set.",
+        },
+        footerTemplate: {
+          type: "string",
+          description:
+            "Custom HTML template for the running footer. Tokens: {title}, {pageNumber}, {totalPages}, {date}. Overrides `footer` when set.",
+        },
+        autoNumberCaptions: {
+          type: "boolean",
+          description:
+            "Inject auto-numbered 'Gambar N.' and 'Tabel N.' caption lines before each image/table (md2pdf emits no <figure>/<caption>, so this pre-pass is required for figure/table numbering). Already-numbered captions are left untouched.",
+        },
         open: {
           type: "boolean",
           description: "If true, opens the PDF in the default viewer after generation.",
@@ -203,6 +218,9 @@ async function dispatchTool(name, args) {
         lineHeight: args.lineHeight,
         header: args.header,
         footer: args.footer,
+        headerTemplate: args.headerTemplate,
+        footerTemplate: args.footerTemplate,
+        autoNumberCaptions: args.autoNumberCaptions,
       });
       if (args.open) openPath(pdfPath);
       return `PDF generated from ${sourceDescription}:\n- ${pdfPath}`;

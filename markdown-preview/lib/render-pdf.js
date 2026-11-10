@@ -198,10 +198,51 @@ function resolveTheme(theme) {
   return trimmed;
 }
 
+// md2pdf serializes images as bare <img> and tables as bare <table>; it never
+// emits <figure>/<figcaption>/<caption>, so pure-CSS caption counters are
+// impossible. This opt-in pre-pass injects "Gambar N." before each image and
+// "Tabel N." before each table, producing auto-numbered captions without
+// touching the user's source. Already-numbered captions ("Gambar 1.") are left
+// untouched to avoid double numbering.
+function autoNumberCaptions(md) {
+  const lines = md.split(/\r?\n/);
+  let fig = 0;
+  let tab = 0;
+  const out = [];
+  const imgRe = /^\s*!\[[^\]]*\]\([^)]+\)$/;
+  const tableRe = /^\s*\|.*\|\s*$/;
+  const alreadyFig = /^Gambar\s+\d+[.)]/i;
+  const alreadyTab = /^Tabel\s+\d+[.)]/i;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (imgRe.test(line) && !(i > 0 && alreadyFig.test(lines[i - 1].trim()))) {
+      fig++;
+      out.push(`Gambar ${fig}.`);
+    } else if (
+      tableRe.test(line) &&
+      i + 1 < lines.length &&
+      /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i + 1]) &&
+      !(i > 0 && alreadyTab.test(lines[i - 1].trim()))
+    ) {
+      tab++;
+      out.push(`Tabel ${tab}.`);
+    }
+    out.push(line);
+  }
+  return out.join("\n");
+}
+
 async function renderPdf(markdown, outputPath, options = {}) {
   const tmpDir = await mkdtemp(join(tmpdir(), "md-preview-pdf-"));
   const mdPath = join(tmpDir, "input.md");
   const pdfPath = outputPath || join(tmpDir, "output.pdf");
+
+  // md2pdf emits bare <img> and <table> elements: no <figure>/<figcaption> and
+  // no <caption>, so CSS counters alone cannot number figures or tables.
+  // Opt-in pre-processing adds "Gambar N." / "Tabel N." caption lines.
+  if (options.autoNumberCaptions === true) {
+    markdown = autoNumberCaptions(markdown);
+  }
 
   await writeFile(mdPath, markdown, "utf-8");
 
@@ -234,6 +275,8 @@ async function renderPdf(markdown, outputPath, options = {}) {
     ["marginRight", "--margin-right"],
     ["fontSize", "--font-size"],
     ["lineHeight", "--line-height"],
+    ["headerTemplate", "--header-template"],
+    ["footerTemplate", "--footer-template"],
   ];
   const boolFlags = [
     ["tocPageBreak", "--toc-page-break"],

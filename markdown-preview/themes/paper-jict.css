@@ -24,7 +24,7 @@
   --md2pdf-callout-border-radius: 0;
 }
 
-.markdown-body { column-count: 2; column-gap: 6mm; counter-reset: sec; }
+.markdown-body { column-count: 2; column-gap: 6mm; counter-reset: sec fig; }
 body { text-align: justify; }
 p { margin: 0 0 0.25em; text-indent: 0.75em; }
 h1 + p, h2 + p, h3 + p, li p, td p, blockquote p { text-indent: 0; }
