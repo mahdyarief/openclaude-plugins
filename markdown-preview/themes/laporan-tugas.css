@@ -1,74 +1,244 @@
-/* Laporan Tugas — Matches Indonesian university report format:
-   Times New Roman 12pt, spasi 1.5, rata kanan-kiri, auto-numbered
-   "## BAB I" -> BAB I, "### 1.1" -> 1.1. Margin A4 4-4-3-3 cm. */
+/* Laporan Tugas — format laporan akademik Indonesia.
+   Times New Roman 12pt, spasi 1.5, rata kanan-kiri, A4.
+   Margin halaman diatur lewat THEME_DEFAULTS di lib/render-pdf.js (4-3-4-3 cm),
+   bukan dari CSS ini.
+
+   Struktur heading:
+     h1 (#)    bagian awal: ABSTRAK, DAFTAR ISI, DAFTAR PUSTAKA, LAMPIRAN
+     h2 (##)   BAB, nomor romawi otomatis "BAB I" dst.
+     h3 (###)  subbab, "1.1"
+     h4 (####) sub-subbab, "1.1.1"
+   Bila Markdown sudah memuat nomor manual, plugin mematikan counter otomatis. */
 :root {
   --md2pdf-font-family-body: 'Times New Roman', 'Liberation Serif', Times, serif;
   --md2pdf-font-family-heading: 'Times New Roman', 'Liberation Serif', Times, serif;
   --md2pdf-font-family-mono: 'Consolas', 'Courier New', monospace;
   --md2pdf-font-size: 12pt;
   --md2pdf-line-height: 1.5;
-  --md2pdf-page-margin: 40mm 30mm 30mm 40mm;
   --md2pdf-color-bg: #ffffff;
   --md2pdf-color-text: #000000;
   --md2pdf-color-heading: #000000;
-  --md2pdf-color-text-muted: #3d4451;
+  --md2pdf-color-text-muted: #333333;
   --md2pdf-color-link: #1f3a68;
-  --md2pdf-color-code-bg: #f3f5f9;
-  --md2pdf-color-code-text: #0f172a;
-  --md2pdf-color-border: #1f3a68;
-  --md2pdf-color-hr: #1f3a68;
+  --md2pdf-color-link-visited: #1f3a68;
+  --md2pdf-color-code-bg: #f7f8fa;
+  --md2pdf-color-code-text: #1f2937;
+  --md2pdf-color-border: #000000;
+  --md2pdf-color-blockquote-border: #000000;
+  --md2pdf-color-hr: #000000;
   --md2pdf-accent-color: #1f3a68;
-  --md2pdf-table-header-bg: #1f3a68;
-  --md2pdf-table-stripe-bg: #f3f5f9;
+  --md2pdf-accent-text: #ffffff;
+  --md2pdf-table-header-bg: #ffffff;
+  --md2pdf-table-stripe-bg: #ffffff;
   --md2pdf-code-border-radius: 0;
   --md2pdf-callout-border-radius: 0;
+  --md2pdf-blockquote-border-width: 2pt;
 }
 
 .markdown-body { counter-reset: bab; }
-body { text-align: justify; }
-p { margin: 0 0 0.4em; text-indent: 1.25cm; orphans: 3; widows: 3; }
-h1 + p, h2 + p, h3 + p, h4 + p, li p, td p, blockquote p { text-indent: 0; }
 
-h1, h2, h3, h4 { border: none !important; page-break-after: avoid; break-after: avoid-page; color: #000; }
+body {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  orphans: 3;
+  widows: 3;
+}
 
-/* Bagian awal (h1): judul depan — ABSTRAK, DAFTAR ISI, LAMPIRAN, dll.
-   14pt, rata tengah, kapital, halaman baru; TANPA nomor BAB. */
-h1 { font-size: 14pt; font-weight: bold; text-align: center;
-  text-transform: uppercase; line-height: 1.5; margin: 0 0 1.8em;
-  page-break-before: always; }
+/* Paragraf menjorok 1,25 cm, tanpa jarak tambahan antarbaris. */
+p { margin: 0; text-indent: 1.25cm; text-align: justify; }
+h1 + p, h2 + p, h3 + p, h4 + p,
+li p, td p, th p, blockquote p, figcaption { text-indent: 0; }
+
+/* Heading: hitam, tanpa dekorasi bawaan theme, tidak yatim di dasar halaman. */
+h1, h2, h3, h4 {
+  border: none !important;
+  padding: 0 !important;
+  color: #000 !important;
+  break-after: avoid-page;
+  page-break-after: avoid;
+}
+
+/* Bagian awal (h1): 14pt, kapital, rata tengah, halaman baru, tanpa nomor BAB. */
+h1 {
+  font-size: 14pt;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  line-height: 1.5;
+  margin: 0 0 1.5em;
+  break-before: page;
+  page-break-before: always;
+}
 h1::before { content: none; }
 
-/* BAB (h2): 14pt, kapital, rata tengah; nomor BAB otomatis via counter.
-   Bila Markdown sudah menulis "## BAB I ..." manual, plugin menetralkan
-   ::before ini sehingga nomor tidak dobel. */
-h2 { counter-increment: bab; counter-reset: subbab; font-size: 14pt;
-  font-weight: bold; text-align: center; text-transform: uppercase;
-  line-height: 1.5; margin: 0 0 1.8em; page-break-before: always; }
+/* BAB (h2): 14pt, kapital, rata tengah, halaman baru, nomor romawi otomatis. */
+h2 {
+  counter-increment: bab;
+  counter-reset: subbab;
+  font-size: 14pt;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  line-height: 1.5;
+  margin: 0 0 1.5em;
+  break-before: page;
+  page-break-before: always;
+}
 h2::before { content: "BAB " counter(bab, upper-roman); display: block; }
 
-/* Subbab: ### -> 12pt bold */
-h3 { counter-increment: subbab; counter-reset: subsub; font-size: 12pt;
-  font-weight: bold; margin: 1.1em 0 0.3em; }
+/* Subbab (h3): 12pt tebal, rata kiri, tetap di aliran halaman. */
+h3 {
+  counter-increment: subbab;
+  counter-reset: subsub;
+  font-size: 12pt;
+  font-weight: bold;
+  text-align: left;
+  margin: 1em 0 0.25em;
+  break-before: auto;
+  page-break-before: auto;
+}
 h3::before { content: counter(bab) "." counter(subbab) "\2003"; }
 
-/* Sub-subbab: #### -> 12pt bold */
-h4 { counter-increment: subsub; font-size: 12pt; font-weight: bold;
-  margin: 0.9em 0 0.3em; }
+/* Sub-subbab (h4): 12pt tebal. */
+h4 {
+  counter-increment: subsub;
+  font-size: 12pt;
+  font-weight: bold;
+  text-align: left;
+  margin: 0.8em 0 0.2em;
+}
 h4::before { content: counter(bab) "." counter(subbab) "." counter(subsub) "\2003"; }
 
-table { border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 11pt;
-  line-height: 1.25; break-inside: avoid; }
-table th, table td { border: 0.6pt solid #1f3a68 !important; padding: 4pt 7pt; }
-table th { background: var(--md2pdf-table-header-bg) !important; color: #ffffff !important;
-  font-weight: bold; text-align: center; }
-table tr:nth-child(even) td { background: var(--md2pdf-table-stripe-bg) !important; }
+/* Tabel: gaya booktabs — tanpa warna, garis horizontal saja.
+   Jangan pecah di tengah halaman; caption di atasnya menempel. */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6em 0 0.9em;
+  font-size: 10pt;
+  line-height: 1.2;
+  text-align: left;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+table th, table td {
+  border: none !important;
+  border-bottom: 0.5pt solid #000 !important;
+  padding: 3pt 6pt;
+  vertical-align: top;
+  background: #ffffff !important;
+  color: #000 !important;
+  text-align: left;
+}
+table thead th {
+  border-top: 1pt solid #000 !important;
+  border-bottom: 0.75pt solid #000 !important;
+  font-weight: bold;
+  text-align: center;
+}
+table tbody tr:last-child td { border-bottom: 1pt solid #000 !important; }
+table tr { break-inside: avoid; page-break-inside: avoid; }
 
-img, .mermaid, figure { display: block; margin: 1em auto 0.3em; text-align: center; break-inside: avoid; }
-figcaption { font-size: 11pt; text-align: center; font-weight: bold; }
-blockquote { border-left: none !important; margin: 0.6em 1.25cm; padding: 0;
-  font-size: 11pt; line-height: 1.15; color: #000; }
-pre { font-size: 10pt; line-height: 1.3; border: none; border-left: 2.5pt solid #1f3a68; }
-ol, ul { padding-left: 1.25cm; }
-li { margin: 0.1em 0; }
-a { color: var(--md2pdf-color-link); text-decoration: none; }
-.toc-title { text-align: center; text-transform: uppercase; font-size: 14pt; border: none !important; }
+/* Paragraf tebal (caption "**Tabel 1. ...**") yang diikuti tabel/code/gambar
+   diikat ke objeknya agar caption tidak tertinggal sendirian. */
+p:has(+ table),
+p:has(+ pre),
+p:has(+ img),
+p:has(+ .mermaid) {
+  break-after: avoid-page;
+  page-break-after: avoid;
+  margin-bottom: 0.15em;
+}
+table, pre, img, .mermaid, figure {
+  break-before: avoid-page;
+  page-break-before: avoid;
+}
+
+/* Gambar dan diagram. */
+img, .mermaid, figure {
+  display: block;
+  margin: 0.6em auto 0.2em;
+  max-width: 100%;
+  text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+figcaption {
+  font-size: 10pt;
+  font-weight: normal;
+  text-align: center;
+  line-height: 1.0;
+  margin-top: 0.25em;
+  margin-bottom: 0.9em;
+}
+
+/* Blok kode: latar netral, garis kiri tipis, tanpa pewarnaan sintaks
+   mencolok agar dokumen tetap formal. */
+pre {
+  font-size: 9pt;
+  line-height: 1.25;
+  background: #f7f8fa !important;
+  border: none !important;
+  border-left: 2pt solid #6b7280 !important;
+  border-radius: 0 !important;
+  padding: 0.55em 0.8em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code, pre code span, pre.shiki, pre.shiki code, pre.shiki span {
+  background: transparent !important;
+  color: #1f2937 !important;
+  font-size: 9pt;
+  font-weight: normal !important;
+  font-style: normal !important;
+}
+code {
+  font-size: 10pt;
+  background: #f2f3f5;
+  color: #1f2937;
+  padding: 0 2pt;
+  border-radius: 0;
+}
+
+/* Kutipan panjang: masuk 1,25 cm, spasi tunggal, tanpa dekorasi. */
+blockquote {
+  border-left: none !important;
+  background: transparent !important;
+  margin: 0.5em 1.25cm;
+  padding: 0;
+  font-size: 10pt;
+  font-style: normal;
+  line-height: 1.0;
+  color: #000 !important;
+}
+
+ol, ul { margin: 0.2em 0 0.6em; padding-left: 1.25cm; }
+li { margin: 0.1em 0; text-align: justify; }
+
+a { color: #1f3a68; text-decoration: none; }
+
+hr {
+  border: none;
+  border-top: 0.5pt solid #000;
+  margin: 1em 0;
+}
+
+/* Daftar isi bawaan md2pdf. */
+.toc-title {
+  font-size: 14pt;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 0 1em;
+}
+.table-of-contents { font-size: 11pt; line-height: 1.35; }
+.toc-list { list-style: none; padding-left: 0; margin: 0; }
+.toc-list .toc-list { padding-left: 1.25cm; }
+.toc-list li { margin: 0.1em 0; text-align: left; }
+.toc-list a { color: #000; }
+.toc-separator { border-top: none; margin: 0.8em 0; }
