@@ -96,7 +96,9 @@ const MERMAID_THEMES = {
   academic: "neutral",
   "catatan-buku": "neutral",
   jurnal: "neutral",
+  "paper-jict": "neutral",
   "tugas-kuliah": "neutral",
+  "laporan-tugas": "neutral",
   artikel: "base",
   tufte: "neutral",
   proposal: "base",
@@ -115,9 +117,11 @@ const NO_TOC_THEMES = new Set(["jurnal", "artikel", "tufte", "naskah", "surat-di
 // When the document already carries its own numbers, both appear ("I. 1. ...").
 const AUTO_NUMBERED_THEMES = {
   jurnal: ['h2:not(.toc-title)::before', "h3::before"],
+  "paper-jict": ['h2:not(.toc-title)::before', "h3::before"],
   "tugas-kuliah": ["h1::before", "h2:not(.toc-title)::before", "h3::before"],
   teknis: ["h2:not(.toc-title)::before", "h3::before"],
   proposal: ["h2:not(.toc-title)::before", "h3::before"],
+  "laporan-tugas": ["h2:not(.toc-title)::before", "h3::before", "h4::before"],
 };
 
 // A heading whose text already starts with its own number: "1.", "1.2",
@@ -158,10 +162,13 @@ async function suppressAutoNumbering(themePath, selectors, tmpDir) {
 
 const TOC_TITLES = {
   "tugas-kuliah": "Daftar Isi",
+  "paper-jict": "Daftar Isi",
+  "laporan-tugas": "Daftar Isi",
   "catatan-buku": "Daftar Isi",
   academic: "Contents",
   proposal: "Daftar Isi",
   teknis: "Contents",
+  "laporan-tugas": "Daftar Isi",
 };
 
 // Resolve a theme string to an md2pdf CLI --theme value.
@@ -215,6 +222,41 @@ async function renderPdf(markdown, outputPath, options = {}) {
     options.mermaidTheme || MERMAID_THEMES[themeName] || MERMAID_THEMES.default;
   const toc = options.toc ?? !NO_TOC_THEMES.has(themeName);
 
+  // Generic pass-through for scalar CLI flags. Key = option name as accepted
+  // by markdown_to_pdf callers; value = md2pdf CLI flag.
+  const scalarFlags = [
+    ["tocDepth", "--toc-depth"],
+    ["paper", "--paper"],
+    ["margin", "--margin"],
+    ["marginTop", "--margin-top"],
+    ["marginBottom", "--margin-bottom"],
+    ["marginLeft", "--margin-left"],
+    ["marginRight", "--margin-right"],
+    ["fontSize", "--font-size"],
+    ["lineHeight", "--line-height"],
+  ];
+  const boolFlags = [
+    ["tocPageBreak", "--toc-page-break"],
+    ["h1NewPage", "--h1-new-page"],
+    ["hrPageBreak", "--hr-page-break"],
+    ["outline", "--outline"],
+    // md2pdf's --header/--footer are boolean flags enabling default running
+    // header/footer (custom text goes via --header-template/--footer-template).
+    ["header", "--header"],
+    ["footer", "--footer"],
+  ];
+
+  const formatArgs = [];
+  for (const [key, flag] of scalarFlags) {
+    const v = options[key];
+    if (v !== undefined && v !== null && `${v}`.trim() !== "") {
+      formatArgs.push(flag, `${v}`);
+    }
+  }
+  for (const [key, flag] of boolFlags) {
+    if (options[key] === true) formatArgs.push(flag);
+  }
+
   const args = [
     mdPath,
     "-o", pdfPath,
@@ -222,6 +264,7 @@ async function renderPdf(markdown, outputPath, options = {}) {
     "--mermaid-theme", mermaidTheme,
     ...(toc ? ["--toc"] : []),
     ...(toc && TOC_TITLES[themeName] ? ["--toc-title", TOC_TITLES[themeName]] : []),
+    ...formatArgs,
     "--page-numbers",
     // md2pdf's cache keys on markdown content only, so edited theme CSS would be ignored.
     "--no-cache",

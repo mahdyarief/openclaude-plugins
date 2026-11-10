@@ -34,13 +34,60 @@ const TOOLS = [
         theme: {
           type: "string",
           description:
-            "Theme. Plugin themes: academic (thesis/report, Palatino), jurnal (two-column journal/conference paper, auto I/II/III sections), tugas-kuliah (Indonesian campus report: Times 12pt, spasi 1.5, auto BAB I / 1.1 numbering — write headings without manual numbers), artikel (magazine long-form), tufte (lecture notes; blockquotes become margin sidenotes), proposal (research/grant proposal; first blockquote is a boxed summary), naskah (plain Courier double-spaced submission manuscript), surat-dinas (Indonesian official letter: H1 = kop surat, next line = address), memo (executive briefing; first blockquote = executive summary), teknis (technical docs/SOP; blockquotes become NOTE callouts), notulen (compact meeting minutes; bullets render as checkboxes), zine (brutalist essay/opinion), catatan-buku, default. md2pdf built-ins: github, obsidian-light, obsidian-dark, dracula, nord. Or an absolute path to a .css file. Defaults to 'default'.",
+            "Theme. Plugin themes: academic (thesis/report, Palatino), jurnal (two-column journal/conference paper, auto I/II/III sections), paper-jict (Indonesian journal paper: two-column 10pt, auto 1./1.1 numbering, full-width tables/figures), laporan-tugas (Indonesian report: Times 12pt spasi 1.5, auto BAB I numbering, each chapter on a new page), tugas-kuliah (Indonesian campus report: Times 12pt, spasi 1.5, auto BAB I / 1.1 numbering — write headings without manual numbers), artikel (magazine long-form), tufte (lecture notes; blockquotes become margin sidenotes), proposal (research/grant proposal; first blockquote is a boxed summary), naskah (plain Courier double-spaced submission manuscript), surat-dinas (Indonesian official letter: H1 = kop surat, next line = address), memo (executive briefing; first blockquote = executive summary), teknis (technical docs/SOP; blockquotes become NOTE callouts), notulen (compact meeting minutes; bullets render as checkboxes), zine (brutalist essay/opinion), catatan-buku, default. md2pdf built-ins: github, obsidian-light, obsidian-dark, dracula, nord. Or an absolute path to a .css file. Defaults to 'default'.",
           default: "default",
         },
         mermaidTheme: {
           type: "string",
           description:
             "Optional Mermaid diagram theme override (default, base, dark, neutral). Auto-matched to the selected theme when omitted.",
+        },
+        toc: {
+          type: "boolean",
+          description:
+            "Generate a table of contents. Defaults to true except for themes where a TOC breaks the layout (jurnal, artikel, tufte, naskah, surat-dinas, memo, notulen, zine).",
+        },
+        tocDepth: {
+          type: "number",
+          description: "TOC depth (1-6): how many heading levels to include.",
+        },
+        tocPageBreak: {
+          type: "boolean",
+          description: "Insert a page break after the table of contents.",
+        },
+        h1NewPage: {
+          type: "boolean",
+          description: "Start every H1 heading on a new page.",
+        },
+        hrPageBreak: {
+          type: "boolean",
+          description: "Treat horizontal rules (---) as page breaks.",
+        },
+        outline: {
+          type: "boolean",
+          description: "Embed a PDF outline/bookmark tree from headings.",
+        },
+        paper: {
+          type: "string",
+          description: "Paper size: A4, Letter, or Legal.",
+        },
+        margin: {
+          type: "string",
+          description: "Page margin for all sides, e.g. '20mm'.",
+        },
+        marginTop: { type: "string", description: "Top page margin, e.g. '25mm'." },
+        marginBottom: { type: "string", description: "Bottom page margin, e.g. '25mm'." },
+        marginLeft: { type: "string", description: "Left page margin, e.g. '20mm'." },
+        marginRight: { type: "string", description: "Right page margin, e.g. '20mm'." },
+        fontSize: { type: "string", description: "Body font size override, e.g. '11pt'." },
+        lineHeight: { type: "number", description: "Line height override, e.g. 1.5." },
+        header: {
+          type: "boolean",
+          description: "Enable the default running header (document title/date).",
+        },
+        footer: {
+          type: "boolean",
+          description: "Enable the default running footer.",
         },
         open: {
           type: "boolean",
@@ -140,6 +187,22 @@ async function dispatchTool(name, args) {
       const pdfPath = await renderPdf(markdown, args.outputPath, {
         theme: args.theme,
         mermaidTheme: args.mermaidTheme,
+        toc: args.toc,
+        tocDepth: args.tocDepth,
+        tocPageBreak: args.tocPageBreak,
+        h1NewPage: args.h1NewPage,
+        hrPageBreak: args.hrPageBreak,
+        outline: args.outline,
+        paper: args.paper,
+        margin: args.margin,
+        marginTop: args.marginTop,
+        marginBottom: args.marginBottom,
+        marginLeft: args.marginLeft,
+        marginRight: args.marginRight,
+        fontSize: args.fontSize,
+        lineHeight: args.lineHeight,
+        header: args.header,
+        footer: args.footer,
       });
       if (args.open) openPath(pdfPath);
       return `PDF generated from ${sourceDescription}:\n- ${pdfPath}`;

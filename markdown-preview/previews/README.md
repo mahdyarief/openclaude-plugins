@@ -10,7 +10,8 @@ Every theme rendered from the same [`sample.md`](sample.md). Click a thumbnail f
 | [![artikel](artikel.png)](artikel.pdf)<br>**artikel** — magazine long-form | [![catatan-buku](catatan-buku.png)](catatan-buku.pdf)<br>**catatan-buku** — notes | [![default](default.png)](default.pdf)<br>**default** |
 | [![tufte](tufte.png)](tufte.pdf)<br>**tufte** — lecture notes, sidenotes | [![proposal](proposal.png)](proposal.pdf)<br>**proposal** — research / grant | [![naskah](naskah.png)](naskah.pdf)<br>**naskah** — submission manuscript |
 | [![surat-dinas](surat-dinas.png)](surat-dinas.pdf)<br>**surat-dinas** — official letter | [![memo](memo.png)](memo.pdf)<br>**memo** — executive briefing | [![teknis](teknis.png)](teknis.pdf)<br>**teknis** — technical docs / SOP |
-| [![notulen](notulen.png)](notulen.pdf)<br>**notulen** — meeting minutes | [![zine](zine.png)](zine.pdf)<br>**zine** — brutalist essay | |
+| [![notulen](notulen.png)](notulen.pdf)<br>**notulen** — meeting minutes | [![zine](zine.png)](zine.pdf)<br>**zine** — brutalist essay | [![paper-jict](paper-jict.png)](paper-jict.pdf)<br>**paper-jict** — Indonesian journal paper (two-column) |
+| [![laporan-tugas](laporan-tugas.png)](laporan-tugas.pdf)<br>**laporan-tugas** — Indonesian report (BAB, 1.5 spacing) | | |
 
 ## md2pdf built-in themes
 

@@ -1,7 +1,7 @@
 {
   "name": "markdown-preview",
-  "description": "MCP server for markdown to PDF/HTML/PNG conversion. PDF engine absorbed from @amitdevx/md2pdf: supports Mermaid diagrams, KaTeX math, syntax highlighting, callouts, TOC, page numbers, and 19 themes (14 plugin themes and 5 md2pdf built-ins) plus custom CSS themes. Exposes 3 tools: markdown_to_pdf, markdown_to_html, markdown_to_png.",
-  "version": "2.2.0",
+  "description": "MCP server for markdown to PDF/HTML/PNG conversion. PDF engine: @amitdevx/md2pdf (Chromium/Playwright) — renders Mermaid, KaTeX, and syntax highlighting natively. Supports callouts, TOC, page numbers, outline/bookmarks, running header/footer, and 21 themes (16 plugin themes + 5 md2pdf built-ins) plus custom CSS themes. markdown_to_pdf accepts toc, tocDepth, tocPageBreak, h1NewPage, hrPageBreak, outline, paper, margin, fontSize, lineHeight, header, footer. Exposes 3 tools: markdown_to_pdf, markdown_to_html, markdown_to_png.",
+  "version": "2.3.0",
   "keywords": ["markdown", "pdf", "html", "png", "mermaid", "katex", "mcp", "docx"],
   "author": {
     "name": "Custom"
