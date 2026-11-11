@@ -81,18 +81,13 @@ h2.toc-title {
 }
 h2.toc-title::before { content: none; }
 
-/* Hindari halaman kosong: page-break ganda antara akhir TOC
-   (div toc-break) dan heading pertama setelahnya. */
-.table-of-contents + h1,
-.table-of-contents + h2 {
-  break-before: auto;
-  page-break-before: auto;
-}
+/* Heading pertama setelah daftar isi HARUS tetap mulai halaman baru;
+   mematikan break di sini membuat Abstrak ikut menempel di halaman TOC. */
 
 /* BAB (h2): 14pt, kapital, rata tengah, halaman baru, nomor romawi otomatis. */
 h2 {
-  counter-increment: bab;
-  counter-reset: subbab;
+  counter-increment: none !important;
+  counter-reset: none !important;
   font-size: 14pt;
   font-weight: bold;
   text-align: center;
@@ -102,12 +97,12 @@ h2 {
   break-before: page;
   page-break-before: always;
 }
-h2::before { content: "BAB " counter(bab, upper-roman); display: block; }
+h2::before { content: none !important; }
 
 /* Subbab (h3): 12pt tebal, rata kiri, tetap di aliran halaman. */
 h3 {
-  counter-increment: subbab;
-  counter-reset: subsub;
+  counter-increment: none !important;
+  counter-reset: none !important;
   font-size: 12pt;
   font-weight: bold;
   text-align: left;
@@ -115,17 +110,17 @@ h3 {
   break-before: auto;
   page-break-before: auto;
 }
-h3::before { content: counter(bab) "." counter(subbab) "\2003"; }
+h3::before { content: none !important; }
 
 /* Sub-subbab (h4): 12pt tebal. */
 h4 {
-  counter-increment: subsub;
+  counter-increment: none !important;
   font-size: 12pt;
   font-weight: bold;
   text-align: left;
   margin: 0.8em 0 0.2em;
 }
-h4::before { content: counter(bab) "." counter(subbab) "." counter(subsub) "\2003"; }
+h4::before { content: none !important; }
 
 /* Tabel: gaya booktabs — tanpa warna, garis horizontal saja.
    Jangan pecah di tengah halaman; caption di atasnya menempel. */

@@ -42,12 +42,15 @@ h4 { font-size: 12pt; font-weight: normal; font-style: italic; margin: 0.8em 0 0
 
 table { border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 11pt;
   line-height: 1.25; break-inside: avoid; }
-table th, table td { border: 0.6pt solid #1f3a68 !important; padding: 4pt 7pt; }
+table th, table td { border: 0.6pt solid #1f3a68 !important; padding: 4pt 7pt;
+  text-align: left !important; }
 table th { background: var(--md2pdf-table-header-bg) !important; color: #ffffff !important;
-  font-weight: bold; text-align: center; }
+  font-weight: bold; text-align: left !important; }
 table tr:nth-child(even) td { background: var(--md2pdf-table-stripe-bg) !important; }
 
-img, .mermaid, figure { display: block; margin: 1em auto 0.3em; text-align: center; break-inside: avoid; }
+img, .mermaid, figure { display: block; margin: 0.8em auto 0.3em; text-align: center;
+  break-inside: avoid; max-width: 100%; max-height: 12cm; width: auto; height: auto;
+  object-fit: contain; }
 figcaption { font-size: 11pt; text-align: center; font-weight: bold; }
 blockquote { border-left: none !important; margin: 0.6em 1.25cm; padding: 0;
   font-size: 11pt; line-height: 1.15; color: #000; }
