@@ -42,6 +42,28 @@ open-access links, not article bodies.
 Scopus extras: `get_abstract_details`, `get_author_profile`,
 `get_quota_status`, plus the five `scival_*` metric tools.
 
+## SLR / Systematic review pipeline
+
+Tools stateful (tidak perlu jaringan) untuk mengabadikan alur SLR ke dalam
+review state tunggal: identifikasi → screening → kelayakan full-text →
+apresiasi kualitas → ekstraksi → PRISMA flow.
+
+| Tool | Purpose |
+|---|---|
+| `slr_import` | Impor papers (title+doi+year+venue), dedup oleh DOI lalu judul |
+| `slr_screen` | Keputusan title/abstract: include / exclude / unclear + kode alasan |
+| `slr_full_text` | Keputusan kelayakan full-text: include / exclude + alasan |
+| `slr_appraise` | Apresiasi kualitas studi (kelas, item Y/N, risiko) |
+| `slr_extract` | Simpan field ekstraksi studi (tahun, metrik, dll.) |
+| `slr_prisma` | Hitungan alur PRISMA 2020 dari state saat ini |
+| `slr_summary` | Snapshot lengkap (PRISMA + per-record), atau CSV dengan `format=csv` |
+| `slr_reset` | Bersihkan semua state review |
+
+Contoh alur: impor hasil pencarian → `slr_screen` per paper → `slr_full_text`
+untuk yang lolos → `slr_appraise` & `slr_extract` untuk included →
+`slr_prisma` untuk laporan. State hidup selama sesi MCP aktif; panggil
+`slr_reset` untuk memulai ulang.
+
 ## Query syntax
 
 Boolean operators must be **uppercase**: `AND`, `OR`, `NOT`. Providers that

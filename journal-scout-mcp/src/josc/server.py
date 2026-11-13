@@ -12,6 +12,7 @@ from .corpus import load_corpus
 from .exporters import FORMATTERS, format_papers
 from .fulltext import build_index, search_index
 from .search_archive import SearchArchive
+from .slr_tools import slr_call, slr_tool_defs
 from .http import Fetcher
 from .models import ProviderError
 from .identify import resolve_document
@@ -47,7 +48,8 @@ SCIVAL_TOOLS = [
     "scival_topic_metrics",
 ]
 KEY_TOOLS = ["rotate_consensus_key"]
-TOOL_NAMES = UNIFIED_TOOLS + PER_SOURCE_TOOLS + SCOPUS_DETAIL_TOOLS + SCIVAL_TOOLS + KEY_TOOLS
+SLR_TOOL_NAMES = [t.name for t in slr_tool_defs()]
+TOOL_NAMES = UNIFIED_TOOLS + PER_SOURCE_TOOLS + SCOPUS_DETAIL_TOOLS + SCIVAL_TOOLS + KEY_TOOLS + SLR_TOOL_NAMES
 
 # MCP hosts reject a single tool result past their token cap (the transcript
 # keeps ~100k chars before erroring). Search payloads embed full abstracts and
@@ -501,6 +503,7 @@ def _tool_list() -> List[types.Tool]:
             },
         )
     )
+    tools.extend(slr_tool_defs())
     return tools
 
 
@@ -703,6 +706,8 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         )
     if name == "rotate_consensus_key":
         return await consensus_key.rotate_consensus_key(arguments["api_key"])
+    if name in SLR_TOOL_NAMES:
+        return await slr_call(name, arguments)
     raise ValueError(f"Unknown tool: {name}")
 
 

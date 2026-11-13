@@ -25,7 +25,15 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 31
+    assert len(TOOL_NAMES) == 39
+    assert "slr_import" in TOOL_NAMES
+    assert "slr_screen" in TOOL_NAMES
+    assert "slr_full_text" in TOOL_NAMES
+    assert "slr_appraise" in TOOL_NAMES
+    assert "slr_extract" in TOOL_NAMES
+    assert "slr_prisma" in TOOL_NAMES
+    assert "slr_summary" in TOOL_NAMES
+    assert "slr_reset" in TOOL_NAMES
     assert "search_consensus" in TOOL_NAMES
     assert "rotate_consensus_key" in TOOL_NAMES
     assert "search_corpus" in TOOL_NAMES
@@ -38,6 +46,39 @@ def test_tool_names_count():
     assert "get_references" in TOOL_NAMES
     assert "get_related_works" in TOOL_NAMES
     assert "build_citation_network" in TOOL_NAMES
+
+
+def test_slr_import_and_prisma():
+    from josc.slr import slr_reset, slr_import_records, slr_prisma
+
+    slr_reset()
+    res = slr_import_records(
+        [
+            {"title": "A", "doi": "10.1/x", "year": 2024},
+            {"title": "B", "doi": "10.2/y", "year": 2023},
+        ]
+    )
+    assert res["total"] == 2
+    assert slr_prisma()["identified"] == 2
+
+
+def test_slr_screening_and_full_text():
+    from josc.slr import (
+        slr_reset,
+        slr_import_records,
+        slr_screening,
+        slr_full_text,
+        slr_prisma,
+    )
+
+    slr_reset()
+    slr_import_records([{"title": "A", "doi": "10.1/x"}])
+    slr_screening("doi:10_1_x", "include", "S1", "relevant")
+    slr_full_text("doi:10_1_x", "exclude", "E1", "no full text")
+    p = slr_prisma()
+    assert p["screening_decisions"]["include"] == 1
+    assert p["full_text_decisions"]["exclude"] == 1
+    assert p["included_final"] == 0
     assert "build_research_landscape" in TOOL_NAMES
     assert "compute_metrics" in TOOL_NAMES
     assert "get_citing_papers" not in TOOL_NAMES
