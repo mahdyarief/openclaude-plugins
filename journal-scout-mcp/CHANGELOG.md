@@ -37,6 +37,20 @@ Historical entries are reconstructed from the upstream commit history
 ### Tests
 - 540 tests passing
 
+## [2.5.0] - 2026-11-13
+
+### Added
+- SLR / systematic review pipeline: modular `slr.py` engine (import/dedup,
+  screening, full-text decisions, quality appraisal, extraction, PRISMA 2020
+  flow, summary, CSV, reset) and `slr_tools.py` with 8 MCP tools
+  (`slr_import`, `slr_screen`, `slr_full_text`, `slr_appraise`, `slr_extract`,
+  `slr_prisma`, `slr_summary`, `slr_reset`), wired into `server.py` via
+  `slr_tool_defs`/`slr_call`.
+- `skills/journal-scout/SKILL.md` documents the SLR pipeline.
+
+### Tests
+- 578 tests passing
+
 ## [2.3.0] - 2026-10-24
 
 Supersedes upstream v2.2.0 (2026-10-14), whose changes — prompt templates,
