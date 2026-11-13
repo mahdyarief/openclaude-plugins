@@ -729,7 +729,7 @@ def start() -> None:
             api_key = None
         providers = build_providers(fetcher, {"api_key": api_key})
         scopus_provider = next(p for p in providers if p.name == "scopus")
-        server = Server("journal-scout-mcp")
+        server = Server("journal-scout")
 
         @server.list_tools()
         async def _list_tools() -> List[types.Tool]:

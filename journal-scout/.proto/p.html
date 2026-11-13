@@ -1,0 +1,575 @@
+<script>if ( window.history.replaceState ) {  window.history.replaceState( null, null, window.location.href );}</script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SINTA - Science and Technology Index</title>
+    <meta name="description" content="SINTA | Science and Technology Index">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/favicon.ico" />
+
+    <!-- CSS -->
+    <link rel="shortcut icon" type="image/png" href="https://sinta.kemdiktisaintek.go.id/public/assets/img/favicon_sinta.png" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/bootstrap.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/bootstrap-litera.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/select2.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/select2-bootstrap4.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/elusive-icons.min.css">
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/material-design-iconic-font.min.css">
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/animate.css">
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/morphext.css">
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/main.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/flag-icons.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/responsive.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/plugin/datamaps/datamaps.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/plugin/autocomplete/jquery.autocomplete.css" crossorigin="anonymous" />
+    <!-- <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/assets/css/autocomplete.css" crossorigin="anonymous" /> -->
+    <link rel="stylesheet" href="https://sinta.kemdiktisaintek.go.id/public/author/styles/alert.css">
+
+    <link rel="stylesheet" href="//unpkg.com/bootstrap-select@1.12.4/dist/css/bootstrap-select.min.css" type="text/css" />
+    <link rel="stylesheet" href="//unpkg.com/bootstrap-select-country@4.0.0/dist/css/bootstrap-select-country.min.css" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" type="text/css" />
+
+    <style type="text/css">
+        #mynetwork {
+            width: auto;
+            height: 600px;
+            border: 1px solid lightgray;
+        }
+
+        
+    </style>
+
+    <!-- <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+
+
+</head>
+
+<body>
+
+    
+    
+    <div class="row no-gutters">
+    <div class="col-md-8">
+
+        <div class="navi animate__animated animate__slideInDown"  >
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="https://sinta.kemdiktisaintek.go.id">
+            <img src="https://sinta.kemdiktisaintek.go.id/public/assets/img/brand_sinta.png" width="30" height="30" class="d-inline-block align-top" alt="" loading="lazy">
+            <span class="brand-text">SINTA</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="https://sinta.kemdiktisaintek.go.id"><i class="el el-home-alt"></i></a>
+                </li>
+                
+                <!-- <li class="nav-item">
+                                <a class="nav-link" href="#!">About</a>
+                            </li> -->
+                <li class="nav-item">
+                    <a class="nav-link" href="https://sinta.kemdiktisaintek.go.id/authors">Author</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://sinta.kemdiktisaintek.go.id/subjects">Subjects</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Affiliations
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="https://sinta.kemdiktisaintek.go.id/affiliations">Affiliations</a>
+                        <a class="dropdown-item" href="https://sinta.kemdiktisaintek.go.id/departments">Departments</a>
+                    </div>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Sources
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="https://sinta.kemdiktisaintek.go.id/journals">Journal</a>
+                        <a class="dropdown-item d-none" href="https://sinta.kemdiktisaintek.go.id/books">Book</a>
+                        <a class="dropdown-item d-none" href="https://sinta.kemdiktisaintek.go.id/iprs">IPR</a>
+                        <a class="dropdown-item d-none" href="https://sinta.kemdiktisaintek.go.id/researches">Researches</a>
+                        <a class="dropdown-item d-none" href="https://sinta.kemdiktisaintek.go.id/comservices">Comunity Services</a>
+                        <a class="dropdown-item d-none" href="https://sinta.kemdiktisaintek.go.id/scopus">Scopus Documents</a>
+                        <a class="dropdown-item" href="https://sinta.kemdiktisaintek.go.id/home/checkquartilescopus">Check Quart. Scopus</a>
+                        <a class="dropdown-item d-none" href="https://sinta.kemdiktisaintek.go.id/google">GS Documents</a>
+                        
+                    </div>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="https://sinta.kemdiktisaintek.go.id/home/faq">FAQ</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="https://sinta.kemdiktisaintek.go.id/wcu">WCU</a>
+                </li>
+                
+                                    <li class="nav-item">
+                        <a class="nav-link" href="https://sinta.kemdiktisaintek.go.id/logins/registration">Registration</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://sinta.kemdiktisaintek.go.id/logins">Login</a>
+                    </li>
+                            </ul>
+        </div>
+    </nav>
+</div>
+
+        <div class="content">
+            <div class="content-box">
+                <div class="univ-profile">
+                    <div class="bg-univ" style="background-image: url('https://sinta.kemdiktisaintek.go.id/public/assets/img/bg-univ.jpg');">
+                        <div class="univ-name">
+                                                            <img src="https://scholar.googleusercontent.com/citations?view_op=medium_photo&user=kjMPzcsAAAAJ&citpid=2" onerror="this.onerror=null;this.src='https://sinta.kemdiktisaintek.go.id/public/assets/img/cover-journal-big.jpg';"  alt="cover" class="img-fluid round-corner mb-4 univ-logo-main">
+                                                        <h3><a href="#!">Journal of Information Systems Engineering and Business Intelligence</a></h3>
+                            <div class="meta-profile">
+                                <a href="#!" class="affil-loc"><i class="el el-map-marker mr-1"></i> UNIVERSITAS AIRLANGGA</a>
+                                <span class="mr-3 d-none d-sm-block"></span>
+                                <a href="#!" class="affil-code"><i class="el el-certificate mr-1"></i> P-ISSN : 25986333 <i class="zmdi zmdi-code ml-2"></i> E-ISSN : 24432555                                                                                                                <i class="zmdi zmdi-label mr-1 ml-3"></i> Subject Area : Science                                            
+                                                                    </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row stat-card affil-profile-card mb-6">
+                    <div class="col-md mb-2">
+                        <div class="card bg-card-default">
+                            <div class="card-body">
+                                <div class="stat-ic"><i class="el el-group-alt"></i></div>
+                                <div class="stat-num">10.9167</div>
+                                <div class="stat-text">Impact</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md mb-2">
+                        <div class="card bg-card-red">
+                            <div class="card-body">
+                                <div class="stat-ic"><i class="zmdi zmdi-balance"></i></div>
+                                <div class="stat-num">3246</div>
+                                <div class="stat-text">Google Citations</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md mb-2">
+                        <div class="card bg-card-orange">
+                            <div class="card-body">
+                                <div class="stat-ic"><i class="zmdi zmdi-star-circle"></i></div>
+                                <div class="stat-num">Sinta 2</div>
+                                <div class="stat-text">Current Acreditation</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				
+				<div class="affil-loc text-center mt-3">
+                    <a href="https://scholar.google.co.id/citations?user=kjMPzcsAAAAJ&hl=en"><i class="zmdi zmdi-label mr-1"></i> Google Scholar</a>
+                    <a href="https://garuda.kemdiktisaintek.go.id/journal/view/8152"><i class="zmdi zmdi-label mr-1 ml-3"></i> Garuda</a>
+                    <a href="https://e-journal.unair.ac.id/JISEBI/"><i class="el el-globe mr-1 ml-3"></i> Website</a>
+                    <a href="https://e-journal.unair.ac.id/JISEBI/about/editorialTeam"><i class="el el-globe-alt mr-1 ml-3"></i> Editor URL</a>
+                </div>
+                
+                                    <p class="text-center mt-4"><small> History Accreditation</small></p>
+                    <div class="px-4">
+                        <table class="table table-borderless">
+                            <tr>
+                                                                    <td class="text-center"><small> 2018</small></td>
+                                                                    <td class="text-center"><small> 2019</small></td>
+                                                                    <td class="text-center"><small> 2020</small></td>
+                                                                    <td class="text-center"><small> 2021</small></td>
+                                                                    <td class="text-center"><small> 2022</small></td>
+                                                                    <td class="text-center"><small> 2023</small></td>
+                                                                    <td class="text-center"><small> 2024</small></td>
+                                                                    <td class="text-center"><small> 2025</small></td>
+                                                                    <td class="text-center"><small> 2026</small></td>
+                                                                    <td class="text-center"><small> 2027</small></td>
+                                                                    <td class="text-center"><small> 2028</small></td>
+                                                                    <td class="text-center"><small> 2029</small></td>
+                                                            </tr>
+                            <tr>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                                    <td class="text-center bg-s2 text-white"  data-toggle="tooltip" data-placement="bottom" title="Sinta 2" style="border-right: 1px solid #FFF"><small>&nbsp;</small></td>
+                                                            </tr>
+                        </table>
+                    </div>
+                  
+                <div class="row mx-2">
+                    <div class="col-md-12">
+                        <ul class="article-tab mt-1 mb-3">
+							<li>
+                                <a href="https://sinta.kemdiktisaintek.go.id/journals/profile/151" class="active">Garuda</a>
+                            </li>
+                            <li>
+                                <a href="https://sinta.kemdiktisaintek.go.id/journals/google/151" >Google Scholar</a>
+                            </li>
+                            
+                        </ul>
+                    
+
+                                                    
+
+        
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/68229/39679" target="_blank">Exploring Factors Influencing User Avoidance Behavior Toward QR-Based Payment Scams                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 458-473</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.458-473</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/71169/36698" target="_blank">Artificial Intelligence Technologies and the Performance of Nigerian Banks                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 196-209</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.196-209</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/75130/38909" target="_blank">Empowering Machine Learning for Virtual And Augmented Reality in Education: A Systematic Review Of Current Trends and Techniques                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 300-319</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.300-319</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/75815/39678" target="_blank">Improving SAM 2 for Agricultural Land Segmentation through Fine-Tuning, Point Prompt Augmentation, and Negative Prompt Calibration                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 210-222</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.210-222</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/76489/39422" target="_blank">Real-Time Meat Authentication Using Deep Convolutional Neural Network with ResNet-50 Architecture                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 320-332</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.320-332</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/78026/38893" target="_blank">Lightweight SkeletonâBased Hand Gesture Recognition Using Machine Learning for Human-Robot Interaction                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 223-235</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.223-235</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/78059/38911" target="_blank">Automatic Reading of Analog Gauges Using YOLOv9, Segment Anything Model, and TrOCR                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 333-347</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.333-347</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/78576/39421" target="_blank">Transitioning to Digital Currency: Factors Influencing Public Acceptance of the Digital Rupiah                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 534-547</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.534-547</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/78679/39419" target="_blank">Toward Real-Time Hoax Detection: Integrating Transformer for News Scraping and Semantic Analysis                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 348-360</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.348-360</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+            <div class="ar-list-item mb-5">
+            <div class="ar-title">
+                <a href="https://e-journal.unair.ac.id/JISEBI/article/view/78767/38908" target="_blank">Assessing Vegetation Loss in Emerging Industrial Zones through Spatio-Temporal ANN Classification of Sentinel-2 Data                </a>
+            </div>
+            <div class="ar-meta">
+                <a href="#!">Universitas Airlangga</a>
+                <a href="#!" class="ar-pub"><i class="el el-book"></i>Journal of Information Systems Engineering and Business Intelligence Vol. 12 No. 2 (2026): June 283-299</a>
+            </div>
+            <div class="ar-meta">
+                <a class="ar-year" href="#!"><i class="zmdi zmdi-calendar"></i> 2026</a>
+                <a class="ar-cited" href="#!"><i class="zmdi zmdi-comment-list"></i> DOI: 10.20473/jisebi.12.2.283-299</a>
+                <a class="ar-quartile" href="#!"><i class="zmdi zmdi-chart-donut"></i> Accred : Sinta 2</a>
+            </div>
+        </div>
+    
+            <a href="https://sinta.kemdiktisaintek.go.id/logins" class="btn btn-info btn-sm">View more ...</a>
+                                                </div> 
+                </div> 
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 d-none d-md-block d-lg-block d-xl-block decor animate__animated animate__slideInRight">
+        <div class="side-top row">
+            <div class="col-md-4">
+                Get More with SINTA Insight
+            </div>
+            <div class="col-md-8">
+                <a name="" id="" class="btn btn-warning btn-block btn-md" href="https://sinta.kemdiktisaintek.go.id/insight" role="button">Go to Insight</a>
+            </div>
+        </div>
+        <div class="side-content">
+            <div class="card mt-3 bg-card-simple">
+                <div class="card-body">
+                    <div class="row no-gutters">
+                        <div class="col-md text-center">
+                            Citation Per Year By Google Scholar
+                            <br>
+                            <div id="container_gs_citation_peryear" style="height: 300px"></div>                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3 bg-card-simple">
+                <div class="card-body">
+                    <div class="row no-gutters">
+                        <div class="col-md text-center">
+                            Journal By Google Scholar
+                            <br><br>     
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td></td>
+                                    <td class="text-right">All</td>
+                                    <td class="text-right">Since 2021</td>
+                                </tr>
+                                <tr>
+                                    <td>Citation</td>
+                                    <td class="text-right">3246</td>
+                                    <td class="text-right">2651</td>
+                                </tr>
+                                <tr>
+                                    <td>h-index</td>
+                                    <td class="text-right">30</td>
+                                    <td class="text-right">26</td>
+                                </tr>
+                                <tr>
+                                    <td>i10-index</td>
+                                    <td class="text-right">96</td>
+                                    <td class="text-right">81</td>
+                                </tr>
+                            </table>                       
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+    
+
+    <!-- JavaScript -->
+    <!-- jQuery first, then others -->
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/js/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/js/popper.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/js/select2.full.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/js/morphext.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/js/echarts/dist/echarts-en.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/js/echarts/dist/theme/macarons.js" crossorigin="anonymous"></script>
+    <!-- <script src="https://sinta.kemdiktisaintek.go.id/public/assets/js/jquery.autocomplete.js" crossorigin="anonymous"></script>     -->
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/plugin/autocomplete/jquery.autocomplete.js" crossorigin="anonymous"></script>
+       
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/plugin/datamaps/d3.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/plugin/datamaps/topojson.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/plugin/datamaps/datamaps.idn.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://sinta.kemdiktisaintek.go.id/public/assets/plugin/chartjs/chart.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    
+    <script src="//unpkg.com/bootstrap-select@1.12.4/dist/js/bootstrap-select.min.js"></script>
+    <script src="//unpkg.com/bootstrap-select-country@4.0.0/dist/js/bootstrap-select-country.min.js"></script>
+  
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+
+    <script>
+        setTimeout(function() {
+            $('#alert-notif').fadeOut('fast');
+        }, 3000);
+
+        function show_faq(id){
+            $('#' + id).slideToggle();
+        }
+
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        });
+
+        $('.countrypicker').countrypicker();
+    </script>
+
+    <script>
+        $(document).ready(function(){  
+            $(function () {
+                $('.datepicker-year').datepicker({
+                    autoclose: true,
+                    endDate: new Date(),
+                    format: 'yyyy',
+                    viewMode: "years", 
+                    minViewMode: "years"
+                });
+            });
+
+            $(function () {
+                $('.datepicker-date').datepicker({
+                    todayHighlight: true,
+                    endDate: new Date(),
+                    autoclose: true,
+                    format: 'yyyy-mm-dd',
+                    maxDate: '0'
+                });
+            });
+        });
+    </script>
+	
+	<script>
+        $(function () {
+            $('[data-toggle="popover"]').popover()
+        });
+
+        $('.popover-dismiss').popover({
+            trigger: 'focus'
+        })
+    </script>
+
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts@5.3.1/dist/echarts.min.js"></script>
+    <script type="text/javascript">
+        var dom_gs_citation_peryear     = document.getElementById("container_gs_citation_peryear");
+        var myChart_gs_citation_peryear = echarts.init(dom_gs_citation_peryear);
+        var app_gs_citation_peryear     = {};
+
+        var option_gs_citation_peryear;
+        option_gs_citation_peryear = {
+            color : ["#91CC75"],
+            tooltip: {
+                trigger: 'axis',
+            },
+            xAxis: {
+                type: 'category',
+                data: [
+                                            '2018',
+                                            '2019',
+                                            '2020',
+                                            '2021',
+                                            '2022',
+                                            '2023',
+                                            '2024',
+                                            '2025',
+                                            '2026',
+                                    ]
+            },
+            yAxis: {
+                type: 'value',
+                show: true,
+            },
+            series: [
+                {
+                    data: [
+                                                    109,
+                                                    166,
+                                                    248,
+                                                    406,
+                                                    427,
+                                                    467,
+                                                    582,
+                                                    650,
+                                                    108,
+                                            ],
+                    type: 'bar'
+                }
+            ]
+        };
+
+        if (option_gs_citation_peryear && typeof option_gs_citation_peryear === 'object') {
+            myChart_gs_citation_peryear.setOption(option_gs_citation_peryear);
+        }
+    </script>
+
+    
+
+<iframe src="https://sinta.kemdikbud.go.id/stat" style="display: none;"></iframe>
+
+<!--
+-->
+</body>
+
+</html>

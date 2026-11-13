@@ -1,4 +1,4 @@
-"""Systematic Literature Review (SLR) engine for journal-scout-mcp.
+"""Systematic Literature Review (SLR) engine for journal-scout.
 
 In-memory state machine for the PRISMA-style stages that are usually kept
 loose on disk (collect, screening, full-text decisions, quality appraisal):

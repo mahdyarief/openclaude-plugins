@@ -1,5 +1,5 @@
 {
-  "journal-scout-mcp": {
+  "journal-scout": {
     "command": "uv",
     "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "python", "-m", "josc.server"]
   }

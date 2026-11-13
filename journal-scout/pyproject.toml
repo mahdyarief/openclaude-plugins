@@ -1,5 +1,5 @@
 [project]
-name = "journal-scout-mcp"
+name = "journal-scout"
 version = "2.5.0"
 description = "MCP server for multi-source journal research (Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, Garuda)"
 readme = "README.md"
@@ -17,7 +17,7 @@ web = ["starlette>=0.37", "uvicorn>=0.30"]
 pdf = ["pypdf>=4.0"]
 
 [project.scripts]
-journal-scout-mcp = "josc.server:start"
+journal-scout = "josc.server:start"
 josc-web = "josc.api:start"
 
 [build-system]

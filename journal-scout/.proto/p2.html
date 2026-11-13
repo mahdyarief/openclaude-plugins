@@ -1,0 +1,752 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="garuda garba rujukan digital">
+        <meta name="author" content="kementrian riset, teknologi dan pendidikan tinggi">
+        <link rel="icon" href="/assets/img/garuda-icon.png">
+
+        <title>Garuda - Garba Rujukan Digital</title>
+
+        <!-- SEMANTIC UI -->
+        <link href="/assets/semantic/semantic.min.css" rel="stylesheet">
+        <link href="/assets/semantic/components/reset.css" rel="stylesheet"> 
+
+        <link href="/assets/css/main.css" rel="stylesheet">
+        <link href="/assets/css/app.css" rel="stylesheet">
+        <link href="/assets/css/flash-message.css" rel="stylesheet">
+        
+        <!-- JQUERY UI - AUTOCOMPLETE -->
+        <link href="/assets/css/jquery-ui/jquery-ui.css" rel="stylesheet" />
+
+        <script src="/assets/js/jquery.js"></script>
+        <script src="/assets/semantic/semantic.min.js"></script>
+        <script src="/assets/js/jquery.tagcloud.js" type="text/javascript"></script>
+        <script src="/assets/js/Chart.js"></script>
+        <script src="/assets/custom/main.js"></script>
+        <script src="/assets/js/app.js"></script>
+        <!-- JQUERY UI - AUTOCOMPLETE -->
+        <script src="/assets/js/jquery-ui/jquery-ui.min.js"></script>
+    </head>
+
+
+
+    <body>
+                <div class="ui stackable menu top-menu">
+            <a class="header item brand" href="/">
+                 <img src="/assets/img/garuda1.png" alt=""> 
+            </a>
+            <div class="right menu">
+                <a class="nav item " href="/">Home</a>
+                <a class="nav item " href="/publisher">Publisher</a>
+                <a class="nav item " href="/journal">Journal / Conference</a>
+                <a class="nav item " href="/area">Subject</a>
+                <a class="nav item " href="/suggest">Suggest</a>
+                <a class="nav item" target="_blank" href="https://drive.google.com/drive/folders/19TuyOLkABcMgh99AgLweV-B8BE1wcUl8?usp=sharing">Guidebook</a>
+                <a class="nav item disabled">&nbsp;</a>
+            </div>
+        </div>
+
+        <main role="main" class="container">
+
+<div class="row" style="margin: 0 15px;">
+    <form class="ui form" action="" method="GET">
+        <div class="ui stackable padded grid">
+            <div class="three wide field column">
+                <label>Search By</label>
+                <select class="ui selection dropdown" name="select">
+                    <option value="title" >Title</option>
+                    <option value="abstract" >Abstract</option>
+                    <option value="author" >Author</option>
+                    <option value="doi" >DOI</option>
+                </select>
+                <div class="ui checkbox" style="margin-top: 10px;">
+                    <input type="checkbox" tabindex="0" name="pdf" value="1" >
+                    <label>Downloadable PDF Only</label>
+                </div>
+            </div>
+            <div class="seven wide field column">
+                <label>Keywords</label>
+                <input type="text" name="q" placeholder="Source Title" value="test" minlength="3" required> 
+            </div>
+            <div class="four wide field column">
+                <label>Publisher</label>
+                <input type="text" name="pub" placeholder="Publisher Name" value="" minlength="3">
+            </div>
+            <div class="two wide field column">
+                <label>&nbsp;</label>
+                <button class="ui fluid button" type="submit"><i class="search icon"></i> Search</button>
+            </div>
+        </div>
+    </form>
+    
+    <div class="ui stackable grid">
+        <div class="four wide column">
+            <div class="ui basic segment">
+                <h4 class="ui header">Filter By Year</h4>
+                <p>
+                    1945                    <span style="float: right"> 2024</span>
+                </p> 
+                <div id="slider-range"></div>
+                <br>
+
+                <form id="filter_year" class="ui mini form" action="" method="get">
+                                            <input type="hidden" name="q" value="test">
+                                                        
+                                        
+                    <div class="equal width fields">
+                        <div class="field">
+                            <label>From</label>
+                            <input type="text" id="from" name="from">
+                        </div>
+                        <div class="field">
+                            <label>To</label>
+                            <input type="text" id="to" name="to">
+                        </div>
+                    </div>
+                    <div class="equal width fields">
+                        <div class="field">
+                            <button class="ui mini fluid button" type="submit">Filter</button>
+                        </div>
+                        <div class="field">
+                            <a class="ui mini fluid button basic red" href="/documents/?q=test&select=&pub=&pdf=">Reset</a>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+        </div>
+        <div class="twelve wide column">
+            <div class="ui equal width grid">
+                <div class="column">
+                    <h2 class="ui header">
+                        <i class="search icon"></i>
+                        <div class="content">
+                            Found 14,737 documents
+                            <div class="sub header">Search  
+                                <i><xmp>test</xmp></i> 
+                                <i><xmp></xmp></i> 
+                                <i><xmp></xmp></i>  
+                                <i><xmp></xmp></i>
+                                <i><xmp></xmp></i>
+                            </div>
+                        </div>
+                    </h2>
+                </div>
+                <div class="column right aligned">
+                                            <div class="page-column" style="float: right !important;">
+                            <a href="?page=1&q=test" class="ui mini icon button">
+                                <i class="angle double left icon"></i>
+                            </a>                                
+                                                            <a href="?page=1&q=test" class="ui mini icon button ">
+                                    &nbsp;1&nbsp;
+                                </a>
+                                                            <a href="?page=2&q=test" class="ui mini icon button orange">
+                                    &nbsp;2&nbsp;
+                                </a>
+                                                            <a href="?page=3&q=test" class="ui mini icon button ">
+                                    &nbsp;3&nbsp;
+                                </a>
+                                                            <a href="?page=4&q=test" class="ui mini icon button ">
+                                    &nbsp;4&nbsp;
+                                </a>
+                                                            <a href="?page=5&q=test" class="ui mini icon button ">
+                                    &nbsp;5&nbsp;
+                                </a>
+                                                        
+                            <a href="?page=1474&q=test" class="ui mini icon button page-button">
+                                <i class="angle double right icon"></i>
+                            </a>
+                        </div>
+					                </div>
+            </div>
+
+            <div class="ui">
+                <div class="ui divider"></div>
+                                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1391651">
+                                <xmp>CONSOLIDATION CHARACTERISTICS UNDER CYLINDER TEST, CENTRIFUGAL TEST AND OEDOMETER TEST </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/761214"><xmp>Rondonuwu, Steeva G.</xmp></a>; <a class="author-article" href="/author/view/372107"><xmp>Sarajar, Alva N.</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> TEKNO Vol 14, No 66 (2016): JURNAL TEKNO </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">TEKNO </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1391651" onclick="show_abstract(1391651)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://ejournal.unsrat.ac.id/index.php/tekno/article/download/14195/13769" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://ejournal.unsrat.ac.id/index.php/tekno/article/view/14195/13769" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;CONSOLIDATION+CHARACTERISTICS+UNDER+CYLINDER+TEST+CENTRIFUGAL+TEST+AND+OEDOMETER+TEST&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                            </p>
+                            <div id="show_abstract1391651" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">A several laboratory tests have conducted to investigate the self-weight consolidation characteristics on Ariake washed. They are self weight consolidation by cylinder test and centrifuge test, while incremental loading by oedometer test as well. All the samples were used have passed through a 425 Î¼m siever to remove the granular particles. For cylinder test series, we adjust the suspension for each sample in initial water content range from 103 % to 1000 %, corresponding to liquid limit start from 1. Then let the self-weight consolidation process occurred. After the final process, we measured the final water content and maximum settling rate. Next for centrifugal test, we adjust the sample in liquidity index (IL) equal 1.5. The initial height specimens were 6, 4, 2, and 1 cm. All the specimens were played in centrifuge device. For 5 and 6 cm initial height specimen we adjust the velocity 850 rpm, and 800 rpm for 1 and 2 cm initial height specimen. The settling was recorded on elapsed time ranging from 15 to 1440 minute randomly. As for oedometer test, we adjusted the samples under 0.75, 1.0, 1.25, and 1.0 in liquidity index. Key words: self weight consolidation, settlement, centrifuge, sediment</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/1670535">
+                                <xmp>The Performance of Ramsey Test, White Test and Terasvirta Test in Detecting Nonlinearity </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/3314215"><xmp>Hendri Prabowo</xmp></a>; <a class="author-article" href="/author/view/2861116"><xmp>Suhartono Suhartono</xmp></a>; <a class="author-article" href="/author/view/345741"><xmp>Dedy Dwi Prastyo</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Inferensi Vol 3, No 1 (2020): Inferensi </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Department of Statistics ITS </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="1670535" onclick="show_abstract(1670535)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://iptek.its.ac.id/index.php/inferensi/article/download/6876/4530" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://iptek.its.ac.id/index.php/inferensi/article/view/6876/4530" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;The+Performance+of+Ramsey+Test+White+Test+and+Terasvirta+Test+in+Detecting+Nonlinearity&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.12962/j27213862.v3i1.6876">
+                                        DOI: 10.12962/j27213862.v3i1.6876                                    </a>
+                                                            </p>
+                            <div id="show_abstract1670535" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">The objective of this research is to compare Ramsey test, White test and Terasvirta test in the identification of nonlinearity. Ramsey test is a test based on the regression specification error test. While White test and Terasvirta test are based on neural network models. The difference between White test and Terasvirta test is in determining its weight, White test based on random sampling, while Terasvirta test based on Taylor expansion. Simulation studies are carried out with various scenarios in each test by generating linear models, linear models with outliers and nonlinear models. The results of the simulation study showed that Terasvirta test had better power than Ramsey test and White test in detecting nonlinearity. Terasvirta test is also more sensitive to the presence of outliers in linear models.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2240680">
+                                <xmp>PENGARUH MUSIK KLASIK DAN PREFERENSI PRIBADI TERHADAP TEST ANXIETY DAN HASIL TES MEMBACA KOMPREHENSIF SISWA [THE EFFECT OF CLASSICAL MUSIC AND PERSONAL MUSIC PREFERENCE ON TEST ANXIETY AND READING COMPREHENSION TEST RESULTS] </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/4063189"><xmp>Andreas Sigit Pamungkas</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Jurnal Teropong Pendidikan Vol 1, No 2 (2021): May 2021 </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Magister Teknologi Pendidikan Fakultas Ilmu Pendidikan, Universitas Pelita Harapan </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2240680" onclick="show_abstract(2240680)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://ojs.uph.edu/index.php/JTP/article/download/3458/pdf" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://ojs.uph.edu/index.php/JTP/article/view/3458/pdf" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;PENGARUH+MUSIK+KLASIK+DAN+PREFERENSI+PRIBADI+TERHADAP+TEST+ANXIETY+DAN+HASIL+TES+MEMBACA+KOMPREHENSIF+SISWA+THE+EFFECT+OF+CLASSICAL+MUSIC+AND+PERSONAL+MUSIC+PREFERENCE+ON+TEST+ANXIETY+AND+READING+COMPREHENSION+TEST+RESULTS&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.19166/jtp.v1i2.3458">
+                                        DOI: 10.19166/jtp.v1i2.3458                                    </a>
+                                                            </p>
+                            <div id="show_abstract2240680" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Music is part of human life. Studies show that music influences psychological, cognitive, behavior, and emotion sides of human being. Research shows that music also influences students’ performance on reading comprehension test and test anxiety level. The purpose of this study is to investigate the effect of classical and personal preference music on students’ reading comprehension test performance and test anxiety level at grade XII SMAK 4 PENABUR Jakarta. The experiment design of this study is Pretest Posttest Non-Randomly Assigned Design. The students in experiment group get a treatment that is listening to classical music fifteen minutes before and while doing reading comprehension test. Students in another experiment group get a treatment that is listening personal preference music fifteen minutes before and while doing reading comprehension test in English class. Mean obtained from pretest and posttest of experiment class will be compared with mean from pretest and posttest of control class to explain whether or not they are statistically different. The study shows that classical and personal preference music influence students’ reading comprehension performance and test anxiety. Study also shows that there is negative correlation between students’ test anxiety and reading comprehension performance.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2265621">
+                                <xmp>Uji Toksisitas Ekstrak Cacing Tambelo (Bactronophorus thoracites) dengan Metode Brine Shrimp Lethality Test : Toxicity Test of Wood-boring Shipworm (Bactronophorus thoracites) using Brine Shrimp Lethality Test </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/230203"><xmp>Lely Okmawaty Anwar</xmp></a>; <a class="author-article" href="/author/view/2515902"><xmp>Sri Fatmah Sari</xmp></a>; <a class="author-article" href="/author/view/2515903"><xmp>Asrul Ambo Elo</xmp></a>; <a class="author-article" href="/author/view/484231"><xmp>Rosmawati Rosmawati</xmp></a>; <a class="author-article" href="/author/view/2515905"><xmp>Iin Nurdiyanty Nurdin</xmp></a>; <a class="author-article" href="/author/view/2515906"><xmp>Anwar Said</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Jurnal Pengolahan Hasil Perikanan Indonesia Vol 24 No 2 (2021): Jurnal Pengolahan Hasil Perikanan Indonesia 24(2) </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Department of Aquatic Product Technology IPB University in collaboration with Masyarakat Pengolahan Hasil Perikanan Indonesia (MPHPI) </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2265621" onclick="show_abstract(2265621)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://journal.ipb.ac.id/index.php/jphpi/article/download/34880/22184" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://journal.ipb.ac.id/index.php/jphpi/article/view/34880/22184" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Uji+Toksisitas+Ekstrak+Cacing+Tambelo+Bactronophorus+thoracites+dengan+Metode+Brine+Shrimp+Lethality+Test++Toxicity+Test+of+Wood-boring+Shipworm+Bactronophorus+thoracites+using+Brine+Shrimp+Lethality+Test&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.17844/jphpi.v24i2.34880">
+                                        DOI: 10.17844/jphpi.v24i2.34880                                    </a>
+                                                            </p>
+                            <div id="show_abstract2265621" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Cacing tambelo merupakan moluska yang menetap pada batang Rhizophora sp yang sudah mati. Studi ini bertujuan untuk menentukan tingkat toksisitas dari ekstrak cacing tambelo dengan metode brine shrimp letahlity test (BSLT). Cacing tambelo diambil dari hutan mangrove di Desa Moolo, Kecamatan Batukara, Kabupaten Muna, Sulawesi Tenggara. Ekstrak cacing tambelo dipreparasi memakai larutan metanol. Uji toksisitas BSLT pada penelitian ini terdiri atas dua tahap, uji preliminary dan uji definitif. Uji preliminary bertujuan untuk menentukan kisaran lethal concentration (LC50), nilai kisaran konsentrasi tersebut akan digunakan pada uji selanjutnya (uji definitif). Uji preliminary menggunakan konsentrasi ekstrak tambelo sebesar 10, 100, 1.000 μg/mL dan 0 sebagai kontrol. Uji definitif menggunakan 4 konsentrasi (masing-masing 3 ulangan) yaitu:17,78; 31,61; 56,21; 99,94 μg/mL dan 0 sebagai kontrol. Data yang diperoleh dari uji definitif selanjutnya dianalisis dengan probit. Hasil analisis tersebut menunjukkan bahwa nilai LC50-24jam dari ekstrak tambelo ialah 42,43 μg/mL. Nilai LC50 tersebut mengindikasikan bahwa ekstrak cacing tambelo bersifat sangat toksik terhadap larva udang.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2297179">
+                                <xmp>Anxiety and Test Form: The Differences of Test Anxiety Levels in Terms of Test Form </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/1616506"><xmp>Lussy Dwiutami Wahyuni</xmp></a>; <a class="author-article" href="/author/view/3126367"><xmp>Rezza Citraini</xmp></a>; <a class="author-article" href="/author/view/3126368"><xmp>Bijak Aditia Hutomo</xmp></a>; <a class="author-article" href="/author/view/3855944"><xmp>Gumgum Gumelar</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> JP3I (Jurnal Pengukuran Psikologi dan Pendidikan Indonesia) Vol 10, No 2 (2021): JP3I </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Fakultas Psikologi UIN Syarif Hidayatullah Jakarta </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2297179" onclick="show_abstract(2297179)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://journal.uinjkt.ac.id/index.php/jp3i/article/download/17974/pdf" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://journal.uinjkt.ac.id/index.php/jp3i/article/view/17974/pdf" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Anxiety+and+Test+Form+The+Differences+of+Test+Anxiety+Levels+in+Terms+of+Test+Form&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.15408/jp3i.v10i2.17974">
+                                        DOI: 10.15408/jp3i.v10i2.17974                                    </a>
+                                                            </p>
+                            <div id="show_abstract2297179" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Education is one of the most important aspects of human life. In the education file, examination is an important part to evaluate the progress of the students. The students need to fulfill the test parameters and indicators in order to move to the higher level of class or higher degree. The common feeling while students feel anxious in facing the test is called test anxiety. There are several factors that affect test anxiety, and one of the most common sources is the test form. This study aimed to determine the differences in test anxiety levels in students in terms of multiple-choice and matchmaking tests. The population of this study was 142 students of the Faculty of Psychology Education that registered in 2018. The design of this study was a quasi-experimental research with two-group pretest-posttest design. The instrument used in this study was the Reaction to Test scale by Irwin G. Sarason. The results showed that the multiple-choice test anxiety level was higher than the matching test, although the difference was small. The multiple-choice test anxiety level was (M = 2.17) and matchmaking (M = 2.07).</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2372969">
+                                <xmp>ANALISA TEKNIS PENGUJIAN KEKEDAPAN PENGELASAN PADA TANGKI TONGKANG DENGAN MEMBANDINGKAN METODE CHALK TEST, AIR PRESSURE TEST DAN VACUUM TEST </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/470426"><xmp>Firda Herlina</xmp></a>; <a class="author-article" href="/author/view/3703368"><xmp>M. Suprapto</xmp></a>; <a class="author-article" href="/author/view/3137560"><xmp>Siswanto Siswanto</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> INFO-TEKNIK Vol 19, No 1 (2018): INFOTEKNIK Vol. 19 No. 1 Juli 2018 </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Universitas Lambung Mangkurat </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2372969" onclick="show_abstract(2372969)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://ppjp.ulm.ac.id/journal/index.php/infoteknik/article/download/5143/pdf" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://ppjp.ulm.ac.id/journal/index.php/infoteknik/article/view/5143/pdf" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;ANALISA+TEKNIS+PENGUJIAN+KEKEDAPAN+PENGELASAN+PADA+TANGKI+TONGKANG+DENGAN+MEMBANDINGKAN+METODE+CHALK+TEST+AIR+PRESSURE+TEST+DAN+VACUUM+TEST&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.20527/infotek.v19i1.5143">
+                                        DOI: 10.20527/infotek.v19i1.5143                                    </a>
+                                                            </p>
+                            <div id="show_abstract2372969" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">PT. Dock & amp; perkapalan kodja nautical ( persero ) shipyard banjarmasin is a company that move in ship industry, development for shipbuilding industry large enough aims to meet the needs of countries will ships as a country maritime .In doing their activities, company got a job as the construction of ships new, work a serviceman a ship etc. The field of that is associated with welding, welding identical also with a flaw and fraud especially on the part affected a serviceman . Testing impermeability a tank were done in order to the examination of the possibility of mismanagement of a connection is welding and why ensure the quality of welds, an adequate number of qualified to leakage in the connection las can be seen from that there was an indication who occuring when testing done in the same manner .There are several a method of testing, and among the companies were a method of lime oil , water test and a vacuum test drives in .Chalk test drives in / lime oil is a method of welding stability testing traditional tank , water pressure test drives in is a method of welding stability testing a tank by the principle of the compressed air and a vacuum test drives in also made use of of the nature of soapy water , only on the implementation of the activity a method of testing is provided by way of an instrument a vacuum box shaped with one of the sides open and one of the sides made from the materials of glass . In the process of testing kekedapan welding a method of the most accurate in a reading of a point to leakage in connection las that is a method of water pressure test/the compressed air with flattened flattened a reading of a point leakage is more than 1 in any its testing. A method of tests need time in at least the process that is a method of vacuum test and water pressure test.Testing first method vacuum test 1.15 hours and water pressure test by 0.47 hours. Testing second method vacuum test 1.30 hours and water pressure test 1.20 hours. Testing third method vacuum test 0.40 hours and water pressure test 0.50 hours. Testing fourth method vacuum test 1.15 hours and water pressure test 1.20 hours. Testing fifth method vacuum test .30 hours and water pressure test 0.37 hours. Testing sixth method vacuum test 1.40 hours and water pressure test 1.30 hours.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2414484">
+                                <xmp>EFFECTIVENESS OF TEST DESIGN BETWEEN OF CLOZE TEST AND MULTIPLE CHOICE TEST FOR READING COMPREHENSION </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/6529225"><xmp>Elma Tiara</xmp></a>; <a class="author-article" href="/author/view/4197209"><xmp>Chairuddin Chairuddin</xmp></a>; <a class="author-article" href="/author/view/2478165"><xmp>Makhroji Makhroji</xmp></a>; <a class="author-article" href="/author/view/2627747"><xmp>Evi Zulida</xmp></a>; <a class="author-article" href="/author/view/3454477"><xmp>Fadlia Fadlia</xmp></a>; <a class="author-article" href="/author/view/2627734"><xmp>Rahmiati Rahmiati</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Journal of Education, Linguistics, Literature and Language Teaching Vol 2 No 02 (2019): JURNAL ELLITE ( JOURNAL OF EDUCATION, LINGUISTICS,LITERATURE AND LANGUAGE TEACHI </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Universitas Samudra </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2414484" onclick="show_abstract(2414484)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://ejurnalunsam.id/index.php/ELLITE/article/download/1782/1334" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://ejurnalunsam.id/index.php/ELLITE/article/view/1782/1334" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;EFFECTIVENESS+OF+TEST+DESIGN+BETWEEN+OF+CLOZE+TEST+AND+MULTIPLE+CHOICE+TEST+FOR+READING+COMPREHENSION&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=2414484&val=23050&title=EFFECTIVENESS OF TEST DESIGN BETWEEN OF CLOZE TEST AND MULTIPLE CHOICE TEST FOR READING COMPREHENSION">
+                                        Full PDF (667.567 KB)
+                                    </a>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.33059/ellite.v2i02.1782">
+                                        DOI: 10.33059/ellite.v2i02.1782                                    </a>
+                                                            </p>
+                            <div id="show_abstract2414484" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">The use of tests that is suitable for use by teachers in learning needs to be considered. This aims to produce a satisfactory of the test result. So the teacher needs to consider what type of test is given to students. So the researcher conducted a study to analyze of effectiveness of test design between of cloze test and multiple choice test for reading comprehension at SMA Negeri 3 Langsa. The purposes of research were to find out if there is a difference between multiple choice test and cloze test in teaching EFL for reading comprehension and to find out which of the most effectiveness between multiple choice tests or cloze test in teaching EFL for reading comprehension. The method of this research is qualitative approach. The sample of this research is the students at class XII Bahasa in SMA Negeri 3 Langsa. In this study, the researcher collected data to conduct on 22nd October 2018 until 19th October 2018 in SMAN 3 Langsa. The result of study showed that the result of testing the students’ reading comprehension showed that the students’ test 1 showed that multiple choice test has mean score 8,1 and cloze test has mean score 7,3. It meant multiple choice test more effective in testing reading comprehension for the students. The result of the students’ test 2 showed that multiple choice test has mean score 8 and cloze test has mean score 5,3. It meant multiple choice test more effective in testing reading comprehension for the students and the result of the teachers’ interview showed that multiple choice test more effective than cloze test but the result of the students’ interview showed that multiple choice test was very difficult. It meant the result of the students’ test between the students’ interview opposite because the students said multiple choice test was very difficult, automatically the students got the multiple choice test score lower than the cloze test score.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2526704">
+                                <xmp>the Scheffe Test Sebagai Uji Lanjut Analisis Komparatif Angkatan Kerja Seta Jumlah Pengangguran Pada Tiga Provinsi di Wilayah Sumbagsel: “Scheffe Test As Advanced Test Comparative Analysis Of The Labor And The Number Of Unemployments In Three Province In The Sumbagsel Region” </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/2374957"><xmp>ajeng Kusuma aidini desfa reza, Fitriyani</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Khazanah Intelektual Vol. 5 No. 3 (2021): Khazanah Intelektual </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Balitbangda Provinsi Jambi </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2526704" onclick="show_abstract(2526704)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://jurnalkibalitbangdajbi.com/index.php/newkiki/article/download/132/76" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://jurnalkibalitbangdajbi.com/index.php/newkiki/article/view/132/76" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;the+Scheffe+Test+Sebagai+Uji+Lanjut+Analisis+Komparatif+Angkatan+Kerja+Seta+Jumlah+Pengangguran+Pada+Tiga+Provinsi+di+Wilayah+Sumbagsel+Scheffe+Test+As+Advanced+Test+Comparative+Analysis+Of+The+Labor+And+The+Number+Of+Unemployments+In+Three+Province+In+The+Sumbagsel+Region&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.37250/newkiki.v5i3.132">
+                                        DOI: 10.37250/newkiki.v5i3.132                                    </a>
+                                                            </p>
+                            <div id="show_abstract2526704" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Menurut Sumber data BPS untuk rentang waktu 2019-2021 terjadi peningkatan pengangguran pada Provinsi Jambi, Lampung dan Bengkulu akibat pandemic Covid-19. Salah satu penanganan dari Pemerintah ialah denghan adanya Program Pemulihan Ekonomi Nasional merupakan salah satu rangkaian kegiatan untuk mengurangi dampak Covid-19terhadap perekonomian. Selain penanganan krisis kesehatan, pemerintah juga menjalankan program PEN sebagai respon atau penurunan aktivitas masyarakat yang berdampak pada ekonomi, khususnya sektor informal atau UMKM sesuai dengan UU Nomor 2 Tahun 2020 tentang Penetapan Peraturan Pemerintah Pengganti UU Nomor 1 Tahun 2020 tentang Kebijakan Keuangan dan Stabilitas Sistem Keuangan untuk Penanganan Pandemi Covid-19 dan/atau Dalam Rangka Menghadapi Ancaman yang Membahayakan Perekonomian Nasional dan/atau Stabilitas Sistem Keuangan Menjadi Undang-undang.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2709446">
+                                <xmp>Polypenol Content Test, Antioxidant Activity Test and Sunblock Protection Test of Pinang Peels </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/424663"><xmp>Yulianis S.Farm, M.Farm, Apt</xmp></a>; <a class="author-article" href="/author/view/3006838"><xmp>Armini Hadriyati</xmp></a>; <a class="author-article" href="/author/view/1101297"><xmp>Mukhlis Sanuddin</xmp></a>; <a class="author-article" href="/author/view/3006839"><xmp>Nofa Putriani</xmp></a>; <a class="author-article" href="/author/view/3006840"><xmp>Indah Sagita Cahyani</xmp></a>; <a class="author-article" href="/author/view/3006841"><xmp>Eka Fitriani</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Jurnal Ipteks Terapan Vol 14, No 2 (2020): JIT </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">LLDIKTI Wilayah X </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2709446" onclick="show_abstract(2709446)"> Show Abstract</a>
+                                | <a class="title-citation" href="http://ejournal.lldikti10.id/index.php/jit/article/download/5010/filesxopy" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="http://ejournal.lldikti10.id/index.php/jit/article/view/5010/filesxopy" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Polypenol+Content+Test+Antioxidant+Activity+Test+and+Sunblock+Protection+Test+of+Pinang+Peels&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.22216/jit.2020.v14i2.5010">
+                                        DOI: 10.22216/jit.2020.v14i2.5010                                    </a>
+                                                            </p>
+                            <div id="show_abstract2709446" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Areca nut skin contains phenolic compounds which have antioxidant and sunscreen activities. This study aims to determine the levels of polyphenols, antioxidant activity and sunscreen contained in the extract and fraction of areca nut (Areca catechu L.) skin. Testing levels of polyphenols using Folin-Ciocalteau reagents, testing of antioxidants using the DPPH method with a comparison of vitamin C, and on sunscreen testing using the UV-Vis spectrophotometry method by calculating the SPF value. The results of this study indicate that the fraction of n-Butanol has higher polyphenol levels compared to extracts and other fractions with polyphenol levels of 13.88974%. In antioxidant testing it was found that the n-hexane fraction had very strong antioxidant activity with an IC50 value of 40.848 mg / ml. In the sunscreen activity test, it was found that the highest SPF value was at a concentration of 300 ppm, in the thick ethanol extract, n-hexane fraction, ethyl acetate fraction, n-Butanol fraction, and residual water fraction. The highest sunscreen activity of SPF value is the ethyl acetate fraction that is 24.79. From the results of the study it can be concluded that the skin of betel nuts has antioxidant activity, sunscreen, and polyphenol levels.</xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                            <div class="article-item">        
+                            <a class="title-article" href="/documents/detail/2941970">
+                                <xmp>Investigating the Relationship between Test-Taking Anxiety and Test-Takersâ€™ Performance on the IELTS Test </xmp>
+                            </a>
+                            <a class="author-article" href="/author/view/4151995"><xmp>Dang Arif Hartono</xmp></a>                            <br>
+                            <xmp class="subtitle-article"> Script Journal: Journal of Linguistics and English Teaching Vol. 4 No. 1 (2019): April </xmp>
+                            <br>
+                            <i class="subtitle-article">Publisher : </i><xmp class="subtitle-article">Teacher Training and Education Faculty, Widya Gama Mahakam Samarinda University </xmp>
+                            <p class="action-article">
+                                <a class="btn_show_abstract title-citation" target="2941970" onclick="show_abstract(2941970)"> Show Abstract</a>
+                                | <a class="title-citation" href="https://jurnal.fkip-uwgm.ac.id/index.php/Script/article/download/282/289" target="_blank">
+                                    <i class="download icon"></i> Download Original
+                                </a>
+                                | <i>
+                                    <a class="title-citation" href="https://jurnal.fkip-uwgm.ac.id/index.php/Script/article/view/282/289" target="_blank">
+                                        Original Source
+                                    </a>
+                                </i>
+                                | <i>
+                                    <a class="title-citation" href="http://scholar.google.com/scholar?q=%2Bintitle%3A&quot;Investigating+the+Relationship+between+Test-Taking+Anxiety+and+Test-Takers+Performance+on+the+IELTS+Test&quot;" target="_blank">
+                                        Check in Google Scholar
+                                    </a>
+                                </i>
+                                                                    |
+                                    <i class="file pdf outline icon"></i>
+                                    <a class="title-citation" target="_blank" href="http://download.garuda.kemdiktisaintek.go.id/article.php?article=2941970&val=10770&title=Investigating the Relationship between Test-Taking Anxiety and Test-Takers Performance on the IELTS Test">
+                                        Full PDF (434.587 KB)
+                                    </a>
+                                                                                                    
+                                    | <a class="title-citation" target="_blank" href="https://doi.org/10.24903/sj.v4i1.282">
+                                        DOI: 10.24903/sj.v4i1.282                                    </a>
+                                                            </p>
+                            <div id="show_abstract2941970" class="article-abstract">
+                                <div class="ui message tiny basic">
+                                    <h4 class="ui header">
+                                        <b>Abstract</b>
+                                    </h4>
+                                    <div class="abstract-article">
+                                        <xmp class="abstract-article">Although there is a growing body of research indicating that anxiety relates to foreign language learning, the correlation between anxiety and learnersâ€™ performance on a high-stakes testing context has not been fully explored. To date, studies investigating the relationship between test-taking anxiety and test-takersâ€™ performance are not only limited in number, but also partial in nature as most of them only looked at one aspect of test-takers performance, i.e. listening, speaking, or writing performance only. This study is aimed at investigating the relationship between test-taking anxiety and test-takersâ€™ performance with a holistic view, taking into account the test-takersâ€™ performance on the listening, reading, speaking, and writing modules of the International English Language Testing System (IELTSâ„¢) test. The participants in this study were 15 government officials taking an IELTS test preparation program. Two instruments were utilized in this study: (1) a set of test-taking anxiety questionnaire items to measure the level of anxiety and, (2) the official IELTSâ„¢ test to measure test-takersâ€™ performance. The results indicated that there was a weak to moderate correlation between test-taking anxiety and the test-takersâ€™ performance across different modules of the IELTS test. These results corroborate the findings from previous studies.Â </xmp>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui divider"></div>
+                                                
+                                    <div class="ui two column stackable grid">
+                        <div class="column">
+                            <p class="pagination-info">
+                                Page 2 of 1474                                | Total Record : 14737 
+                            </p>
+                        </div>
+                        <div class="column">
+                                                            <div class="page-column"  style="float: right !important;">
+                                    <a href="?page=1&q=test" class="ui mini icon button">
+                                        <i class="angle double left icon"></i>
+                                    </a>                                
+                                                                            <a href="?page=1&q=test" class="ui mini icon button ">
+                                            &nbsp;1&nbsp;
+                                        </a>
+                                                                            <a href="?page=2&q=test" class="ui mini icon button orange">
+                                            &nbsp;2&nbsp;
+                                        </a>
+                                                                            <a href="?page=3&q=test" class="ui mini icon button ">
+                                            &nbsp;3&nbsp;
+                                        </a>
+                                                                            <a href="?page=4&q=test" class="ui mini icon button ">
+                                            &nbsp;4&nbsp;
+                                        </a>
+                                                                            <a href="?page=5&q=test" class="ui mini icon button ">
+                                            &nbsp;5&nbsp;
+                                        </a>
+                                                                
+                                    <a href="?page=1474&q=test" class="ui mini icon button">
+                                        <i class="angle double right icon"></i>
+                                    </a>
+                                </div>                        
+                                                    </div>
+                    </div>
+                    <br><br>
+                            </div>
+            <!-- </div> -->
+        </div>
+    </div>
+</div>
+
+<script>
+    $( function() {
+        $("#slider-range" ).slider({
+            range: true,
+            min: 1945,
+            max: 2024,
+            values: [ 1945, 2024 ],
+            slide: function( event, ui ) {
+                $("#from").val(ui.values[ 0 ]);
+                $("#to").val(ui.values[ 1 ]);
+            }
+        });
+        $("#from").val( $( "#slider-range" ).slider( "values", 0 ));
+        $("#to").val($( "#slider-range" ).slider( "values", 1 ));
+    });
+</script><!-- </div> -->
+</main>
+
+<div class="links-box">
+    <ul>
+        <li><a href="https://sinta.kemdiktisaintek.go.id" target="_blank">Sinta</a></li>
+        <li><a title="Basis Informasi Penelitian dan Pengabdian kepada Masyarakat" href="https://bima.kemdiktisaintek.go.id" target="_blank">Bima</a></li>
+        <li><a title="Akreditasi Jurnal Nasional" href="https://arjuna.kemdiktisaintek.go.id" target="_blank">Arjuna</a></li>
+        <li><a title="Pangkalan Data Pendidikan Tinggi Ristekdikti" href="https://pddikti.kemdiktisaintek.go.id" target="_blank">PDDIKTI</a></li>
+        <li><a title="Data Riset dan Pengembangan Ristekdikti" href="https://dikti.kemdiktisaintek.go.id/" target="_blank">Risbang</a></li>
+        <li><a title="The Largest Abstract and Citation Database of Peer-Reviewed Literature" href="https://www.scopus.com" target="_blank">Scopus</a></li>
+        <li><a title="Repositori Tugas Akhir Mahasiswa" href="https://rama.kemdiktisaintek.go.id/" target="_blank">Rama</a></li>
+    </ul>
+</div>
+<footer class="ui grid equal width footer">
+    <div class="clearfix"></div>
+    <div class="column">
+        <img src="/assets/img/logo_dikbud.png" />
+        <div class="footer-company">Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi </div>
+        <div class="footer-subcompany">(The Ministry of Education, Culture, Research, and Technology)</div>
+        <div class="footer-copyright">&copy; 2018</div>
+    </div>
+    <div class="column"></div>
+</footer>
+<!-- UI KIT -->
+
+
+
+
+<script>
+    setTimeout(function() {
+        // $('#flash_message').slideUp( 300, "linear" );
+        $('#flash_message').fadeOut( "slow");
+    }, 2000);
+</script>
+<!-- AUTOSEARCH BUKU-->
+<script>
+    $(function() {
+        $("#suggest_pub").autocomplete({
+            source: "/suggest/findPublisher",
+            select: function( event, ui ) {
+                event.preventDefault();
+                $("#suggest_pub").val(ui.item.value);
+            }
+        });
+    });
+</script>
+<!-- END AUTOSEARCH BUKU-->
+
+
+<script type="text/javascript">
+    $('.ui.checkbox').checkbox();
+    $('select.dropdown').dropdown();
+    $('.ui.dropdown').dropdown();
+    $('.top.menu .item').tab();
+
+    $(document).ready(function () {
+
+        $("#sort").change(function () {
+            var page = 1;
+            // $("#sort").val(page);
+            $("#form_sort").submit();
+        });
+
+        $("#select_item").change(function () {
+            var page = 1;
+            $("#page").val(page);
+            $("#form_journal").submit();
+        });        
+
+        $("#select_item").change(function () {
+            var page = 1;
+            $("#page").val(page);
+            $("#form_alphabeth").submit();
+        });
+
+        $("#select_item").change(function () {
+            var page = 1;
+            $("#page").val(page);
+            $("#form_search").submit();
+        });
+
+        $('#page').keydown(function () {
+            var key = e.which;
+            if (key == 13) {
+                $('#form_journal').submit();
+            }
+        });
+
+        $('#form_journal').keydown(function () {
+            var key = e.which;
+            if (key == 13) {
+                // As ASCII code for ENTER key is "13"
+                $('#form_journal').submit(); // Submit form code
+            }
+        });
+
+        $('.demo.menu .item').tab({history: false});
+
+        $('.area-cloud a').tagcloud();
+
+    });
+
+    $('.ui.top.attached.tabular.menu .item').tab({history: false});
+
+    $.fn.tagcloud.defaults = {
+        size: {start: 9, end: 30, unit: 'pt'},
+        color: {start: '#444', end: '#ed462f'}
+    };
+
+    function show_abstract(id){
+        $('#show_abstract'+id).slideToggle();
+    }
+
+    $(document).ready(function () {
+        $('#adv-btn').on('click', function () {
+            $('#adv-box').slideToggle('slow');
+            $('#form-journal').slideToggle('slow');
+        });
+
+        $('#adv-less').on('click', function () {
+            $('#adv-box').slideToggle('slow');
+            $('#form-journal').slideToggle('slow');
+        });
+    });
+
+
+
+</script>
+
+</body>
+</html>

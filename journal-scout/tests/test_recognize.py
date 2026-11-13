@@ -75,7 +75,7 @@ def test_extract_pdf_text_explains_a_missing_dependency(monkeypatch):
 
     with pytest.raises(RuntimeError) as excinfo:
         extract_pdf_text("whatever.pdf")
-    assert "journal-scout-mcp[pdf]" in str(excinfo.value)
+    assert "journal-scout[pdf]" in str(excinfo.value)
 
 
 async def test_resolve_document_returns_identifier_and_paper(monkeypatch):
@@ -109,4 +109,4 @@ def test_extract_pdf_text_from_bytes_explains_a_missing_dependency(monkeypatch):
     with pytest.raises(RuntimeError) as excinfo:
         extract_pdf_text_from_bytes(b"%PDF-1.4")
 
-    assert "journal-scout-mcp[pdf]" in str(excinfo.value)
+    assert "journal-scout[pdf]" in str(excinfo.value)

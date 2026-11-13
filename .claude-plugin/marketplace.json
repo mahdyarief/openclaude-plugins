@@ -79,8 +79,8 @@
       "category": "development"
     },
     {
-      "name": "journal-scout-mcp",
-      "source": "./journal-scout-mcp",
+      "name": "journal-scout",
+      "source": "./journal-scout",
       "description": "Multi-source journal research MCP (Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, DBLP, Unpaywall) with unified dedup.",
       "category": "development"
     },

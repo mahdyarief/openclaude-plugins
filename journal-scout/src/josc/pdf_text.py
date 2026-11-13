@@ -13,7 +13,7 @@ def _pdf_reader(source):
     except ImportError as exc:
         raise RuntimeError(
             "PDF support requires the optional extra: "
-            "pip install 'journal-scout-mcp[pdf]'"
+            "pip install 'journal-scout[pdf]'"
         ) from exc
     return PdfReader(source)
 

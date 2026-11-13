@@ -338,7 +338,7 @@ wheels = [
 ]
 
 [[package]]
-name = "journal-scout-mcp"
+name = "journal-scout"
 version = "2.3.0"
 source = { editable = "." }
 dependencies = [
