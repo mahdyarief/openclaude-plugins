@@ -1,0 +1,9 @@
+{
+  "name": "trail-code",
+  "description": "Trail-code code context graph for OpenClaude — build a repo's wiring graph + per-file cards as linked markdown. 6 MCP tools (trail_find_code, trail_find_all, trail_trace_calls, trail_file_api, trail_repo_map, trail_check_freshness) + auto hooks that inject relevant graph context into every prompt, rebuild the graph after edits, and track token savings. Requires `npm install -g @trailhq/trail-code` (CLI: `trail`).",
+  "version": "1.0.0",
+  "keywords": ["trail-code", "code-graph", "context", "mcp", "hooks"],
+  "author": {
+    "name": "Custom"
+  }
+}

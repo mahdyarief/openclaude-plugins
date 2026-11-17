@@ -73,9 +73,9 @@
       "category": "development"
     },
     {
-      "name": "graft",
-      "source": "./graft",
-      "description": "Graft code context graph for OpenClaude — 6 MCP tools (graft_find_code, graft_find_all, graft_trace_calls, graft_file_api, graft_repo_map, graft_check_freshness) + auto hooks that inject graph context into prompts, rebuild after edits, track token savings. Requires npm install -g @nanonets/graft.",
+      "name": "trail-code",
+      "source": "./trail-code",
+      "description": "Trail-code code context graph — 6 MCP tools (trail_find_code, trail_find_all, trail_trace_calls, trail_file_api, trail_repo_map, trail_check_freshness) + auto hooks that inject graph context into prompts, rebuild after edits, track token savings. Requires npm install -g @trailhq/trail-code (CLI: trail).",
       "category": "development"
     },
     {
