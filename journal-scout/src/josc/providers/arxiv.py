@@ -122,3 +122,18 @@ class ArxivProvider(ProviderBase):
         feed = ET.fromstring(text)
         entries = feed.findall(f"{ATOM}entry")
         return self._to_paper(entries[0]) if entries else None
+
+    async def get_many(self, identifiers: List[str]) -> List[Paper]:
+        """Resolve several arXiv ids with one ``id_list`` request."""
+        ids: List[str] = []
+        for identifier in identifiers:
+            aid = _valid_arxiv_id(identifier)
+            if aid and aid not in ids:
+                ids.append(aid)
+        if not ids:
+            return []
+        text = await self._fetch_text(ARXIV_URL, params={"id_list": ",".join(ids)})
+        feed = ET.fromstring(text)
+        papers = [self._to_paper(entry) for entry in feed.findall(f"{ATOM}entry")]
+        order = {aid: index for index, aid in enumerate(ids)}
+        return sorted(papers, key=lambda p: order.get(p.ids.get("arxiv", ""), len(order)))

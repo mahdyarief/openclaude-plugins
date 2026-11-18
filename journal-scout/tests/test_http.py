@@ -11,6 +11,23 @@ def _fetcher(handler):
     return Fetcher(client=client)
 
 
+async def test_get_bytes_returns_raw_body_and_caches_it():
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        return httpx.Response(200, content=b"%PDF-1.4 fake")
+
+    f = _fetcher(handler)
+    try:
+        first = await f.get_bytes("https://example.test/paper.pdf", provider="fulltext")
+        second = await f.get_bytes("https://example.test/paper.pdf", provider="fulltext")
+        assert first == second == b"%PDF-1.4 fake"
+        assert calls["n"] == 1
+    finally:
+        await f.close()
+
+
 async def test_get_json_returns_payload():
     def handler(request):
         return httpx.Response(200, json={"ok": True})

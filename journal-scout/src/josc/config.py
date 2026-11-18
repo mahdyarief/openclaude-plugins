@@ -88,6 +88,11 @@ def get_polite_email() -> str:
     )
 
 
+def get_openalex_api_key() -> Optional[str]:
+    """OpenAlex premium key; unauthenticated search is paused during overload."""
+    return os.getenv("OPENALEX_API_KEY") or load_config_file().get("openalex_api_key")
+
+
 def get_cache_ttl() -> float:
     """Seconds to cache identical upstream queries; ``<= 0`` disables it."""
     raw = os.getenv("JOURNAL_SCOUT_CACHE_TTL")

@@ -25,7 +25,7 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 40
+    assert len(TOOL_NAMES) == 43
     assert "search_exa" in TOOL_NAMES
     assert "slr_import" in TOOL_NAMES
     assert "slr_screen" in TOOL_NAMES
@@ -457,3 +457,121 @@ def test_abstract_tools_schemas_advertised():
     batch = next(t for t in _tool_list() if t.name == "get_abstracts")
     assert "doi" in single.inputSchema["properties"]
     assert "papers" in batch.inputSchema["properties"]
+
+
+async def test_batch_lookup_tool_is_registered():
+    assert "batch_lookup" in TOOL_NAMES
+    schema = next(
+        tool for tool in _tool_list() if tool.name == "batch_lookup"
+    ).inputSchema
+    assert "identifiers" in schema["properties"]
+    assert schema["required"] == ["identifiers"]
+
+
+async def test_dispatch_batch_lookup_passes_sources(monkeypatch):
+    import josc.server as server
+
+    captured = {}
+
+    async def fake_batch(providers, identifiers, sources=None):
+        captured["identifiers"] = identifiers
+        captured["sources"] = sources
+        return {"papers": [], "counts": {"requested": 0, "resolved": 0}}
+
+    monkeypatch.setattr(server.aggregator, "batch_lookup", fake_batch)
+    await build_json(
+        "batch_lookup",
+        {"identifiers": ["10.1/a"], "sources": ["openalex"]},
+        [],
+        None,
+    )
+    assert captured == {"identifiers": ["10.1/a"], "sources": ["openalex"]}
+
+
+def test_topic_classify_tool_is_registered():
+    assert "topic_classify" in TOOL_NAMES
+    schema = next(
+        tool for tool in _tool_list() if tool.name == "topic_classify"
+    ).inputSchema
+    assert schema["required"] == ["text"]
+    assert schema["properties"]["level"]["enum"] == [
+        "topic",
+        "subfield",
+        "field",
+        "domain",
+    ]
+
+
+class TaxonomyProvider(ProviderBase):
+    name = "openalex"
+
+    def __init__(self):
+        super().__init__(None)
+        self.calls = []
+
+    async def classify_topics(self, text, limit=5, level="topic"):
+        self.calls.append({"text": text, "limit": limit, "level": level})
+        return [{"name": "Machine Learning", "level": level, "score": 0.9}]
+
+
+async def test_dispatch_topic_classify_uses_openalex_provider():
+    provider = TaxonomyProvider()
+    result = await build_json(
+        "topic_classify",
+        {"text": "claims with transformers", "limit": 3, "level": "subfield"},
+        [provider],
+        None,
+    )
+    assert provider.calls == [
+        {"text": "claims with transformers", "limit": 3, "level": "subfield"}
+    ]
+    assert result["candidates"][0]["name"] == "Machine Learning"
+    assert result["level"] == "subfield"
+    assert result["count"] == 1
+    json.dumps(result)
+
+
+async def test_dispatch_topic_classify_reports_missing_provider():
+    result = await build_json("topic_classify", {"text": "ai"}, [SearchProvider(None)], None)
+    assert result["candidates"] == []
+    assert "openalex" in result["error"]
+
+
+async def test_get_fulltext_tool_is_registered():
+    assert "get_fulltext" in TOOL_NAMES
+    schema = next(tool for tool in _tool_list() if tool.name == "get_fulltext").inputSchema
+    assert "identifier" in schema["properties"]
+    assert "max_chars" in schema["properties"]
+
+
+class FulltextPaperProvider(ProviderBase):
+    name = "openalex"
+
+    def __init__(self):
+        super().__init__(None)
+        self.papers = {}
+
+    async def get(self, identifier):
+        return self.papers.get(identifier)
+
+
+async def test_dispatch_get_fulltext_delegates_to_fulltext_fetch(monkeypatch):
+    import josc.server as server
+
+    captured = {}
+
+    async def fake_fetch(providers, identifier, max_chars=20_000):
+        captured["providers"] = providers
+        captured["identifier"] = identifier
+        captured["max_chars"] = max_chars
+        return {"status": "found", "full_text": "body", "truncated": False}
+
+    monkeypatch.setattr(server, "fetch_fulltext", fake_fetch)
+    provider = FulltextPaperProvider()
+    result = await build_json(
+        "get_fulltext", {"identifier": "10.1/x", "max_chars": 1234}, [provider], None
+    )
+    assert result["status"] == "found"
+    assert captured["identifier"] == "10.1/x"
+    assert captured["max_chars"] == 1234
+    assert captured["providers"] == [provider]

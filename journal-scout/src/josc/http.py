@@ -181,5 +181,17 @@ class Fetcher:
             self.cache.set(key, text)
         return text
 
+    async def get_bytes(self, url, params=None, headers=None, provider=None) -> bytes:
+        key = self._cache_key(url, params, provider)
+        if key is not None:
+            cached = self.cache.get(key)
+            if cached is not None:
+                return cached
+        response = await self._request(url, params, headers, provider)
+        content = response.content
+        if key is not None:
+            self.cache.set(key, content)
+        return content
+
     async def close(self) -> None:
         await self.client.aclose()

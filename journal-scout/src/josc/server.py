@@ -14,6 +14,7 @@ from .cache import build_cache
 from .corpus import load_corpus
 from .exporters import FORMATTERS, format_papers
 from .fulltext import build_index, search_index
+from .fulltext_fetch import fetch_fulltext
 from .search_archive import SearchArchive
 from .slr_tools import slr_call, slr_tool_defs
 from .http import Fetcher
@@ -42,6 +43,9 @@ UNIFIED_TOOLS = [
     "search_corpus",
     "get_paper_abstract",
     "get_abstracts",
+    "get_fulltext",
+    "batch_lookup",
+    "topic_classify",
 ]
 PER_SOURCE_TOOLS = [f"search_{name}" for name in search_provider_names()]
 SCOPUS_DETAIL_TOOLS = ["get_abstract_details", "get_author_profile", "get_quota_status"]
@@ -350,6 +354,83 @@ def _tool_list() -> List[types.Tool]:
             },
         ),
         types.Tool(
+            name="get_fulltext",
+            description=(
+                "Fetch the open-access full text of one paper: resolve the identifier "
+                "across lookup sources, download the best OA PDF (Unpaywall link or "
+                "arXiv PDF), and extract its text. Requires the optional 'pdf' extra "
+                "(pypdf) on the server. Returns status='no_oa' for paywalled papers "
+                "and status='error' with a message when extraction fails."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "identifier": {
+                        "type": "string",
+                        "description": "DOI, arXiv id, or other identifier the providers understand.",
+                    },
+                    "max_chars": {
+                        "type": "integer",
+                        "default": 20_000,
+                        "description": "Cap the returned text length; longer text is truncated with truncated=true.",
+                    },
+                    "sources": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["identifier"],
+            },
+        ),
+        types.Tool(
+            name="batch_lookup",
+            description=(
+                "Resolve many identifiers (DOIs, arXiv ids, OpenAlex ids) in one call. "
+                "OpenAlex and arXiv answer with a single batched request; other "
+                "sources are queried per identifier. Results keep the request order, "
+                "and identifiers that resolved nothing are listed in not_found."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "identifiers": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Identifiers to resolve; duplicates are ignored.",
+                    },
+                    "sources": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["identifiers"],
+            },
+        ),
+        types.Tool(
+            name="topic_classify",
+            description=(
+                "Classify free text (a title, abstract, or research question) into "
+                "OpenAlex's scholarly taxonomy. Returns ranked candidates with a "
+                "relevance score and a domain → field → subfield → topic path. Use "
+                "level='subfield', 'field', or 'domain' for a coarser class."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "Title, abstract, or keywords to classify.",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 5,
+                        "description": "How many candidates to return, best first.",
+                    },
+                    "level": {
+                        "type": "string",
+                        "enum": ["topic", "subfield", "field", "domain"],
+                        "default": "topic",
+                        "description": "Taxonomy granularity to classify against.",
+                    },
+                },
+                "required": ["text"],
+            },
+        ),
+        types.Tool(
             name="get_citations",
             description="Collect the cross-source citation graph (Scopus + OpenAlex + OpenCitations) for one paper. Pass sources to disambiguate a bare id that only one provider understands.",
             inputSchema={
@@ -618,6 +699,47 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             arguments["papers"],
             timeout=arguments.get("timeout", 10.0),
         )
+    if name == "get_fulltext":
+        requested = arguments.get("sources")
+        selected = [p for p in providers if not requested or p.name in requested]
+        # Clamp to the tool-result budget: a bigger cap would be truncated by
+        # the transport anyway, so the server keeps responses deliverable.
+        max_chars = min(arguments.get("max_chars", 20_000), MAX_TOOL_RESULT_CHARS)
+        return await fetch_fulltext(selected, arguments["identifier"], max_chars=max_chars)
+    if name == "batch_lookup":
+        return await aggregator.batch_lookup(
+            providers,
+            arguments["identifiers"],
+            sources=arguments.get("sources"),
+        )
+    if name == "topic_classify":
+        level = arguments.get("level", "topic")
+        limit = arguments.get("limit", 5)
+        classifier = next(
+            (
+                provider
+                for provider in providers
+                if callable(getattr(provider, "classify_topics", None))
+            ),
+            None,
+        )
+        if classifier is None:
+            return {
+                "status": "error",
+                "error": "openalex provider is not configured; topic classification needs it.",
+                "candidates": [],
+                "level": level,
+                "count": 0,
+            }
+        candidates = await classifier.classify_topics(
+            arguments["text"], limit=limit, level=level
+        )
+        return {
+            "status": "ok",
+            "level": level,
+            "count": len(candidates),
+            "candidates": candidates,
+        }
     if name == "search_author":
         return await aggregator.search_author(
             providers,

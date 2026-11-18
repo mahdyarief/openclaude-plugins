@@ -35,6 +35,20 @@ def test_api_key_missing_raises(monkeypatch, tmp_path):
         raise AssertionError("expected ValueError")
 
 
+def test_openalex_api_key_prefers_env(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"openalex_api_key": "from_file"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.setenv("OPENALEX_API_KEY", "from_env")
+    assert config.get_openalex_api_key() == "from_env"
+
+
+def test_openalex_api_key_falls_back_to_file(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"openalex_api_key": "from_file"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
+    assert config.get_openalex_api_key() == "from_file"
+
+
 def test_polite_email_default(monkeypatch, tmp_path):
     cfg = _write_config(tmp_path, {})
     monkeypatch.setattr(config, "CONFIG_FILE", cfg)

@@ -19,7 +19,7 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
 COPY --from=web-build /web/dist ./web/dist
-RUN pip install --no-cache-dir ".[server,web]"
+RUN pip install --no-cache-dir ".[server,web,pdf]"
 
 RUN useradd --create-home --uid 10001 josc
 USER josc

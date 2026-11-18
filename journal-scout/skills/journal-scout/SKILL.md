@@ -16,10 +16,11 @@ dedup), and partial failures are reported instead of aborting the search.
 - Tracing what a paper cites (`get_references`) or who cites it (`get_citations`).
 - Mapping how a research area evolved (`build_citation_network`).
 - Author or topic bibliometrics: h-index, i10, g-index, AWCR.
+- Classifying a title or abstract into the OpenAlex research taxonomy.
 - Producing a bibliography in BibTeX, RIS, EndNote, or a citation style.
 
-Do not use it for full-text retrieval — the server returns metadata and
-open-access links, not article bodies.
+Full text is available only for open-access papers through `get_fulltext`;
+other tools return metadata and open-access links, not article bodies.
 
 ## Quick reference
 
@@ -28,6 +29,9 @@ open-access links, not article bodies.
 | `search_all` | Parallel search across all sources, merged and deduped; `topic=` narrows locally after the merge |
 | `search_author` | Papers by an author name |
 | `get_paper` | One record by identifier, with open-access resolution |
+| `get_fulltext` | Extracted text from an open-access PDF; reports `no_oa` when none exists |
+| `batch_lookup` | Resolve many identifiers at once, keeping request order |
+| `topic_classify` | Rank OpenAlex taxonomy candidates for a title/abstract/question |
 | `get_references` | Papers the given paper cites |
 | `get_citations` | Papers citing the given paper |
 | `get_related_works` | Semantically related papers |

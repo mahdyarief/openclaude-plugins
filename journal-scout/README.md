@@ -13,19 +13,21 @@ Citation links come from OpenCitations as well: 300M+ DOI-to-DOI links, free,
 no API key, no approval. It is not a searchable source — it only answers
 citation and reference queries for a known DOI or OpenCitations id.
 
-## Tools (40)
+## Tools (43)
 
-| Unified (9) | Papers & abstracts (4) | Per-source (8) |
+| Unified (11) | Papers & abstracts (5) | Per-source (8) |
 |---|---|---|
 | `search_all` | `get_paper` | `search_scopus` |
 | `search_author` | `get_paper_abstract` | `search_arxiv` |
 | `get_citations` | `get_abstracts` | `search_openalex` |
 | `get_references` | `identify_paper` | `search_crossref` |
-| `get_related_works` | | `search_pubmed` |
+| `get_related_works` | `get_fulltext` | `search_pubmed` |
 | `build_citation_network` | | `search_garuda` |
 | `compute_metrics` | | `search_consensus` |
 | `export_results` | | `search_exa` |
 | `build_research_landscape` | | |
+| `batch_lookup` | | |
+| `topic_classify` | | |
 
 | Scopus detail (3) | SciVal (5) | Local archive (2) |
 |---|---|---|
@@ -54,6 +56,59 @@ results. Both keep the `not_found` status with a null abstract when no source
 has one; nothing is guessed from the title, and an existing abstract is never
 overwritten. Provider errors and timeouts are reported per source instead of
 aborting the batch.
+
+### Full text (open access only)
+
+`get_fulltext` resolves one identifier through the same lookup path as
+`get_paper` (including the Unpaywall enricher), downloads the best open-access
+PDF, and returns its extracted text. arXiv records without a resolved PDF link
+fall back to `https://arxiv.org/pdf/<id>`.
+
+| Field | Meaning |
+|---|---|
+| `status` | `found`, `no_oa`, `not_found`, or `error` |
+| `full_text` | Extracted text, capped by `max_chars` (default 20,000) |
+| `truncated` | True when the source text was longer than `max_chars` |
+| `error` | Download or extraction failure reason, for `status="error"` |
+
+Extraction needs `pypdf`, which ships in the `pdf` extra
+(`pip install "journal-scout[pdf]"`) and is installed in the Docker image. A
+server without it returns `status="error"` with an install hint rather than an
+empty string. This is not a paywall bypass: a paper with no OA copy reports
+`no_oa`.
+
+### Batch lookup
+
+`batch_lookup` resolves a list of identifiers (DOI, arXiv id, OpenAlex id) in
+one call. OpenAlex accepts pipe-separated OR filters (`doi:A|B`,
+`openalex:W1|W2`) and arXiv accepts a native `id_list`, so those two answer a
+whole batch with a single request each. Providers without a batch endpoint fall
+back to one `get` per identifier, concurrently.
+
+| Field | Meaning |
+|---|---|
+| `papers` | Resolved records in the same order as `identifiers`, deduplicated |
+| `counts` | `requested` (unique, after dedup) and `resolved` |
+| `not_found` | Identifiers no provider recognised |
+| `errors` | Per-provider failure message; other providers still contribute |
+
+Pass `sources` to restrict the lookup to specific providers. Enrichers such as
+Unpaywall are skipped here — they need a DOI and add no lookup value.
+
+### Topic classify
+
+`topic_classify` ranks OpenAlex taxonomy entries that best match free text —
+a title, abstract, or research question. Short labels match the taxonomy
+search directly; longer text that the taxonomy endpoint cannot match falls
+back to aggregating the assigned topics of matching works. Each candidate
+carries a relevance `score`, work counts, keywords, and the full
+domain → field → subfield → topic `path`.
+
+| Field | Meaning |
+|---|---|
+| `text` | Required: the text to classify |
+| `level` | `topic` (default), `subfield`, `field`, or `domain` |
+| `limit` | Candidates to return, best first (default 5) |
 
 ### Export
 

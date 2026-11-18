@@ -397,6 +397,119 @@ async def get_paper(
     return {"paper": paper.to_dict(), "errors": errors}
 
 
+def _identifier_keys(identifier: str) -> set:
+    """Keys that let a resolved paper be matched back to a requested id."""
+    value = identifier.strip()
+    keys = {value.lower()}
+    doi = normalize_doi(value) if _looks_like_doi(value) else None
+    if doi:
+        keys.add(doi)
+    stripped = value[len("arxiv:") :] if value.lower().startswith("arxiv:") else value
+    keys.add(stripped.rstrip("/").rsplit("/", 1)[-1].lower())
+    return {key for key in keys if key}
+
+
+def _paper_keys(paper: Paper) -> set:
+    keys = set()
+    doi = normalize_doi(paper.doi)
+    if doi:
+        keys.add(doi)
+    for value in (paper.ids or {}).values():
+        if not value:
+            continue
+        keys.add(str(value).lower())
+        keys.add(str(value).rstrip("/").rsplit("/", 1)[-1].lower())
+    return {key for key in keys if key}
+
+
+async def batch_lookup(
+    providers: List[ProviderBase],
+    identifiers: List[str],
+    sources: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Resolve many identifiers, sending one batched request per provider.
+
+    Providers that expose ``get_many`` (OpenAlex, arXiv) cap the cost at one
+    request regardless of list size; the rest are queried per identifier. A
+    provider returning garbage for the batch is retried one id at a time so a
+    single bad record cannot sink the whole lookup.
+    """
+    requested: List[str] = []
+    seen: set = set()
+    for identifier in identifiers:
+        if not isinstance(identifier, str) or not identifier.strip():
+            continue
+        key = identifier.strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        requested.append(identifier.strip())
+
+    active = [
+        provider
+        for provider in providers
+        if not provider.enricher and (sources is None or provider.name in sources)
+    ]
+
+    errors: Dict[str, str] = {}
+    papers: List[Paper] = []
+
+    async def _one(provider: ProviderBase, identifier: str) -> Optional[Paper]:
+        try:
+            return await provider.get(identifier)
+        except Exception as exc:  # ProviderError and unexpected failures alike
+            errors.setdefault(provider.name, getattr(exc, "message", str(exc)))
+            return None
+
+    for provider in active:
+        batch = getattr(provider, "get_many", None)
+        if batch is not None and requested:
+            try:
+                results = await batch(requested)
+            except Exception:
+                results = None
+            if results is None:
+                outcomes = await asyncio.gather(
+                    *(_one(provider, identifier) for identifier in requested)
+                )
+                papers.extend(p for p in outcomes if p is not None)
+            else:
+                papers.extend(p for p in results if p is not None)
+        else:
+            outcomes = await asyncio.gather(
+                *(_one(provider, identifier) for identifier in requested)
+            )
+            papers.extend(p for p in outcomes if p is not None)
+
+    merged = merge_papers(papers)
+    position: Dict[str, int] = {}
+    for index, identifier in enumerate(requested):
+        for key in _identifier_keys(identifier):
+            position.setdefault(key, index)
+
+    def _request_position(paper: Paper) -> int:
+        matches = [position[key] for key in _paper_keys(paper) if key in position]
+        return min(matches) if matches else len(requested)
+
+    merged.sort(key=_request_position)
+
+    resolved_keys: set = set()
+    for paper in merged:
+        resolved_keys.update(key for key in _paper_keys(paper) if key in position)
+    not_found = [
+        identifier
+        for identifier in requested
+        if not (_identifier_keys(identifier) & resolved_keys)
+    ]
+    resolved = len(requested) - len(not_found)
+    return {
+        "papers": [paper.to_dict() for paper in merged],
+        "counts": {"requested": len(requested), "resolved": resolved},
+        "not_found": not_found,
+        "errors": errors,
+    }
+
+
 async def get_citations(
     providers: List[ProviderBase],
     identifier: str,

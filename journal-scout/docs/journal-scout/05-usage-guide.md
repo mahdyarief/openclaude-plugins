@@ -95,6 +95,19 @@ get_related_works identifier="10.1145/3292500.3330701" limit=20
 Gunakan `sources` bila identifier hanya dikenali satu provider, misalnya
 `identifier="12345"` dengan `sources=["scopus"]`.
 
+Untuk mengelompokkan judul, abstrak, atau pertanyaan riset ke taksonomi
+OpenAlex, panggil `topic_classify`:
+
+```
+topic_classify text="claim prediction with transformer models" limit=5 level="topic"
+topic_classify text="AI for health insurance claims" level="subfield"
+```
+
+`level` menerima `topic` (default), `subfield`, `field`, atau `domain`.
+Kandidat diurutkan menurut `score` OpenAlex dan mencakup ID, jumlah karya dan
+sitasi, kata kunci, deskripsi, serta jalur hierarki taksonomi. Skor adalah
+relevansi pencarian OpenAlex, bukan probabilitas klasifikasi.
+
 ### 3.3 Peta sitasi
 
 ```
