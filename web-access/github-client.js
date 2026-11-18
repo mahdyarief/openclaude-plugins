@@ -1,4 +1,35 @@
+const { execFileSync } = require("child_process");
+
 const GITHUB_API = "https://api.github.com";
+
+const GH_CANDIDATES =
+  process.platform === "win32"
+    ? ["gh", "C:\\Program Files\\GitHub CLI\\gh.exe", "C:\\Program Files (x86)\\GitHub CLI\\gh.exe"]
+    : ["gh", "/opt/homebrew/bin/gh", "/usr/local/bin/gh", "/usr/bin/gh"];
+
+let _cachedToken;
+function readGhToken() {
+  for (const bin of GH_CANDIDATES) {
+    try {
+      const token = execFileSync(bin, ["auth", "token"], {
+        encoding: "utf-8",
+        timeout: 5000,
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
+      if (token) return token;
+    } catch {
+      // try next candidate
+    }
+  }
+  return null;
+}
+
+function resolveGithubToken() {
+  if (_cachedToken !== undefined) return _cachedToken;
+  const fromEnv = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+  if (fromEnv) return (_cachedToken = fromEnv.trim());
+  return (_cachedToken = readGhToken());
+}
 
 /**
  * Search GitHub repositories, code, issues, or commits via the public GitHub API.
@@ -14,18 +45,32 @@ async function searchGithub(query, options = {}) {
   const endpoint = `${GITHUB_API}/search/${type}`;
   const url = `${endpoint}?${params}`;
 
+  const headers = {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "exa-search-mcp/2.0",
+  };
+  const token = resolveGithubToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   const response = await fetch(url, {
-    headers: {
-      Accept: "application/vnd.github.v3+json",
-      "User-Agent": "exa-search-mcp/2.0",
-    },
+    headers,
     signal: AbortSignal.timeout(15000),
   });
 
+  if (response.status === 401) {
+    throw new Error(
+      "GitHub API requires authentication for this search type (code search always does). " +
+        "Set GITHUB_TOKEN/GH_TOKEN env var, or run `gh auth login` so the token can be picked up. " +
+        "Alternatively use web_search with site:github.com."
+    );
+  }
   if (response.status === 403) {
     const reset = response.headers.get("X-RateLimit-Reset");
     const wait = reset ? Math.ceil(Number(reset) - Date.now() / 1000) : "unknown";
-    throw new Error(`GitHub API rate limited. Resets in ${wait}s. Try unauthenticated search via web_search with site:github.com`);
+    throw new Error(
+      `GitHub API rate limited. Resets in ${wait}s. ` +
+        (token ? "Check your token's rate limit." : "Set GITHUB_TOKEN/GH_TOKEN or run `gh auth login` for a higher limit.")
+    );
   }
   if (!response.ok) {
     const err = await response.text();
