@@ -165,6 +165,12 @@ p:has(+ .mermaid) {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* Paragraf label yang isinya hanya teks tebal ("**Tujuan:**", "**Manfaat:**")
+   tidak menjorok; spacing tetap mengikuti paragraf biasa. */
+p:has(> strong:only-child) {
+  text-indent: 0 !important;
+}
 p:has(+ table) + table {
   margin-top: 0.1em !important;
   break-before: avoid-page !important;
