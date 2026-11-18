@@ -75,14 +75,6 @@ export function useSearchController() {
     setSelectedIds(new Set());
   }
 
-  function toggleSource(source: string) {
-    setSelectedSources((current) =>
-      current.includes(source)
-        ? current.filter((item) => item !== source)
-        : [...current, source],
-    );
-  }
-
   function resetFilters() {
     setYearFrom("");
     setYearTo("");
@@ -322,7 +314,6 @@ export function useSearchController() {
     selectAll,
     selectCited,
     clearSelection,
-    toggleSource,
     resetFilters,
     activeFilterCount,
     addCondition,

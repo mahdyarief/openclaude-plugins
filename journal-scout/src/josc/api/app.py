@@ -13,6 +13,7 @@ Run with::
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 
 from starlette.applications import Starlette
@@ -64,7 +65,12 @@ from .watch_routes import watch_delete, watch_feed, watches_list_create
 from ..watches import WatchStore
 from .state import _store, setup_state, teardown_state
 
-WEB_DIST = Path(__file__).resolve().parents[3] / "web" / "dist"
+_dist_env = os.getenv("JOSC_WEB_DIST")
+WEB_DIST = (
+    Path(_dist_env)
+    if _dist_env
+    else Path(__file__).resolve().parents[3] / "web" / "dist"
+)
 
 
 class SPAStaticFiles(StaticFiles):

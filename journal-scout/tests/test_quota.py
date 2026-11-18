@@ -9,11 +9,9 @@ class FakeProvider:
 DOCUMENTED = {
     "scopus": "Weekly quota, tracked via X-RateLimit-* / X-ELS-Status headers",
     "openalex": "100,000 requests/day (polite pool)",
-    "semanticscholar": "1 request/second shared pool",
     "crossref": "Polite pool, no hard cap",
     "pubmed": "3 requests/second without a key, 10 with",
     "arxiv": "1 request per 3 seconds",
-    "dblp": "Best effort, no published quota",
     "opencitations": "180 requests/minute",
     "unpaywall": "100,000 requests/day",
 }

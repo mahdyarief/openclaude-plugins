@@ -42,13 +42,6 @@ def test_polite_email_default(monkeypatch, tmp_path):
     assert config.get_polite_email() == "anonymous@example.com"
 
 
-def test_semantic_scholar_key_optional(monkeypatch, tmp_path):
-    cfg = _write_config(tmp_path, {})
-    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
-    monkeypatch.delenv("SEMANTIC_SCHOLAR_API_KEY", raising=False)
-    assert config.get_semantic_scholar_key() is None
-
-
 def test_cache_ttl_prefers_env(monkeypatch, tmp_path):
     cfg = _write_config(tmp_path, {"cache_ttl": 100})
     monkeypatch.setattr(config, "CONFIG_FILE", cfg)

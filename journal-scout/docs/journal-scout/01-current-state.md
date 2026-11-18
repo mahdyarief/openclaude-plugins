@@ -30,7 +30,7 @@ src/josc/
 | Kelompok | Tool |
 |---|---|
 | Unified (9) | `search_all`, `search_author`, `get_paper`, `get_citations`, `get_references`, `get_related_works`, `build_citation_network`, `compute_metrics`, `export_results` |
-| Per-source (8) | `search_scopus`, `search_arxiv`, `search_openalex`, `search_semanticscholar`, `search_crossref`, `search_pubmed`, `search_dblp`, `search_garuda` |
+| Per-source (8) | `search_scopus`, `search_arxiv`, `search_openalex`, `search_crossref`, `search_pubmed`, `search_garuda`, `search_consensus`, `search_exa` |
 | Scopus detail (3) | `get_abstract_details`, `get_author_profile`, `get_quota_status` |
 | SciVal (5) | `scival_author_metrics`, `scival_institution_metrics`, `scival_author_lookup`, `scival_institution_lookup`, `scival_topic_metrics` |
 | Local archive (3) | `search_corpus`, `identify_paper`, `check_watches` |
@@ -49,11 +49,10 @@ berbeda (OpenAlex concept, Crossref subject, PubMed MeSH); lihat
 
 Tool `get_paper` menerima `identifier` dan `sources` (array opsional).
 `sources` membatasi provider yang dihubungi: identifier numerik telanjang
-ambigu karena Semantic Scholar membaca digit apa pun sebagai `CorpusId`,
-PubMed sebagai PMID, dan Scopus sebagai Scopus id. Pemanggil yang memegang id
-Garuda harus menyebutkan `sources: ["garuda"]`, kalau tidak provider lain ikut
-menebak dan bisa mengembalikan paper yang sama sekali berbeda
-(`aggregator.get_paper`, `src/josc/aggregator.py`).
+ambigu karena PubMed membacanya sebagai PMID dan Scopus sebagai Scopus id.
+Pemanggil yang memegang id Garuda harus menyebutkan `sources: ["garuda"]`,
+kalau tidak provider lain ikut menebak dan bisa mengembalikan paper yang sama
+sekali berbeda (`aggregator.get_paper`, `src/josc/aggregator.py`).
 
 Parameter `sources` yang sama juga ada di `get_citations`, `get_references`,
 dan `get_related_works` (`aggregator.py`), dan diteruskan lewat query param
@@ -88,7 +87,6 @@ yang sudah dikirim provider, jadi tidak ada panggilan jaringan ekstra:
 | `funders` | Crossref `funder` | Pendanaan |
 | `license` | Crossref `license[].URL` | Lisensi |
 | `language` | OpenAlex `language` | Bahasa |
-| `tldr` | Semantic Scholar `tldr.text` | Ringkasan satu kalimat (terpisah dari abstrak) |
 | `is_open_access` | Scopus `openaccess` / `openaccessFlag`, OpenAlex `open_access.is_oa` | Status OA |
 
 `merge_two` (`src/josc/merge.py`) menggabungkan field ini: flag retraksi
@@ -324,8 +322,7 @@ supaya kolom CSV stabil antar rilis.
 ## Dedup dan prioritas sumber
 
 `src/josc/merge.py:9-18` menetapkan urutan otoritas:
-`scopus > crossref > openalex > semanticscholar > dblp > arxiv >
-opencitations > unpaywall`.
+`scopus > crossref > openalex > consensus > arxiv > opencitations > unpaywall`.
 
 `_match_keys` (`merge.py:33`) mencocokkan berurutan: DOI → `(title, year)` →
 `(title, first author)`.

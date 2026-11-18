@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Alert, Button, Chip, Input } from "../ui";
 import { ExportMenu } from "../ExportMenu";
 import { PaperTable } from "../PaperTable";
@@ -25,6 +26,15 @@ export function SearchResults({ controller }: { controller: SearchController }) 
     drawerPaper,
     setDrawerPaper,
   } = controller;
+
+  const tableRows = useMemo(
+    () =>
+      visibleRows.map(({ paper, index }) => ({
+        paper,
+        key: paperKey(paper, index),
+      })),
+    [visibleRows],
+  );
 
   return (
     <>
@@ -162,10 +172,7 @@ export function SearchResults({ controller }: { controller: SearchController }) 
             </p>
           ) : (
             <PaperTable
-              rows={visibleRows.map(({ paper, index }) => ({
-                paper,
-                key: paperKey(paper, index),
-              }))}
+              rows={tableRows}
               selectedIds={selectedIds}
               onToggle={toggleSelected}
               onOpen={setDrawerPaper}

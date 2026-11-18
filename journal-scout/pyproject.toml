@@ -1,7 +1,7 @@
 [project]
 name = "journal-scout"
 version = "2.5.0"
-description = "MCP server for multi-source journal research (Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, Garuda)"
+description = "MCP server for multi-source journal research (Scopus, arXiv, OpenAlex, Crossref, PubMed, Garuda, Consensus, Exa)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -12,6 +12,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+server = ["uvicorn>=0.30", "starlette>=0.37"]
 dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.8"]
 web = ["starlette>=0.37", "uvicorn>=0.30"]
 pdf = ["pypdf>=4.0"]

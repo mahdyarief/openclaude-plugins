@@ -23,6 +23,7 @@ import {
   LoadingLine,
   Spinner,
   LINK_CLASS,
+  Checkbox,
 } from "../components/ui";
 
 const SEARCH_LIMIT = 20;
@@ -530,12 +531,11 @@ export function HistoryPage() {
               >
                 <div className="flex flex-wrap items-start justify-between gap-1.5">
                   <div className="flex min-w-0 items-start gap-1.5">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={selectedIds.has(row.id)}
-                      onChange={() => toggleRow(row.id)}
+                      onCheckedChange={() => toggleRow(row.id)}
                       aria-label={`Select search ${row.query || row.id}`}
-                      className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-sky-500"
+                      className="mt-0.5 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="m-0 break-words text-[13px] font-medium text-slate-100">

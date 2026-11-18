@@ -10,6 +10,8 @@ import {
   PageHeader,
   LoadingLine,
   Spinner,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "../components/ui";
 
 type MetricCard = { key: string; label: string; hint: string };
@@ -182,41 +184,35 @@ export function MetricsPage() {
       <Card className="space-y-2 p-2.5">
         <form onSubmit={submit} className="space-y-2">
         <div className="flex flex-col gap-1.5 lg:flex-row lg:items-center">
-          <div className="flex shrink-0 rounded-md border border-slate-500 bg-slate-800/40 p-0.5 text-[11px]">
+          <ToggleGroup
+            type="single"
+            value={searchBy}
+            onValueChange={(value) => {
+              if (value) setSearchBy(value as typeof searchBy);
+            }}
+            className="shrink-0 text-[11px]"
+          >
             {(["author", "query"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setSearchBy(option)}
-                aria-pressed={searchBy === option}
-                className={`touch-target rounded px-2.5 py-1 transition-colors ${
-                  searchBy === option
-                    ? "bg-slate-700 text-slate-50"
-                    : "text-slate-400 hover:text-slate-100"
-                }`}
-              >
+              <ToggleGroupItem key={option} value={option}>
                 {option === "author" ? "Author" : "Topic query"}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
 
-          <div className="flex shrink-0 rounded-md border border-slate-500 bg-slate-800/40 p-0.5 text-[11px]">
+          <ToggleGroup
+            type="single"
+            value={metricMode}
+            onValueChange={(value) => {
+              if (value) setMetricMode(value as typeof metricMode);
+            }}
+            className="shrink-0 text-[11px]"
+          >
             {(["basic", "extended"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setMetricMode(option)}
-                aria-pressed={metricMode === option}
-                className={`touch-target rounded px-2.5 py-1 transition-colors ${
-                  metricMode === option
-                    ? "bg-slate-700 text-slate-50"
-                    : "text-slate-400 hover:text-slate-100"
-                }`}
-              >
+              <ToggleGroupItem key={option} value={option}>
                 {option === "basic" ? "Basic" : "Extended"}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
 
           <Input
             value={value}

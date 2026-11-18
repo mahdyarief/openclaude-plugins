@@ -12,7 +12,7 @@ export function SearchPage() {
     <div className="w-full space-y-5">
       <PageHeader
         title="Literature search"
-        description="One query fans out across Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP and Garuda, then duplicate records are merged DOI-first into a single result set."
+        description="One query fans out across Scopus, arXiv, OpenAlex, Crossref, PubMed, Garuda, Consensus and Exa, then duplicate records are merged DOI-first into a single result set."
       />
 
       <SearchForm controller={controller} />

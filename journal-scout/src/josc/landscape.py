@@ -193,7 +193,7 @@ def _top(counter: Counter[str], limit: int = 5) -> List[str]:
 def _node_id(paper: Paper, index: int) -> str:
     if paper.doi:
         return paper.doi
-    for key in ("openalex", "semantic_scholar", "pubmed", "scopus"):
+    for key in ("openalex", "pubmed", "scopus"):
         value = paper.ids.get(key) if paper.ids else None
         if value:
             return f"{key}:{value}"

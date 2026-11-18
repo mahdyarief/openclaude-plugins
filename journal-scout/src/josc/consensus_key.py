@@ -9,16 +9,36 @@ never leaves the plugin with a dead key.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
-from .config import CONFIG_FILE
+from .config import CONFIG_FILE, get_consensus_keys
 from .providers.consensus import CONSENSUS_URL
 
 _KEY_PREFIX_LEN = 6
+_INDEX = 0
+_LOCK = asyncio.Lock()
+
+
+async def next_key(keys: Optional[List[str]] = None) -> Optional[str]:
+    """Return the next Consensus key in round-robin order."""
+    global _INDEX
+    keys = list(keys) if keys is not None else get_consensus_keys()
+    if not keys:
+        return None
+    async with _LOCK:
+        index = _INDEX % len(keys)
+        _INDEX = (index + 1) % len(keys)
+    return keys[index]
+
+
+def reset_key_index() -> None:
+    global _INDEX
+    _INDEX = 0
 
 
 def mask_key(key: str) -> str:

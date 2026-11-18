@@ -117,10 +117,10 @@ def test_merge_folds_doiless_record_into_its_doi_twin_by_title_author():
 def test_merge_folds_doiless_records_by_title_author_without_year():
     # No year on either side: the (title, first-author) fallback still merges.
     a = Paper(title="Deep Residual Learning", authors=["Kaiming He"], sources=["arxiv"])
-    b = Paper(title="Deep Residual Learning", authors=["Kaiming He"], sources=["dblp"])
+    b = Paper(title="Deep Residual Learning", authors=["Kaiming He"], sources=["crossref"])
     merged = merge_papers([a, b])
     assert len(merged) == 1
-    assert set(merged[0].sources) == {"arxiv", "dblp"}
+    assert set(merged[0].sources) == {"arxiv", "crossref"}
 
 
 def test_merge_keeps_consensus_annotations():

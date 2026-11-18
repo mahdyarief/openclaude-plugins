@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Paper } from "../lib/types";
-import { cn } from "./ui";
+import { Button, Checkbox, Select, cn } from "./ui";
 import { ChevronDownIcon } from "./icons";
 
 export type SortKey = "year" | "title" | "authors" | "venue" | "type" | "citations";
@@ -91,6 +91,15 @@ export function PaperTable({
 }) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [direction, setDirection] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+
+  useEffect(() => {
+    setPage(1);
+  }, [rows, pageSize]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -115,8 +124,17 @@ export function PaperTable({
     return copy;
   }, [rows, sortKey, direction]);
 
+  const pageRows = useMemo(
+    () => sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [sorted, currentPage, pageSize],
+  );
+
+  const firstRow = sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const lastRow = Math.min(currentPage * pageSize, sorted.length);
+
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-800">
+    <div className="space-y-2">
+      <div className="overflow-x-auto rounded-lg border border-slate-800">
       <table className="w-full min-w-[980px] border-collapse text-[12px]">
         <caption className="sr-only">Search results</caption>
         <thead>
@@ -180,7 +198,7 @@ export function PaperTable({
           </tr>
         </thead>
         <tbody>
-          {sorted.map(({ paper, key }) => {
+          {pageRows.map(({ paper, key }) => {
             const selected = selectedIds.has(key);
             const isActive = activeKey === key;
             return (
@@ -201,12 +219,11 @@ export function PaperTable({
                 )}
               >
                 <td className="px-2 py-1.5 align-top" onClick={(event) => event.stopPropagation()}>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selected}
-                    onChange={() => onToggle(key)}
+                    onCheckedChange={() => onToggle(key)}
                     aria-label={`Select ${paper.title || "untitled"}`}
-                    className="mt-0.5 h-3.5 w-3.5 accent-sky-500"
+                    className="mt-0.5"
                   />
                 </td>
                 <td className="px-2 py-1.5 align-top tabular-nums text-slate-300">
@@ -274,6 +291,50 @@ export function PaperTable({
           })}
         </tbody>
       </table>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[12px] text-slate-400">
+        <div className="flex items-center gap-2">
+          <span>
+            {firstRow}–{lastRow} of {sorted.length}
+          </span>
+          <label className="flex items-center gap-1.5">
+            <span>Rows</span>
+            <Select
+              value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+              aria-label="Rows per page"
+              className="w-16"
+            >
+              {[10, 25, 50, 100].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </Select>
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={currentPage <= 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+          >
+            Previous
+          </Button>
+          <span className="tabular-nums">
+            Page {currentPage} of {pageCount}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={currentPage >= pageCount}
+            onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

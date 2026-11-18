@@ -19,11 +19,9 @@ import re
 OPERATOR_SUPPORT: dict[str, dict[str, bool]] = {
     "crossref": {"AND": False, "OR": True, "NOT": True},
     "openalex": {"AND": False, "OR": False, "NOT": False},
-    "semanticscholar": {"AND": False, "OR": False, "NOT": False},
     "scopus": {"AND": True, "OR": True, "NOT": True},
     "pubmed": {"AND": True, "OR": True, "NOT": True},
     "arxiv": {"AND": True, "OR": True, "NOT": True},
-    "dblp": {"AND": True, "OR": True, "NOT": True},
 }
 
 _OPERATOR_ORDER = ("AND", "OR", "NOT")

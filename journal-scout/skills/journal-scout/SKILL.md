@@ -1,11 +1,11 @@
 ---
 name: journal-scout
-description: Use when searching academic literature across multiple sources, looking up a paper by DOI, tracing citations or references, building a citation network, computing author or topic bibliometrics, or exporting bibliographies. Covers Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, Garuda, Unpaywall, and OpenCitations.
+description: Use when searching academic literature across multiple sources, looking up a paper by DOI, tracing citations or references, building a citation network, computing author or topic bibliometrics, or exporting bibliographies. Covers Scopus, arXiv, OpenAlex, Crossref, PubMed, Garuda, Consensus, Exa, Unpaywall, and OpenCitations.
 ---
 
 # journal-scout
 
-Multi-source literature research through the `journal-scout-mcp` MCP server.
+Multi-source literature research through the `journal-scout` MCP server.
 Results from every source are merged into one entry per paper (DOI-first
 dedup), and partial failures are reported instead of aborting the search.
 

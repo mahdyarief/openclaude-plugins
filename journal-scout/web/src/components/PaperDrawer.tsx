@@ -9,18 +9,17 @@ import { CloseIcon } from "./icons";
 type RelationKind = "related" | "citations";
 
 // Keys of ``Paper.ids`` whose value is only meaningful to the provider that
-// produced it. A bare number is read as a CorpusId by Semantic Scholar, a PMID
-// by PubMed, and a Scopus id by Scopus, so the drawer must name the owner.
+// produced it. A bare number is read as a PMID by PubMed and as a Scopus id by
+// Scopus, so the drawer must name the owner.
 const ID_SOURCES = [
   "openalex",
   "scopus",
-  "semanticscholar",
   "crossref",
   "garuda",
   "arxiv",
   "pubmed",
-  "dblp",
   "consensus",
+  "exa",
 ];
 
 function identifierFor(paper: Paper): { identifier: string; source?: string } | null {

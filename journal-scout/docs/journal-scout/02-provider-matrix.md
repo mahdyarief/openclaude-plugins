@@ -6,26 +6,31 @@ Angka terverifikasi dengan menjalankan `provider_names()` dan
 
 ## Matriks
 
+Catatan status: tabel berikut diperbarui untuk provider aktif saat ini; DBLP dan
+Semantic Scholar telah dihapus karena DBLP terkena bot challenge dan Semantic
+Scholar mengalami throttling persisten.
+
 | Provider | search | citations | author search | references | related | peran lain |
 |---|---|---|---|---|---|---|
 | `scopus` | ya | ya | ya | ya | — | abstract details, author profile, quota, SciVal |
 | `openalex` | ya | ya | ya | ya | **ya** | satu-satunya sumber related works |
-| `semanticscholar` | ya | ya | ya | ya | — | — |
+| `consensus` | ya | — | — | — | — | evidence annotations (takeaway, study type) |
 | `crossref` | ya | — | ya | ya | — | — |
 | `pubmed` | ya | — | ya | — | — | E-utilities dua tahap |
 | `arxiv` | ya | — | ya | — | — | — |
-| `dblp` | ya | — | — | — | — | — |
+| `garuda` | ya | — | — | — | — | portal nasional Indonesia |
+| `exa` | ya | — | — | — | — | pencarian web |
 | `opencitations` | **tidak** | ya | — | ya | — | citation/reference only |
 | `unpaywall` | **tidak** | — | — | — | — | `enricher = True` |
 
 ## Implikasi operasional
 
-**Hanya tiga provider yang bisa jadi sumber sitasi penuh**: Scopus, OpenAlex,
-Semantic Scholar. Ini yang dipakai `get_citations`
-(`src/josc/aggregator.py:223`).
+**Hanya dua provider yang bisa jadi sumber sitasi penuh**: Scopus dan OpenAlex.
+Ini yang dipakai `get_citations` (`src/josc/aggregator.py:223`), dengan
+OpenCitations sebagai pelengkap berbasis DOI.
 
-**Empat provider bisa jadi sumber referensi**: Scopus, OpenAlex, Semantic
-Scholar, Crossref. Dipakai `get_references` (`aggregator.py:233`) dan
+**Tiga provider bisa jadi sumber referensi**: Scopus, OpenAlex, Crossref.
+Dipakai `get_references` (`aggregator.py:233`) dan
 `build_citation_network` (`aggregator.py:284`).
 
 **Unpaywall bukan sumber pencarian.** `enricher = True`
@@ -57,12 +62,11 @@ Sejak 2026-10-24 ia punya capability flag sendiri, `supports_tech_only`
 | `arxiv` | **ya** | `providers/arxiv.py:109` |
 | `openalex` | **ya** | `providers/openalex.py:94` |
 | `scopus` | **ya** | `providers/scopus.py:172` |
-| `semanticscholar` | **ya** | `providers/semanticscholar.py:95` |
 | `crossref` | tidak | hanya menerima parameter, tidak dipakai |
-| `dblp` | tidak | hanya menerima parameter, tidak dipakai |
 | `pubmed` | tidak | hanya menerima parameter, tidak dipakai |
+| `garuda` | tidak | hanya menerima parameter, tidak dipakai |
 
-Empat setter di atas adalah satu-satunya provider yang punya cabang
+Tiga setter di atas adalah satu-satunya provider yang punya cabang
 `tech_only` sungguhan. `_route_filters` (`aggregator.py:94-101`) melaporkan
 `tech_only` hanya bila pemanggil benar-benar menyetelnya `True` — kalau tidak,
 setiap respons default akan menyebutnya sebagai filter yang diabaikan.
@@ -81,9 +85,8 @@ respons; `_filter_kwargs` (`aggregator.py:105-111`) yang membangun kwargs.
 | `openalex` | ya | ya | ya | ya | ya | ya |
 | `crossref` | ya | ya | ya | ya | — | ya |
 | `pubmed` | — | — | ya | ya | ya | ya |
-| `semanticscholar` | — | ya | — | — | — | — |
 | `arxiv` | ya | — | — | — | — | — |
-| `dblp` | ya | — | — | — | — | — |
+| `garuda` | ya | — | — | — | — | — |
 
 Bukti per provider:
 
@@ -101,8 +104,8 @@ Bukti per provider:
 - `pubmed` — `providers/pubmed.py:29`; `_build_term()` (baris 47-59)
   menambahkan `[AD]`, `[IS]`, `[AID]`, `[DOI]`. `author`/`venue` sengaja tidak
   dideklarasikan karena keduanya punya entry point sendiri.
-- `semanticscholar`/`arxiv`/`dblp` — hanya field lama; API-nya tidak punya
-  padanan untuk empat filter baru.
+- `arxiv`/`garuda` — hanya field lama; API-nya tidak punya padanan untuk
+  empat filter baru.
 
 Pengujian: `tests/test_filters.py` (7 test) mencakup routing ke provider
 pendukung, pelaporan `filters_ignored`, pembagian sebagian, dan string query

@@ -360,10 +360,9 @@ async def get_paper(
     """Resolve one identifier across providers.
 
     ``sources`` narrows the lookup when the identifier is only meaningful to
-    one provider. A bare numeric id is ambiguous — Semantic Scholar reads any
-    digits as a ``CorpusId``, PubMed as a PMID, Scopus as a Scopus id — so a
-    caller holding a Garuda document id must say so instead of letting every
-    other source guess.
+    one provider. A bare numeric id is ambiguous — PubMed reads digits as a
+    PMID and Scopus as its own id — so a caller holding a Garuda document id
+    must say so instead of letting every other source guess.
     """
     active = [
         p
@@ -461,7 +460,7 @@ def _relation_identifier(paper: Paper) -> Optional[str]:
     """
     if paper.doi:
         return paper.doi
-    for key in ("openalex", "scopus", "semanticscholar", "crossref"):
+    for key in ("openalex", "scopus", "crossref"):
         value = paper.ids.get(key)
         if value:
             return value

@@ -1,13 +1,15 @@
 from typing import List, Optional
 
-from ..config import get_consensus_key
-from ..models import Paper
+from ..config import get_consensus_keys
+from ..models import Paper, ProviderError
 from ..utils import normalize_doi, parse_year
 from .base import ProviderBase
 
 CONSENSUS_URL = "https://api.consensus.app/v1/search"
 # The API caps ``page_size``; paging past this is wasted requests.
 MAX_PAGE_SIZE = 20
+# Keys exhausted or rejected: move to the next configured account.
+ROTATE_STATUSES = ("401", "429")
 
 
 class ConsensusProvider(ProviderBase):
@@ -23,8 +25,40 @@ class ConsensusProvider(ProviderBase):
     supports_search = True
     supports_filters = frozenset({"year"})
 
-    def _headers(self) -> dict:
-        return {"x-api-key": get_consensus_key()}
+    def _headers(self, key: Optional[str] = None) -> dict:
+        if key is None:
+            keys = get_consensus_keys()
+            if not keys:
+                raise ValueError(
+                    "Consensus API key not found. Set 'CONSENSUS_API_KEYS' (or "
+                    "'CONSENSUS_API_KEY') or add 'consensus_api_key' to "
+                    "config.json next to this plugin."
+                )
+            key = keys[0]
+        return {"x-api-key": key}
+
+    async def _fetch_with_rotation(self, params: dict) -> dict:
+        keys = get_consensus_keys()
+        if not keys:
+            raise ValueError(
+                "Consensus API key not found. Set 'CONSENSUS_API_KEYS' (or "
+                "'CONSENSUS_API_KEY') or add 'consensus_api_key' to config.json "
+                "next to this plugin."
+            )
+        last_error: Optional[ProviderError] = None
+        for key in keys:
+            try:
+                return await self._fetch_json(
+                    CONSENSUS_URL,
+                    params=params,
+                    headers=self._headers(key),
+                    provider=self.name,
+                )
+            except ProviderError as exc:
+                last_error = exc
+                if not any(status in exc.message for status in ROTATE_STATUSES):
+                    raise
+        raise last_error or ProviderError(self.name, "Consensus request failed")
 
     @staticmethod
     def _to_paper(item: dict) -> Paper:
@@ -75,9 +109,7 @@ class ConsensusProvider(ProviderBase):
         page = 0
         while len(papers) < limit:
             params["page"] = page
-            data = await self._fetch_json(
-                CONSENSUS_URL, params=params, headers=self._headers(), provider=self.name
-            )
+            data = await self._fetch_with_rotation(params)
             results = data.get("results") or []
             for item in results:
                 paper = self._to_paper(item)

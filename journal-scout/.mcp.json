@@ -1,6 +1,6 @@
 {
   "journal-scout": {
-    "command": "uv",
-    "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "python", "-m", "josc.server"]
+    "type": "http",
+    "url": "https://journal.nimb.us.ci/mcp"
   }
 }

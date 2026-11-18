@@ -1,7 +1,7 @@
-# journal-scout-mcp
+# journal-scout
 
 Multi-source journal research MCP server. Searches Scopus, arXiv, OpenAlex,
-Semantic Scholar, Crossref, PubMed, DBLP, and Garuda, then merges duplicate
+Crossref, PubMed, Consensus, and Garuda, then merges duplicate
 results into one entry per paper (DOI-first dedup) and reports partial failures.
 Unpaywall resolves open-access copies and OpenCitations supplies citation links.
 
@@ -13,25 +13,47 @@ Citation links come from OpenCitations as well: 300M+ DOI-to-DOI links, free,
 no API key, no approval. It is not a searchable source — it only answers
 citation and reference queries for a known DOI or OpenCitations id.
 
-## Tools (25)
+## Tools (40)
 
-| Unified | Per-source | Scopus detail |
+| Unified (9) | Papers & abstracts (4) | Per-source (8) |
 |---|---|---|
-| `search_all` | `search_scopus` | `get_abstract_details` |
-| `search_author` | `search_arxiv` | `get_author_profile` |
-| `get_paper` | `search_openalex` | `get_quota_status` |
-| `get_citations` | `search_semanticscholar` | SciVal |
-| `get_references` | `search_crossref` | `scival_author_metrics` |
-| `get_related_works` | `search_pubmed` | `scival_institution_metrics` |
-| `build_citation_network` | `search_dblp` | `scival_author_lookup` |
-| `compute_metrics` | `search_garuda` | `scival_institution_lookup` |
-| `export_results` | | `scival_topic_metrics` |
+| `search_all` | `get_paper` | `search_scopus` |
+| `search_author` | `get_paper_abstract` | `search_arxiv` |
+| `get_citations` | `get_abstracts` | `search_openalex` |
+| `get_references` | `identify_paper` | `search_crossref` |
+| `get_related_works` | | `search_pubmed` |
+| `build_citation_network` | | `search_garuda` |
+| `compute_metrics` | | `search_consensus` |
+| `export_results` | | `search_exa` |
+| `build_research_landscape` | | |
+
+| Scopus detail (3) | SciVal (5) | Local archive (2) |
+|---|---|---|
+| `get_abstract_details` | `scival_author_metrics` | `search_corpus` |
+| `get_author_profile` | `scival_institution_metrics` | `check_watches` |
+| `get_quota_status` | `scival_author_lookup` | |
+| | `scival_institution_lookup` | |
+| | `scival_topic_metrics` | |
+
+| Keys (1) | SLR pipeline (8) |
+|---|---|
+| `rotate_consensus_key` | `slr_import`, `slr_screen`, `slr_full_text`, `slr_appraise`, `slr_extract`, `slr_prisma`, `slr_summary`, `slr_reset` |
 
 `search_all` accepts a `topic` filter. It runs **after** the merge and keeps
 records whose `topics` contain the text (case-insensitive substring). It is
 deliberately not pushed down to providers: OpenAlex concepts, Crossref
 subjects, and PubMed MeSH share no vocabulary, so a local pass costs zero
 extra requests and gives one consistent semantic.
+
+### Abstract resolution
+
+`get_paper_abstract` resolves the abstract of one paper (by DOI, another
+identifier, or title) across every lookup-capable provider. `get_abstracts`
+fills missing abstracts in a list of paper dicts, such as `search_all`
+results. Both keep the `not_found` status with a null abstract when no source
+has one; nothing is guessed from the title, and an existing abstract is never
+overwritten. Provider errors and timeouts are reported per source instead of
+aborting the batch.
 
 ### Export
 
@@ -56,7 +78,7 @@ Pass `graph_format="graphml"` to get a Gephi/VOSviewer file instead of JSON.
 
 `get_references` exposes just the merged reference list of one paper.
 
-Providers that answer citation queries: OpenAlex, Semantic Scholar, Crossref
+Providers that answer citation queries: OpenAlex, Crossref
 and OpenCitations. OpenCitations adds links the others miss (and vice versa),
 and its metadata is resolved through the OpenCitations Meta API with a
 Crossref batch fallback, so a paper is returned even when one of the two
@@ -73,9 +95,74 @@ Publish-or-Perish indices: `hc_index`, `hI_index` (Batista), `hI_norm`,
 ## Config
 
 Copy `config.json.example` to `config.json`. Only the Elsevier `api_key` is
-required; the other sources work without a key. `semantic_scholar_api_key`
-raises the Semantic Scholar rate limit, and `polite_email` improves rate limits
-on OpenAlex, Crossref, and Unpaywall.
+required; the other sources work without a key. `polite_email` improves rate
+limits on OpenAlex, Crossref, and Unpaywall.
+
+`search_exa` searches the web through Exa's public MCP endpoint
+(`https://mcp.exa.ai/mcp`); it needs no API key. If `EXA_API_KEYS` (or
+`EXA_API_KEY`) is set, pass a comma- or semicolon-separated list or a JSON
+array to rotate across keys round-robin, and an HTTP 401/429 moves the client
+to the next key. Keys are read from the environment only, so no file inside
+the container is written. Exa answers with plain text rather than JSON; the
+provider parses the `Title` / `URL` / `Published` / `Author` / `Highlights`
+blocks and uses `Highlights` as the abstract.
+
+Consensus keys work the same way: set `CONSENSUS_API_KEYS` to a list (or
+`CONSENSUS_API_KEY` for a single key) and the provider rotates on 401/429.
+The free tier has a monthly quota: once it is spent the API replies 429 with
+`code: "hard_cap_reached"`, and that explanation is passed through in the
+tool's `errors` instead of a bare status code.
+
+## Rate limits
+
+| Source | Limit |
+|---|---|
+| Scopus | Weekly quota, tracked via `X-RateLimit-*` / `X-ELS-Status` headers |
+| OpenAlex | 100,000 requests/day (polite pool) |
+| Crossref | Polite pool, no hard cap |
+| PubMed | 3 requests/second without a key, 10 with |
+| arXiv | 1 request per 3 seconds |
+| Consensus | Per-account quota; rotate keys on 401/429 |
+| OpenCitations | 180 requests/minute |
+| Unpaywall | 100,000 requests/day |
+
+## Remote MCP server
+
+The MCP server can run as a standalone Streamable HTTP service for remote MCP
+clients. One image serves both surfaces:
+
+| Path | Purpose |
+|---|---|
+| `/` and all SPA routes | The `josc-web` browser UI |
+| `/api/*` | REST API used by the browser UI |
+| `/mcp` | Streamable HTTP MCP endpoint |
+| `/healthz` | Unauthenticated container health check |
+
+The Docker image builds the frontend in a `node:22-alpine` stage and listens on
+port `8080`. Configure `JOSC_MCP_TOKEN` to enforce bearer-token authentication
+on `/mcp`; the UI and `/healthz` stay public. The stdio transport remains the
+default when running from source.
+
+```bash
+docker build -t journal-scout .
+docker run --rm -p 8080:8080 \
+  -e JOSC_MCP_TOKEN="$(openssl rand -hex 32)" \
+  journal-scout
+```
+
+Configure remote MCP clients with URL `https://<your-domain>/mcp` and send
+`Authorization: Bearer <token>` when authentication is enabled. The plugin's
+`.mcp.json` points at the hosted server via `type: "http"`; use
+`.mcp.remote.json.example` as a client config template.
+
+Environment variables:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `JOSC_TRANSPORT` | `stdio` | Set `http` to enable Streamable HTTP |
+| `JOSC_HOST` | `0.0.0.0` | HTTP bind address |
+| `JOSC_PORT` | `8080` | HTTP listen port |
+| `JOSC_MCP_TOKEN` | unset | Optional bearer token; set it for public deployments |
 
 ## josc-web
 
@@ -125,6 +212,7 @@ The UI has four routes: `/` (search), `/graph`, `/metrics`, and `/history`
 - **Search** 8 scholarly databases from one MCP server, plus OpenCitations for
   citation links on any DOI.
 - **Merge** duplicates by DOI-first dedup.
+- **Resolve** abstracts for one paper or a whole result list from all available sources.
 - **Report** partial failures (per-source) so callers never get a 500 for one
   blackholed API.
 - **Degrade** gracefully where entitlements are missing (e.g. Scopus `view=FULL`).

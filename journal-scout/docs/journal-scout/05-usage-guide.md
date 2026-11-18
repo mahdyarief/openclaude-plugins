@@ -34,10 +34,9 @@ Dukungan operator per provider (`OPERATOR_SUPPORT`):
 | scopus | ya | ya | ya |
 | pubmed | ya | ya | ya |
 | arxiv | ya | ya | ya |
-| dblp | ya | ya | ya |
 | crossref | tidak | ya | ya |
 | openalex | tidak | tidak | tidak |
-| semanticscholar | tidak | tidak | tidak |
+| consensus | tidak | tidak | tidak |
 
 Contoh query yang aman untuk semua provider: `data quality AND governance`.
 Contoh yang hanya optimal di Scopus/PubMed: `(machine learning OR deep learning) NOT survey`.
@@ -94,7 +93,7 @@ get_related_works identifier="10.1145/3292500.3330701" limit=20
 ```
 
 Gunakan `sources` bila identifier hanya dikenali satu provider, misalnya
-`identifier="S2:..."` dengan `sources=["semanticscholar"]`.
+`identifier="12345"` dengan `sources=["scopus"]`.
 
 ### 3.3 Peta sitasi
 
@@ -144,8 +143,8 @@ Format yang tersedia: `apa`, `bibtex`, `chicago`, `csiro`, `csv`, `csv_bom`,
 
 ### 3.6 Tool per sumber
 
-`search_scopus`, `search_arxiv`, `search_openalex`, `search_semanticscholar`,
-`search_crossref`, `search_pubmed`, `search_dblp`, `search_garuda` memakai
+`search_scopus`, `search_arxiv`, `search_openalex`, `search_crossref`,
+`search_pubmed`, `search_garuda`, `search_consensus`, `search_exa` memakai
 skema filter yang sama; bedanya hanya `count` sebagai pengganti
 `limit_per_source`.
 
@@ -246,7 +245,6 @@ provider — tidak ada request ekstra, jadi tidak menambah waktu tunggu:
 | `funders` | Crossref | Daftar Funders |
 | `license` | Crossref | Tautan lisensi |
 | `language` | OpenAlex | Field Language |
-| `tldr` | Semantic Scholar | Kotak TL;DR di drawer |
 | `is_open_access` | Scopus, OpenAlex | Badge `open access` |
 
 Field yang kosong dari satu provider diisi oleh provider lain saat hasil
@@ -264,5 +262,14 @@ per tahun.
   bila butuh rantai sitasi lebih panjang, tetapi biayanya bertambah linear
   terhadap jumlah request.
 - Provider tanpa API key tetap berjalan, tetapi kena rate limit lebih cepat;
-  isi `polite_email` dan `semantic_scholar_api_key` di `config.json` bila
-  tersedia.
+  isi `polite_email` di `config.json` bila tersedia. Kunci Scopus dan Consensus
+  dibaca dari environment (`SCOPUS_API_KEY`, `CONSENSUS_API_KEYS`); Exa berjalan
+  tanpa key.
+- Consensus memakai kuota gratis bulanan. Bila habis, API menjawab 429 dengan
+  `code: "hard_cap_reached"` dan pesan "used 100% of your free usage this
+  month"; pesan itu kini diteruskan apa adanya di `errors`. Tunggu reset bulan
+  berikutnya atau pasang kunci akun lain lewat `rotate_consensus_key`.
+- Exa membalas sebagai teks biasa, bukan JSON. Hasilnya diurai per blok
+  (`Title`, `URL`, `Published`, `Author`, `Highlights`), dan `Highlights` dipakai
+  sebagai abstrak. Karena berasal dari pencarian web, kualitas abstrak beragam
+  dan tidak selalu sepanjang abstrak jurnal.

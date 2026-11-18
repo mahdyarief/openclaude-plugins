@@ -1,5 +1,3 @@
-import httpx
-
 from josc.providers.scopus import ScopusProvider
 
 

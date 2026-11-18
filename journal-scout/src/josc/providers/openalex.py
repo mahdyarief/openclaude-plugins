@@ -64,7 +64,6 @@ class OpenAlexProvider(ProviderBase):
         primary = work.get("primary_location") or {}
         source = primary.get("source") or {}
         oa = work.get("open_access") or {}
-        topic = (work.get("primary_topic") or {}).get("display_name")
         topics: List[str] = []
         topic_ids: List[str] = []
         topic_paths: List[List[str]] = []

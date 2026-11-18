@@ -1,12 +1,12 @@
-# Contributing to journal-scout-mcp
+# Contributing to journal-scout
 
 Thanks for your interest! This guide covers the basics.
 
 ## Dev setup
 
 ```bash
-git clone https://github.com/mahdyarief/journal-scout-mcp
-cd journal-scout-mcp
+git clone https://github.com/mahdyarief/journal-scout
+cd journal-scout
 uv venv
 uv pip install -e ".[dev]"
 ```

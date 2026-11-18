@@ -6,9 +6,9 @@ list into one provider-specific query string and reports which fields the
 provider honored natively and which it had to degrade to free text.
 
 Providers disagree about field syntax — Scopus wraps terms in ``TITLE()``,
-arXiv prefixes ``ti:``, DBLP uses ``venue:``, and Semantic Scholar has no field
-scoping at all — so the AST is compiled per provider rather than translated
-from a single shared string.
+arXiv prefixes ``ti:``, and others accept no field scoping at all — so the
+AST is compiled per provider rather than translated from a single shared
+string.
 """
 
 from __future__ import annotations
@@ -72,15 +72,6 @@ def _scoper_arxiv(field: str):
     }.get(field)
 
 
-def _scoper_dblp(field: str):
-    # DBLP has no title: prefix; a bare term is already a title/venue match.
-    return {
-        "author": lambda v: f"author:{v}",
-        "venue": lambda v: f"venue:{v}",
-        "all": lambda v: v,
-    }.get(field)
-
-
 def _scoper_free_text(field: str):
     return {"all": lambda v: v}.get(field)
 
@@ -89,10 +80,8 @@ _SCOPERS = {
     "scopus": _scoper_scopus,
     "pubmed": _scoper_pubmed,
     "arxiv": _scoper_arxiv,
-    "dblp": _scoper_dblp,
     "crossref": _scoper_free_text,
     "openalex": _scoper_free_text,
-    "semanticscholar": _scoper_free_text,
     "garuda": _scoper_free_text,
 }
 

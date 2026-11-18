@@ -1,6 +1,6 @@
 # Dokumentasi Referensi journal-scout
 
-Basis pengetahuan untuk pengembangan jangka panjang `journal-scout-mcp`.
+Basis pengetahuan untuk pengembangan jangka panjang `journal-scout`.
 Dibagi tiga: referensi hasil reverse engineering **Harzing's Publish or
 Perish 8** (`pop8/`), referensi **Zotero 10.0.6** (`zotero/`), dan
 dokumentasi kondisi serta rencana pengembangan journal-scout sendiri

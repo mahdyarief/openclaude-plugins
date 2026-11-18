@@ -1,10 +1,10 @@
-import json
 from pathlib import Path
 
 import httpx
 import pytest
 
 from josc.config import get_consensus_key
+from josc.http import Fetcher
 from josc.providers.consensus import ConsensusProvider
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
@@ -121,3 +121,36 @@ async def test_missing_api_key_raises(monkeypatch):
     provider = ConsensusProvider(None)
     with pytest.raises(ValueError):
         provider._headers()
+
+
+async def test_search_rotates_key_on_401(monkeypatch):
+    monkeypatch.setenv("CONSENSUS_API_KEYS", "bad-key,good-key")
+    monkeypatch.delenv("CONSENSUS_API_KEY", raising=False)
+    payload = {"results": [_sample_item()], "page": 0, "page_size": 1, "is_end": True}
+    seen = []
+
+    def handler(request):
+        key = request.headers.get("x-api-key")
+        seen.append(key)
+        if key != "good-key":
+            return httpx.Response(401, json={"error": "bad key"})
+        return httpx.Response(200, json=payload)
+
+    # The Fetcher turns a 401 into ProviderError, which is what the provider
+    # rotates on; a bare AsyncClient would bypass that translation.
+    fetcher = Fetcher(httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    provider = ConsensusProvider(fetcher)
+    try:
+        papers = await provider.search("creatine", 5)
+        assert len(papers) == 1
+        assert seen == ["bad-key", "good-key"]
+    finally:
+        await fetcher.close()
+
+
+async def test_get_consensus_keys_splits_and_dedupes(monkeypatch):
+    from josc.config import get_consensus_keys
+
+    monkeypatch.setenv("CONSENSUS_API_KEYS", " a , b,a ")
+    monkeypatch.delenv("CONSENSUS_API_KEY", raising=False)
+    assert get_consensus_keys() == ["a", "b"]

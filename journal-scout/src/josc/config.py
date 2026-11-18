@@ -32,22 +32,52 @@ def get_api_key() -> str:
     return api_key
 
 
-def get_semantic_scholar_key() -> Optional[str]:
-    return os.getenv("SEMANTIC_SCHOLAR_API_KEY") or load_config_file().get(
-        "semantic_scholar_api_key"
-    )
+def _split_keys(raw: str) -> list[str]:
+    text = (raw or "").strip()
+    if not text:
+        return []
+    if text.startswith("["):
+        try:
+            loaded = json.loads(text)
+        except json.JSONDecodeError:
+            loaded = None
+        if isinstance(loaded, list):
+            return [k.strip() for k in loaded if isinstance(k, str) and k.strip()]
+    parts = text.replace(";", ",").split(",")
+    return [k.strip() for k in parts if k.strip()]
+
+
+def get_consensus_keys() -> list[str]:
+    """Consensus keys from ``CONSENSUS_API_KEYS``/``CONSENSUS_API_KEY``, or config.
+
+    A comma- or semicolon-separated list (or JSON array) enables round-robin
+    rotation across accounts. A single key still works, and the config file is
+    only consulted when the environment is empty.
+    """
+    keys = _split_keys(os.getenv("CONSENSUS_API_KEYS", ""))
+    if not keys:
+        keys = _split_keys(os.getenv("CONSENSUS_API_KEY", ""))
+    if not keys:
+        keys = _split_keys(load_config_file().get("consensus_api_key") or "")
+    return list(dict.fromkeys(keys))
 
 
 def get_consensus_key() -> str:
-    key = os.getenv("CONSENSUS_API_KEY") or load_config_file().get(
-        "consensus_api_key"
-    )
-    if not key:
+    keys = get_consensus_keys()
+    if not keys:
         raise ValueError(
-            "Consensus API key not found. Set 'CONSENSUS_API_KEY' or add "
-            "'consensus_api_key' to config.json next to this plugin."
+            "Consensus API key not found. Set 'CONSENSUS_API_KEYS' (or "
+            "'CONSENSUS_API_KEY') or add 'consensus_api_key' to config.json "
+            "next to this plugin."
         )
-    return key
+    return keys[0]
+
+
+def get_exa_api_keys() -> list[str]:
+    """Multiple Exa keys from the environment, rotated by :mod:`josc.exa_client`."""
+    from .exa_client import load_exa_keys
+
+    return load_exa_keys()
 
 
 def get_polite_email() -> str:

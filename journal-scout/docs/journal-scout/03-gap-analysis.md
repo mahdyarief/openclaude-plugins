@@ -96,7 +96,7 @@ provider, bukan diasumsikan):
 | crossref | `query.affiliation` | `filter=issn:` | — (API tidak punya filter ORCID) | `filter=doi:` |
 | scopus | `AFFIL(...)` | `ISSN(...)` | `ORCID(...)` | `DOI(...)` |
 | pubmed | `"...""[AD]` | `[IS]` | `[AID]` | `[DOI]` |
-| arxiv / dblp / semanticscholar | — | — | — | — |
+| arxiv / garuda / consensus | — | — | — | — |
 
 Dua jebakan yang ditangani eksplisit: OpenAlex memecah `filter` pada koma,
 jadi nilai `affiliation` diratakan dulu (`" ".join(value.replace(",", " ").split())`);
@@ -105,7 +105,7 @@ tahun dan filter field **digabung**, bukan saling menimpa (`_works`,
 `crossref.py:64-78`). Pengujian ada di `tests/test_filters.py` (7 test).
 
 Catatan: `tech_only` **kini punya capability flag** (`supports_tech_only`,
-`providers/base.py:22`), jadi Crossref, DBLP, dan PubMed dilaporkan sebagai
+`providers/base.py:22`), jadi Crossref, Garuda, dan PubMed dilaporkan sebagai
 `filters_ignored` alih-alih diabaikan diam-diam. Lihat `02-provider-matrix.md`.
 
 ---
@@ -119,7 +119,7 @@ Catatan: `tech_only` **kini punya capability flag** (`supports_tech_only`,
 | PubMed | ya | **ya** | — |
 | Lens.org | ya | tidak | sedang |
 | arXiv | tidak | **ya** | — |
-| DBLP | tidak | **ya** | — |
+| Consensus | tidak | **ya** | — |
 | OpenCitations | tidak | **ya** | — |
 
 `PubMedProvider` (`providers/pubmed.py`) memakai E-utilities dua tahap

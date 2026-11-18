@@ -1,13 +1,11 @@
 import json
 
 import httpx
-import pytest
 
 from josc.consensus_key import (
     mask_key,
     rotate_consensus_key,
     verify_consensus_key,
-    write_consensus_key,
 )
 
 

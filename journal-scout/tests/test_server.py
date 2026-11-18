@@ -25,7 +25,8 @@ class AuthorProvider(ProviderBase):
 
 
 def test_tool_names_count():
-    assert len(TOOL_NAMES) == 39
+    assert len(TOOL_NAMES) == 40
+    assert "search_exa" in TOOL_NAMES
     assert "slr_import" in TOOL_NAMES
     assert "slr_screen" in TOOL_NAMES
     assert "slr_full_text" in TOOL_NAMES
@@ -46,6 +47,8 @@ def test_tool_names_count():
     assert "get_references" in TOOL_NAMES
     assert "get_related_works" in TOOL_NAMES
     assert "build_citation_network" in TOOL_NAMES
+    assert "get_paper_abstract" in TOOL_NAMES
+    assert "get_abstracts" in TOOL_NAMES
 
 
 def test_slr_import_and_prisma():
@@ -405,3 +408,52 @@ async def test_rotate_consensus_key_tool_dispatches(monkeypatch):
     assert calls["api_key"] == "ak_NEW"
     assert result["rotated"] is True
     json.dumps(result)
+
+
+class AbstractLookupProvider(ProviderBase):
+    name = "openalex"
+
+    async def get(self, identifier):
+        if identifier == "10.1/ok":
+            return Paper(doi="10.1/ok", title="T", abstract="The abstract text")
+        return None
+
+
+async def test_dispatch_get_paper_abstract():
+    result = await build_json(
+        "get_paper_abstract",
+        {"doi": "10.1/ok"},
+        [AbstractLookupProvider(None)],
+        None,
+    )
+    assert result["abstract"] == "The abstract text"
+    assert result["source"] == "openalex"
+    assert result["status"] == "found"
+
+
+async def test_dispatch_get_abstracts_batch():
+    result = await build_json(
+        "get_abstracts",
+        {
+            "papers": [
+                {"doi": "10.1/ok", "title": "T"},
+                {"doi": "10.1/no", "title": "N"},
+            ]
+        },
+        [AbstractLookupProvider(None)],
+        None,
+    )
+    assert [p["doi"] for p in result["papers"]] == ["10.1/ok", "10.1/no"]
+    assert result["papers"][0]["abstract"] == "The abstract text"
+    assert result["papers"][1]["abstract"] is None
+    assert result["summary"] == {"found": 1, "not_found": 1, "existing": 0}
+
+
+def test_abstract_tools_schemas_advertised():
+    names = [t.name for t in _tool_list()]
+    assert "get_paper_abstract" in names
+    assert "get_abstracts" in names
+    single = next(t for t in _tool_list() if t.name == "get_paper_abstract")
+    batch = next(t for t in _tool_list() if t.name == "get_abstracts")
+    assert "doi" in single.inputSchema["properties"]
+    assert "papers" in batch.inputSchema["properties"]

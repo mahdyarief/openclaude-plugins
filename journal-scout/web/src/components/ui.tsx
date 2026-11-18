@@ -1,29 +1,37 @@
 /*
- * Reusable UI components. Single source of truth for markup + variants.
+ * shadcn/ui-based component layer.
  *
- * Radius scale (documented, three tiers only):
- *   - containers / panels: 8px  (rounded-lg)
- *   - controls (button, input, select): 6px (rounded-md)
- *   - inline micro-actions and chips: 4px (rounded)
- *
- * Contrast floor: secondary text is slate-400 (7.3:1 on the canvas token).
- * slate-500 never carries text. Interactive borders use slate-500 (3.77:1)
- * so they clear WCAG 1.4.11 non-text contrast.
+ * Every primitive below is a thin, themed wrapper over a shadcn/Radix
+ * implementation: Button/Input/Label use the shadcn slot + cva pattern,
+ * Select is Radix Select, and the feedback surfaces (Alert, Badge, Card,
+ * Separator) follow shadcn structure. The public API of the previous
+ * hand-rolled components is preserved so existing call sites keep working.
  */
 import type { ComponentProps, ReactNode } from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
+import { cn } from "../lib/utils";
+import {
+  Select as ShadcnSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
 
-export function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
+export { cn };
+export { ToggleGroup, ToggleGroupItem } from "./toggle-group";
+export { Checkbox, Label } from "./checkbox";
 
 /* --------------------------------------------------------------- Spinner */
 
 type SpinnerSize = "xs" | "sm" | "md";
 
 const SPINNER_SIZES: Record<SpinnerSize, string> = {
-  xs: "h-3 w-3 border-[1.5px]",
-  sm: "h-3.5 w-3.5 border-2",
-  md: "h-4 w-4 border-2",
+  xs: "h-3 w-3",
+  sm: "h-3.5 w-3.5",
+  md: "h-4 w-4",
 };
 
 export function Spinner({
@@ -34,12 +42,8 @@ export function Spinner({
   className?: string;
 }) {
   return (
-    <span
-      className={cn(
-        "spinner inline-block shrink-0 rounded-full border-current border-t-transparent",
-        SPINNER_SIZES[size],
-        className,
-      )}
+    <Loader2
+      className={cn("shrink-0 animate-spin", SPINNER_SIZES[size], className)}
       aria-hidden="true"
     />
   );
@@ -55,7 +59,10 @@ export function LoadingLine({
   return (
     <p
       role="status"
-      className={cn("m-0 flex items-center gap-2 text-[13px] text-slate-400", className)}
+      className={cn(
+        "m-0 flex items-center gap-2 text-[13px] text-slate-400",
+        className,
+      )}
     >
       <Spinner />
       {children}
@@ -65,39 +72,51 @@ export function LoadingLine({
 
 /* ---------------------------------------------------------------- Button */
 
-type ButtonVariant = "primary" | "ghost" | "accent" | "danger";
-type ButtonSize = "md" | "sm";
-
-const BUTTON_BASE =
-  "touch-target inline-flex shrink-0 items-center justify-center gap-1.5 font-semibold no-underline transition-colors active:translate-y-px disabled:cursor-not-allowed";
-
-const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary:
-    "bg-sky-400 text-slate-950 hover:bg-sky-300 disabled:opacity-50",
-  ghost:
-    "border border-slate-500 text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 disabled:opacity-50",
-  accent:
-    "border border-sky-500/50 text-sky-300 hover:bg-sky-500/15 disabled:opacity-60",
-  danger:
-    "border border-rose-500/50 text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 disabled:opacity-60",
-};
-
-const BUTTON_SIZES: Record<ButtonSize, string> = {
-  md: "h-8 rounded-md px-3 text-[13px]",
-  sm: "rounded px-1.5 py-0.5 text-[11px] font-normal",
-};
+const buttonVariants = cva(
+  "touch-target inline-flex shrink-0 items-center justify-center gap-1.5 font-semibold no-underline transition-colors active:translate-y-px disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        primary: "bg-sky-400 text-slate-950 hover:bg-sky-300",
+        ghost:
+          "border border-slate-500 text-slate-300 hover:bg-slate-800/60 hover:text-slate-100",
+        accent:
+          "border border-sky-500/50 text-sky-300 hover:bg-sky-500/15",
+        danger:
+          "border border-rose-500/50 text-rose-300 hover:bg-rose-500/15 hover:text-rose-200",
+        default: "bg-sky-400 text-slate-950 hover:bg-sky-300",
+        secondary:
+          "border border-slate-500 bg-slate-900/60 text-slate-200 hover:bg-slate-800",
+        outline:
+          "border border-slate-500 bg-transparent text-slate-200 hover:bg-slate-800/60",
+        link: "text-sky-400 underline-offset-2 hover:underline",
+      },
+      size: {
+        md: "h-8 rounded-md px-3 text-[13px]",
+        sm: "rounded px-1.5 py-0.5 text-[11px] font-normal",
+        default: "h-8 rounded-md px-3 text-[13px]",
+        icon: "h-8 w-8 rounded-md",
+      },
+    },
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
+    },
+  },
+);
 
 export function buttonClass(
-  variant: ButtonVariant = "primary",
-  size: ButtonSize = "md",
+  variant: "primary" | "ghost" | "accent" | "danger" | "default" | "secondary" | "outline" | "link" = "primary",
+  size: "md" | "sm" | "default" | "icon" = "md",
   className?: string,
 ): string {
-  return cn(BUTTON_BASE, BUTTON_VARIANTS[variant], BUTTON_SIZES[size], className);
+  return cn(buttonVariants({ variant, size }), className);
 }
 
-export interface ButtonProps extends ComponentProps<"button"> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+export interface ButtonProps
+  extends ComponentProps<"button">,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
 }
 
 export function Button({
@@ -105,21 +124,22 @@ export function Button({
   size = "md",
   className,
   type = "button",
+  asChild = false,
   ...props
 }: ButtonProps) {
+  const Comp = asChild ? Slot : "button";
   return (
-    <button
-      type={type}
-      className={buttonClass(variant, size, className)}
+    <Comp
+      type={asChild ? undefined : type}
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />
   );
 }
 
-export interface AnchorButtonProps extends ComponentProps<"a"> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-}
+export interface AnchorButtonProps
+  extends ComponentProps<"a">,
+    VariantProps<typeof buttonVariants> {}
 
 export function AnchorButton({
   variant = "ghost",
@@ -127,46 +147,140 @@ export function AnchorButton({
   className,
   ...props
 }: AnchorButtonProps) {
-  return <a className={buttonClass(variant, size, className)} {...props} />;
+  return <a className={cn(buttonVariants({ variant, size }), className)} {...props} />;
 }
 
-/* ----------------------------------------------------------------- Input */
+/* ------------------------------------------------------------ Input / Label */
 
-export interface InputProps extends ComponentProps<"input"> {
-  controlSize?: "md" | "sm";
-}
+const inputVariants = cva(
+  "rounded-md border border-slate-500 bg-slate-950/60 text-[13px] text-slate-100 outline-none transition-colors placeholder:text-slate-400 file:border-0 file:bg-transparent file:text-[13px] file:font-medium hover:border-slate-500 focus-visible:border-sky-400 focus-visible:ring-2 focus-visible:ring-sky-400/25 disabled:cursor-not-allowed disabled:opacity-50",
+  {
+    variants: {
+      controlSize: {
+        md: "h-9 px-3",
+        sm: "h-8 px-2.5",
+      },
+    },
+    defaultVariants: {
+      controlSize: "md",
+    },
+  },
+);
 
-const INPUT_BASE =
-  "rounded-md border border-slate-500 bg-slate-950/60 text-[13px] text-slate-100 outline-none transition-colors placeholder:text-slate-400 hover:border-slate-500 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/25";
+export interface InputProps
+  extends ComponentProps<"input">,
+    VariantProps<typeof inputVariants> {}
 
 export function Input({ controlSize = "md", className, ...props }: InputProps) {
   return (
-    <input
-      className={cn(
-        INPUT_BASE,
-        controlSize === "md" ? "h-9 px-3" : "h-8 px-2.5",
-        className,
-      )}
-      {...props}
-    />
+    <input className={cn(inputVariants({ controlSize }), className)} {...props} />
   );
 }
 
-export interface SelectProps extends ComponentProps<"select"> {
-  controlSize?: "md" | "sm";
+/* ---------------------------------------------------------------- Select */
+
+export interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
 }
 
-export function Select({ controlSize = "sm", className, ...props }: SelectProps) {
+type SelectControlSize = "md" | "sm";
+
+export interface SelectProps {
+  value?: string | number;
+  onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  disabled?: boolean;
+  name?: string;
+  className?: string;
+  "aria-label"?: string;
+  placeholder?: string;
+  controlSize?: SelectControlSize;
+  options?: SelectOption[];
+  children?: ReactNode;
+}
+
+/**
+ * Radix Select wrapper.
+ *
+ * Call sites that pass `<option>` children keep working: options are read from
+ * the React children. Call sites can also pass an explicit `options` array.
+ */
+export function Select({
+  controlSize = "sm",
+  className,
+  value,
+  onChange,
+  disabled,
+  name,
+  options,
+  children,
+  placeholder,
+  "aria-label": ariaLabel,
+}: SelectProps) {
+  const parsed: SelectOption[] =
+    options ??
+    extractOptions(children);
+
   return (
-    <select
-      className={cn(
-        INPUT_BASE,
-        controlSize === "md" ? "h-9 px-3" : "h-8 px-2.5",
-        className,
-      )}
-      {...props}
-    />
+    <ShadcnSelect
+      value={value === undefined || value === null ? undefined : String(value)}
+      onValueChange={(next) => {
+        onChange?.({
+          target: { value: next },
+        } as unknown as React.ChangeEvent<HTMLSelectElement>);
+      }}
+      disabled={disabled}
+      name={name}
+    >
+      <SelectTrigger
+        aria-label={ariaLabel}
+        className={cn(
+          controlSize === "md" ? "h-9 text-[13px]" : "h-8 text-[11px]",
+          className,
+        )}
+      >
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {parsed.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            disabled={option.disabled}
+          >
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </ShadcnSelect>
   );
+}
+
+function extractOptions(children: ReactNode): SelectOption[] {
+  const result: SelectOption[] = [];
+  const visit = (nodes: ReactNode) => {
+    if (Array.isArray(nodes)) {
+      nodes.forEach(visit);
+      return;
+    }
+    if (
+      nodes &&
+      typeof nodes === "object" &&
+      "props" in nodes &&
+      (nodes as { type?: unknown }).type === "option"
+    ) {
+      const props = (nodes as { props: { value?: string; children?: ReactNode; disabled?: boolean } }).props;
+      result.push({
+        value: String(props.value ?? ""),
+        label: typeof props.children === "string" ? props.children : String(props.value ?? ""),
+        disabled: props.disabled,
+      });
+      return;
+    }
+  };
+  visit(children);
+  return result;
 }
 
 /* ------------------------------------------------------- Layout surfaces */
@@ -174,7 +288,10 @@ export function Select({ controlSize = "sm", className, ...props }: SelectProps)
 export function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn("rounded-lg border border-slate-800 bg-slate-900/40", className)}
+      className={cn(
+        "rounded-lg border border-slate-800 bg-slate-900/40 text-slate-100",
+        className,
+      )}
       {...props}
     />
   );
@@ -189,16 +306,28 @@ export function Panel({ className, ...props }: ComponentProps<"div">) {
   );
 }
 
-export function Chip({ className, ...props }: ComponentProps<"span">) {
-  return (
-    <span
-      className={cn(
-        "rounded border border-slate-700 bg-slate-800/50 px-1.5 py-0.5 text-[11px] leading-4 text-slate-300",
-        className,
-      )}
-      {...props}
-    />
-  );
+const badgeVariants = cva(
+  "inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] leading-4",
+  {
+    variants: {
+      variant: {
+        default: "border-slate-700 bg-slate-800/50 text-slate-300",
+        secondary: "border-slate-700 bg-slate-800/70 text-slate-200",
+        outline: "border-slate-600 bg-transparent text-slate-300",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+export interface ChipProps
+  extends ComponentProps<"span">,
+    VariantProps<typeof badgeVariants> {}
+
+export function Chip({ className, variant, ...props }: ChipProps) {
+  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 /* -------------------------------------------------------------- Page head */
@@ -212,7 +341,9 @@ export interface PageHeaderProps {
 export function PageHeader({ title, description, className }: PageHeaderProps) {
   return (
     <section className={cn("space-y-1.5", className)}>
-      <h1 className="m-0 text-xl font-semibold tracking-tight text-slate-50">{title}</h1>
+      <h1 className="m-0 text-xl font-semibold tracking-tight text-slate-50">
+        {title}
+      </h1>
       {description && (
         <p className="m-0 text-[13px] leading-relaxed text-slate-400">{description}</p>
       )}
@@ -222,12 +353,13 @@ export function PageHeader({ title, description, className }: PageHeaderProps) {
 
 /* ---------------------------------------------------------------- Alerts */
 
-type AlertTone = "error" | "warn" | "ok";
+type AlertTone = "error" | "warn" | "ok" | "info";
 
 const ALERT_TONES: Record<AlertTone, string> = {
   error: "border-red-500/40 bg-red-500/10 text-red-200",
   warn: "border-amber-500/40 bg-amber-500/10 text-amber-200",
   ok: "border-emerald-500/40 bg-emerald-500/10 text-emerald-200",
+  info: "border-sky-500/40 bg-sky-500/10 text-sky-200",
 };
 
 export interface AlertProps extends ComponentProps<"div"> {
@@ -239,13 +371,21 @@ export function Alert({ tone = "error", className, ...props }: AlertProps) {
     <div
       role={tone === "error" ? "alert" : "status"}
       className={cn(
-        "rounded-lg border px-3 py-2 text-[13px]",
+        "relative w-full rounded-lg border px-3 py-2 text-[13px]",
         ALERT_TONES[tone],
         className,
       )}
       {...props}
     />
   );
+}
+
+export function AlertTitle({ className, ...props }: ComponentProps<"div">) {
+  return <div className={cn("mb-0.5 font-semibold", className)} {...props} />;
+}
+
+export function AlertDescription({ className, ...props }: ComponentProps<"div">) {
+  return <div className={cn("text-[12.5px] leading-relaxed", className)} {...props} />;
 }
 
 /* ----------------------------------------------------------------- Field */

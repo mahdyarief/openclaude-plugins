@@ -12,6 +12,7 @@ import {
   type SimulationNodeDatum,
 } from "d3-force";
 import type { GraphEdge, GraphNode } from "../lib/types";
+import { Checkbox } from "./ui";
 
 const WIDTH = 1000;
 const HEIGHT = 700;
@@ -444,13 +445,12 @@ export function ForceGraph({
         <span className="font-medium text-slate-400">Edges</span>
         {EDGE_TYPES.map((type) => (
           <label key={type} className="flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={enabled[type]}
-              onChange={(event) =>
-                setEnabled((prev) => ({ ...prev, [type]: event.target.checked }))
+              onCheckedChange={(value) =>
+                setEnabled((prev) => ({ ...prev, [type]: value === true }))
               }
-              className="accent-sky-500"
+              aria-label={type}
             />
             <span className="capitalize">{type}</span>
           </label>

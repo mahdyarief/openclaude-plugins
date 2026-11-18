@@ -28,6 +28,30 @@ async def test_get_maps_open_access_location():
         await client.aclose()
 
 
+async def test_get_falls_back_to_other_oa_location_pdf():
+    payload = {
+        "doi": "10.1/no-best",
+        "is_oa": True,
+        "title": "T",
+        "best_oa_location": {"url_for_landing_page": "https://repo.example/record"},
+        "oa_locations": [
+            {"url_for_landing_page": "https://repo.example/record"},
+            {"url_for_pdf": "https://repo.example/full.pdf"},
+        ],
+    }
+
+    def handler(request):
+        return httpx.Response(200, json=payload)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = UnpaywallProvider(client)
+    try:
+        p = await provider.get("10.1/no-best")
+        assert p.pdf_url == "https://repo.example/full.pdf"
+    finally:
+        await client.aclose()
+
+
 async def test_get_empty_doi_returns_none():
     provider = UnpaywallProvider(None)
     assert await provider.get("") is None

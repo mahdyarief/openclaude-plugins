@@ -339,7 +339,7 @@ wheels = [
 
 [[package]]
 name = "journal-scout"
-version = "2.3.0"
+version = "2.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -354,6 +354,13 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "ruff" },
 ]
+pdf = [
+    { name = "pypdf" },
+]
+server = [
+    { name = "starlette" },
+    { name = "uvicorn" },
+]
 web = [
     { name = "starlette" },
     { name = "uvicorn" },
@@ -365,13 +372,16 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "lxml", specifier = ">=5.0" },
     { name = "mcp", specifier = ">=1.0,<2" },
+    { name = "pypdf", marker = "extra == 'pdf'", specifier = ">=4.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
+    { name = "starlette", marker = "extra == 'server'", specifier = ">=0.37" },
     { name = "starlette", marker = "extra == 'web'", specifier = ">=0.37" },
+    { name = "uvicorn", marker = "extra == 'server'", specifier = ">=0.30" },
     { name = "uvicorn", marker = "extra == 'web'", specifier = ">=0.30" },
 ]
-provides-extras = ["dev", "web"]
+provides-extras = ["server", "dev", "web", "pdf"]
 
 [[package]]
 name = "jsonschema"
@@ -776,6 +786,18 @@ wheels = [
 [package.optional-dependencies]
 crypto = [
     { name = "cryptography" },
+]
+
+[[package]]
+name = "pypdf"
+version = "7.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/60/d3/367aa9baefaededd3321cde46bbcb9f008bb51cef3a6b745608352a99534/pypdf-7.1.0.tar.gz", hash = "sha256:ca3fa902369e98a6d2cb7b56396de902b72ef9bb3c1e8706c1bfc7d8bd0cf0d7", size = 7215190, upload-time = "2026-11-13T12:23:18.629Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ed/4c/d19f91b743c8579b67e3d8b001e095745dec5bb13a9b4b9eadc235a85d9e/pypdf-7.1.0-py3-none-any.whl", hash = "sha256:47cca6b24bdcf4c4d65b5f7b8b972535c61710a061261e737688777cfd9a7bfb", size = 418698, upload-time = "2026-11-13T12:23:16.777Z" },
 ]
 
 [[package]]

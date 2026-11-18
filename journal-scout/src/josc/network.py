@@ -11,7 +11,7 @@ from xml.sax.saxutils import escape, quoteattr
 from .models import Paper
 from .utils import normalize_doi, normalize_title
 
-_PROVIDER_ID_KEYS = ("scopus", "openalex", "semanticscholar", "crossref")
+_PROVIDER_ID_KEYS = ("scopus", "openalex", "crossref")
 
 # Titles shorter than this are too ambiguous to merge two records on; merging
 # on "editorial" or "introduction" would fabricate co-citation links.
@@ -26,7 +26,7 @@ def node_id(paper: Paper) -> str:
     doi = normalize_doi(paper.doi)
     if doi:
         return f"doi:{doi}"
-    for key in ("scopus", "openalex", "semanticscholar", "crossref"):
+    for key in ("scopus", "openalex", "crossref"):
         value = paper.ids.get(key)
         if value:
             return f"{key}:{value}"

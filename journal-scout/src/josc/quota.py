@@ -11,10 +11,6 @@ _LIMITS: Dict[str, Dict[str, str]] = {
         "limit": "100,000 requests/day (polite pool)",
         "notes": "Include a polite mailto in the request to use the polite pool.",
     },
-    "semanticscholar": {
-        "limit": "1 request/second shared pool",
-        "notes": "An API key raises the shared rate limit.",
-    },
     "crossref": {
         "limit": "Polite pool, no hard cap",
         "notes": "Include a polite mailto to use the polite pool.",
@@ -26,10 +22,6 @@ _LIMITS: Dict[str, Dict[str, str]] = {
     "arxiv": {
         "limit": "1 request per 3 seconds",
         "notes": "arXiv asks clients to space requests and avoid bulk scraping.",
-    },
-    "dblp": {
-        "limit": "Best effort, no published quota",
-        "notes": "No published quota; throttle conservatively.",
     },
     "opencitations": {
         "limit": "180 requests/minute",

@@ -128,7 +128,7 @@ def _to_paper(item) -> Optional[Paper]:
 def _document_id(identifier: str) -> Optional[str]:
     """Extract the numeric Garuda document id, rejecting foreign identifiers.
 
-    A bare number is ambiguous across providers (Semantic Scholar treats any
+    A bare number is ambiguous across providers (some treat any
     digits as a CorpusId), so callers that know the source pass a prefixed
     value or the detail URL.
     """

@@ -11,7 +11,6 @@ from .models import ProviderError
 MAX_BACKOFF_SECONDS = 60
 MIN_INTERVALS: Dict[str, float] = {
     "arxiv": 3.0,
-    "semanticscholar": 1.0,
     # OpenCitations allows 180 requests/minute per IP.
     "opencitations": 0.34,
 }
@@ -65,6 +64,7 @@ class Fetcher:
         retries = MAX_RETRIES
         last_exc: Optional[Exception] = None
         last_status: Optional[int] = None
+        last_body = ""
         while retries > 0:
             await self._throttle(provider)
             try:
@@ -77,6 +77,7 @@ class Fetcher:
                 continue
 
             last_status = response.status_code
+            last_body = response.text[:200]
             # arXiv signals its per-IP rate limit with 406 rather than 429;
             # retrying matters because _throttle() re-applies the provider
             # interval before the next attempt.
@@ -91,7 +92,14 @@ class Fetcher:
                 retries -= 1
                 if retries <= 0:
                     break
-                await asyncio.sleep(min(backoff, MAX_BACKOFF_SECONDS))
+                retry_after = response.headers.get("Retry-After")
+                delay = backoff
+                if retry_after:
+                    try:
+                        delay = max(delay, float(retry_after))
+                    except ValueError:
+                        pass
+                await asyncio.sleep(min(delay, MAX_BACKOFF_SECONDS))
                 backoff *= 2
                 continue
             if last_status == 403:
@@ -122,9 +130,13 @@ class Fetcher:
             return response
 
         if last_exc:
-            raise ProviderError(provider or "unknown", f"Request failed after retries ({last_exc})")
+            raise ProviderError(
+                provider or "unknown", f"Request failed after retries ({last_exc})"
+            )
+        detail = f": {last_body}" if last_body else ""
         raise ProviderError(
-            provider or "unknown", f"Request failed after retries (last status={last_status})"
+            provider or "unknown",
+            f"Request failed after retries (last status={last_status}){detail}",
         )
 
     @staticmethod
@@ -143,7 +155,9 @@ class Fetcher:
                 provider or "unknown", f"Expected JSON but got: {body}"
             ) from e
 
-    async def get_json(self, url, params=None, headers=None, provider=None) -> Dict[str, Any]:
+    async def get_json(
+        self, url, params=None, headers=None, provider=None
+    ) -> Dict[str, Any]:
         key = self._cache_key(url, params, provider)
         if key is not None:
             cached = self.cache.get(key)

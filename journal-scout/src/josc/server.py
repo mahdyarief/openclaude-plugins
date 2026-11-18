@@ -1,5 +1,7 @@
 import asyncio
+import hmac
 import json
+import os
 from typing import Any, Dict, List, Optional
 
 import mcp.types as types
@@ -7,6 +9,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
 from . import aggregator, config, consensus_key, prompts
+from .abstracts import enrich_abstracts, resolve_abstract
 from .cache import build_cache
 from .corpus import load_corpus
 from .exporters import FORMATTERS, format_papers
@@ -37,6 +40,8 @@ UNIFIED_TOOLS = [
     "identify_paper",
     "check_watches",
     "search_corpus",
+    "get_paper_abstract",
+    "get_abstracts",
 ]
 PER_SOURCE_TOOLS = [f"search_{name}" for name in search_provider_names()]
 SCOPUS_DETAIL_TOOLS = ["get_abstract_details", "get_author_profile", "get_quota_status"]
@@ -288,7 +293,7 @@ def _tool_list() -> List[types.Tool]:
         ),
         types.Tool(
             name="search_author",
-            description="Find one author's papers across every author-search-capable source (Scopus/Crossref/OpenAlex/arXiv/Semantic Scholar), merged and deduped.",
+            description="Find one author's papers across every author-search-capable source (Scopus/Crossref/OpenAlex/arXiv), merged and deduped.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -313,8 +318,40 @@ def _tool_list() -> List[types.Tool]:
             },
         ),
         types.Tool(
+            name="get_paper_abstract",
+            description="Resolve the abstract of one paper from every source that can answer a DOI/title lookup. Returns status='not_found' with a null abstract when no source has one; nothing is guessed.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "doi": {"type": "string", "description": "DOI of the paper."},
+                    "identifier": {"type": "string", "description": "Any other identifier (arXiv/Scopus/OpenAlex id or URL)."},
+                    "title": {"type": "string", "description": "Title used for a title search when no identifier resolves."},
+                    "sources": {"type": "array", "items": {"type": "string"}},
+                    "timeout": {"type": "number", "default": 10.0},
+                },
+                "required": [],
+            },
+        ),
+        types.Tool(
+            name="get_abstracts",
+            description="Fill missing abstracts for a list of paper dicts (e.g. search_all results). Keeps input order, never overwrites an existing abstract, and reports status per paper plus a summary.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "papers": {
+                        "type": "array",
+                        "description": "Paper dicts with doi/title/ids fields.",
+                        "items": {"type": "object"},
+                    },
+                    "sources": {"type": "array", "items": {"type": "string"}},
+                    "timeout": {"type": "number", "default": 10.0},
+                },
+                "required": ["papers"],
+            },
+        ),
+        types.Tool(
             name="get_citations",
-            description="Collect the cross-source citation graph (Scopus + OpenAlex + Semantic Scholar) for one paper. Pass sources to disambiguate a bare id that only one provider understands.",
+            description="Collect the cross-source citation graph (Scopus + OpenAlex + OpenCitations) for one paper. Pass sources to disambiguate a bare id that only one provider understands.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -327,7 +364,7 @@ def _tool_list() -> List[types.Tool]:
         ),
         types.Tool(
             name="get_references",
-            description="Collect the reference list of one paper from every source that exposes references (Scopus/OpenAlex/Semantic Scholar/Crossref), merged and deduped. Pass sources to disambiguate a bare id.",
+            description="Collect the reference list of one paper from every source that exposes references (Scopus/OpenAlex/Crossref/OpenCitations), merged and deduped. Pass sources to disambiguate a bare id.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -563,6 +600,24 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
         return await aggregator.get_paper(
             providers, arguments["identifier"], sources=arguments.get("sources")
         )
+    if name == "get_paper_abstract":
+        requested = arguments.get("sources")
+        selected = [p for p in providers if not requested or p.name in requested]
+        return await resolve_abstract(
+            selected,
+            doi=arguments.get("doi"),
+            title=arguments.get("title"),
+            paper={"identifier": arguments.get("identifier")},
+            timeout=arguments.get("timeout", 10.0),
+        )
+    if name == "get_abstracts":
+        requested = arguments.get("sources")
+        selected = [p for p in providers if not requested or p.name in requested]
+        return await enrich_abstracts(
+            selected,
+            arguments["papers"],
+            timeout=arguments.get("timeout", 10.0),
+        )
     if name == "search_author":
         return await aggregator.search_author(
             providers,
@@ -711,61 +766,150 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
     raise ValueError(f"Unknown tool: {name}")
 
 
-def start() -> None:
-    async def run() -> None:
-        ttl = config.get_cache_ttl()
-        store = build_store(ttl)
-        if store is not None:
-            try:
-                await store.setup()
-                await store.purge_expired()
-            except Exception:
-                await store.store.close()
-                store = None
-        fetcher = Fetcher(cache=build_cache(ttl))
+async def _build_server():
+    """Build the MCP server plus its lifecycle-owned resources.
+
+    Setup (dedup store, HTTP fetcher, provider registry) happens once per
+    process. Every MCP session shares these, which is safe because providers
+    are stateless and the store is async-safe.
+    """
+    ttl = config.get_cache_ttl()
+    store = build_store(ttl)
+    if store is not None:
         try:
-            api_key = config.get_api_key()
-        except ValueError:
-            api_key = None
-        providers = build_providers(fetcher, {"api_key": api_key})
-        scopus_provider = next(p for p in providers if p.name == "scopus")
-        server = Server("journal-scout")
+            await store.setup()
+            await store.purge_expired()
+        except Exception:
+            await store.store.close()
+            store = None
+    fetcher = Fetcher(cache=build_cache(ttl))
+    try:
+        api_key = config.get_api_key()
+    except ValueError:
+        api_key = None
+    providers = build_providers(fetcher, {"api_key": api_key})
+    scopus_provider = next(p for p in providers if p.name == "scopus")
+    server = Server("journal-scout")
 
-        @server.list_tools()
-        async def _list_tools() -> List[types.Tool]:
-            return _tool_list()
+    @server.list_tools()
+    async def _list_tools() -> List[types.Tool]:
+        return _tool_list()
 
-        @server.call_tool()
-        async def _call_tool(tool_name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
-            args = arguments or {}
-            key = (tool_name, json.dumps(args, sort_keys=True, default=str))
-            try:
-                payload = await cached_call(
-                    store,
-                    key,
-                    lambda: build_json(tool_name, args, providers, scopus_provider),
-                )
-            except ProviderError as e:
-                payload = {"error": e.message, "provider": e.provider}
-            except Exception as e:  # noqa: BLE001 - surface a readable message to the agent
-                payload = {"error": str(e)}
-            return [types.TextContent(type="text", text=json.dumps(payload, ensure_ascii=False, indent=2))]
+    @server.call_tool()
+    async def _call_tool(tool_name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
+        args = arguments or {}
+        key = (tool_name, json.dumps(args, sort_keys=True, default=str))
+        try:
+            payload = await cached_call(
+                store,
+                key,
+                lambda: build_json(tool_name, args, providers, scopus_provider),
+            )
+        except ProviderError as e:
+            payload = {"error": e.message, "provider": e.provider}
+        except Exception as e:  # noqa: BLE001 - surface a readable message to the agent
+            payload = {"error": str(e)}
+        return [types.TextContent(type="text", text=json.dumps(payload, ensure_ascii=False, indent=2))]
 
-        @server.list_prompts()
-        async def _list_prompts() -> List[types.Prompt]:
-            return prompts.list_prompts()
+    @server.list_prompts()
+    async def _list_prompts() -> List[types.Prompt]:
+        return prompts.list_prompts()
 
-        @server.get_prompt()
-        async def _get_prompt(name: str, arguments: Optional[Dict[str, Any]]) -> types.GetPromptResult:
-            return prompts.render_prompt(name, arguments)
+    @server.get_prompt()
+    async def _get_prompt(name: str, arguments: Optional[Dict[str, Any]]) -> types.GetPromptResult:
+        return prompts.render_prompt(name, arguments)
 
+    return server, fetcher, store
+
+
+async def _run_stdio() -> None:
+    server, fetcher, store = await _build_server()
+    try:
         async with stdio_server() as (read_stream, write_stream):
             await server.run(read_stream, write_stream, server.create_initialization_options())
+    finally:
         await fetcher.close()
         if store is not None:
             await store.store.close()
 
-    asyncio.run(run())
+
+async def _run_http(host: str, port: int, token: Optional[str]) -> None:
+    from contextlib import AsyncExitStack
+
+    from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+    import uvicorn
+
+    from .api import app as web_app
+
+    server, fetcher, store = await _build_server()
+    manager = StreamableHTTPSessionManager(app=server, stateless=True)
+    web_lifespan = web_app.router.lifespan_context
+
+    async def _send_json(send, status: int, payload: bytes) -> None:
+        await send(
+            {
+                "type": "http.response.start",
+                "status": status,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(payload)).encode()),
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": payload})
+
+    async def app(scope, receive, send) -> None:
+        if scope["type"] == "lifespan":
+            stack = AsyncExitStack()
+            async with stack:
+                while True:
+                    message = await receive()
+                    if message["type"] == "lifespan.startup":
+                        try:
+                            await stack.enter_async_context(manager.run())
+                            await stack.enter_async_context(web_lifespan(web_app))
+                            await send({"type": "lifespan.startup.complete"})
+                        except Exception as exc:  # noqa: BLE001
+                            await send({"type": "lifespan.startup.failed", "message": str(exc)})
+                            return
+                    elif message["type"] == "lifespan.shutdown":
+                        await send({"type": "lifespan.shutdown.complete"})
+                        return
+        if scope["type"] != "http":
+            return
+        path = scope.get("path", "")
+        if path == "/healthz":
+            await _send_json(send, 200, b'{"status":"ok","server":"journal-scout"}')
+            return
+        if path in ("/mcp", "/mcp/"):
+            if token:
+                headers = dict(scope.get("headers") or [])
+                supplied = headers.get(b"authorization", b"")
+                if not hmac.compare_digest(supplied, f"Bearer {token}".encode()):
+                    await _send_json(send, 401, b'{"error":"unauthorized"}')
+                    return
+            await manager.handle_request(scope, receive, send)
+            return
+        await web_app(scope, receive, send)
+
+    config_obj = uvicorn.Config(app, host=host, port=port, log_level="info")
+    try:
+        await uvicorn.Server(config_obj).serve()
+    finally:
+        await fetcher.close()
+        if store is not None:
+            await store.store.close()
+
+
+def start() -> None:
+    transport = (os.getenv("JOSC_TRANSPORT") or "stdio").strip().lower()
+    if transport in ("http", "streamable-http", "remote"):
+        host = os.getenv("JOSC_HOST", "0.0.0.0")
+        port = int(os.getenv("JOSC_PORT", "8080"))
+        token = (os.getenv("JOSC_MCP_TOKEN") or "").strip() or None
+        asyncio.run(_run_http(host, port, token))
+        return
+    asyncio.run(_run_stdio())
 
 
 if __name__ == "__main__":

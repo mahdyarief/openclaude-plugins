@@ -63,12 +63,6 @@ def test_compile_arxiv_scopes_title():
     assert compiled.query == 'ti:"deep learning"'
 
 
-def test_compile_dblp_scopes_venue():
-    compiled = compile_conditions([Condition("venue", "ICIS")], "dblp")
-
-    assert compiled.query == "venue:ICIS"
-
-
 def test_compile_joins_conditions_with_operators():
     compiled = compile_conditions(
         [
@@ -93,7 +87,7 @@ def test_compile_scopus_turns_not_into_and_not():
 
 def test_compile_degrades_unsupported_field_to_free_text():
     compiled = compile_conditions(
-        [Condition("title", "data quality")], "semanticscholar"
+        [Condition("title", "data quality")], "garuda"
     )
 
     assert compiled.query == "data quality"
@@ -116,10 +110,8 @@ def test_field_capabilities_cover_every_searchable_provider():
         "scopus",
         "pubmed",
         "arxiv",
-        "dblp",
         "crossref",
         "openalex",
-        "semanticscholar",
         "garuda",
     }
     # The matrix must never claim scoping the compiler cannot emit.
@@ -143,7 +135,7 @@ class RecordingProvider(ProviderBase):
 @pytest.mark.asyncio
 async def test_search_all_compiles_conditions_per_provider():
     scopus = RecordingProvider("scopus")
-    scholar = RecordingProvider("semanticscholar")
+    scholar = RecordingProvider("garuda")
 
     result = await search_all(
         [scopus, scholar],
@@ -157,7 +149,7 @@ async def test_search_all_compiles_conditions_per_provider():
         "honored": ["title"],
         "degraded": [],
     }
-    assert result["query_scoping"]["semanticscholar"] == {
+    assert result["query_scoping"]["garuda"] == {
         "honored": [],
         "degraded": ["title"],
     }

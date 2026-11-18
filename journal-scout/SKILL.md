@@ -1,26 +1,26 @@
-# journal-scout-mcp
+# journal-scout
 
 Multi-source journal research **MCP server** for Anthropic Claude. Searches
-Scopus, arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, DBLP, and Garuda,
+Scopus, arXiv, OpenAlex, Crossref, PubMed, Consensus, and Garuda,
 then merges duplicate results into one entry per paper (DOI-first dedup) and
 reports partial failures. Unpaywall resolves open-access copies and
 OpenCitations (free, no key) supplies citation links for any known DOI.
 
 This file is the install and overview guide. The **callable skill** lives at
 `skills/journal-scout/SKILL.md` — that is the path the plugin loader reads, so
-that is the one registered as `journal-scout-mcp:journal-scout`. Configure the
+that is the one registered as `journal-scout:journal-scout`. Configure the
 MCP server in your Claude Code/plugin setup, then invoke any of the available
 tools.
 
 ## Setup
 
 1. **Install the MCP server** in your Claude config (`~/.claude.json` or
-   equivalent). The server runs from the `journal-scout-mcp` repo as an
+   equivalent). The server runs from the `journal-scout` repo as an
    MCP plugin:
 
    ```json
    {
-     "journal-scout-mcp": {
+     "journal-scout": {
        "command": "uv",
        "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "python", "-m", "josc.server"]
      }
@@ -38,8 +38,8 @@ tools.
      `get_references`, `get_related_works`, `build_citation_network`,
      `compute_metrics`, `export_results`
    - **Per-source:** `search_scopus`, `search_arxiv`, `search_openalex`,
-     `search_semanticscholar`, `search_crossref`, `search_pubmed`,
-     `search_dblp`, `search_garuda`
+     `search_crossref`, `search_pubmed`, `search_garuda`, `search_consensus`,
+     `search_exa`
    - **Scopus detail:** `get_abstract_details`, `get_author_profile`,
      `get_quota_status`
    - **SciVal:** `scival_author_metrics`,
@@ -74,6 +74,4 @@ tools.
 
 - Scopus `view=FULL` is degraded gracefully (falls back to abstract snippet)
   when entitlement is missing.
-- DBLP may be blocked by a bot challenge from some IPs — treat results as
-  partial.
 - All network errors are reported as partial failures in `search_all` results.

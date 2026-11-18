@@ -11,8 +11,6 @@ PROVIDER_PRIORITY: Sequence[str] = (
     "scopus",
     "crossref",
     "openalex",
-    "semanticscholar",
-    "dblp",
     "arxiv",
     "opencitations",
     "unpaywall",

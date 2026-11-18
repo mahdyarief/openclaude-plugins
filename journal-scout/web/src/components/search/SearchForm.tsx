@@ -11,18 +11,20 @@ import {
   Spinner,
   LINK_CLASS,
   cn,
+  Checkbox,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "../ui";
 
 const PROVIDERS = [
   "scopus",
   "arxiv",
   "openalex",
-  "semanticscholar",
   "crossref",
   "pubmed",
-  "dblp",
   "garuda",
   "consensus",
+  "exa",
 ];
 
 export function SearchForm({ controller }: { controller: SearchController }) {
@@ -61,7 +63,6 @@ export function SearchForm({ controller }: { controller: SearchController }) {
     setDoi,
     selectedSources,
     setSelectedSources,
-    toggleSource,
     conditions,
     addCondition,
     updateCondition,
@@ -198,11 +199,10 @@ export function SearchForm({ controller }: { controller: SearchController }) {
                 />
               </label>
               <label className="flex h-8 items-center gap-1.5 self-end text-[11px] text-slate-300">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={techOnly}
-                  onChange={(event) => setTechOnly(event.target.checked)}
-                  className="h-3.5 w-3.5 accent-sky-500"
+                  onCheckedChange={(value) => setTechOnly(value === true)}
+                  aria-label="tech only"
                 />
                 tech only
               </label>
@@ -267,24 +267,22 @@ export function SearchForm({ controller }: { controller: SearchController }) {
 
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
               <span className="mr-1 font-medium uppercase tracking-wide">Sources</span>
-              {PROVIDERS.map((provider) => {
-                const active = selectedSources.includes(provider);
-                return (
-                  <button
+              <ToggleGroup
+                type="multiple"
+                value={selectedSources}
+                onValueChange={(values) => setSelectedSources(values)}
+                className="flex-wrap gap-1"
+              >
+                {PROVIDERS.map((provider) => (
+                  <ToggleGroupItem
                     key={provider}
-                    type="button"
-                    onClick={() => toggleSource(provider)}
-                    aria-pressed={active}
-                    className={`touch-target rounded border px-2 py-0.5 text-[11px] transition-colors active:translate-y-px ${
-                      active
-                        ? "border-sky-400/60 bg-sky-400/15 text-sky-200"
-                        : "border-slate-500 bg-slate-800/40 text-slate-300 hover:border-slate-400 hover:text-slate-100"
-                    }`}
+                    value={provider}
+                    className="border border-slate-500 bg-slate-800/40 px-2 py-0.5 text-slate-300 data-[state=on]:border-sky-400/60 data-[state=on]:bg-sky-400/15 data-[state=on]:text-sky-200"
                   >
                     {provider}
-                  </button>
-                );
-              })}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
               {selectedSources.length > 0 && (
                 <button
                   type="button"
