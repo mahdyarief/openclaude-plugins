@@ -1,6 +1,0 @@
-{
-  "journal-scout": {
-    "type": "http",
-    "url": "https://journal.nimb.us.ci/mcp"
-  }
-}

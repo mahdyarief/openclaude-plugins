@@ -1,6 +1,0 @@
-{
-  "name": "journal-scout",
-  "version": "2.5.0",
-  "description": "Multi-source journal research MCP: Scopus, arXiv, OpenAlex, Crossref, PubMed, Garuda, Consensus, Exa, Unpaywall, OpenCitations. Unified search with DOI-first dedup, post-merge topic filter, cross-source citation graph, and open-access resolution.",
-  "keywords": ["mcp", "research", "scopus", "arxiv", "openalex", "crossref", "pubmed", "garuda", "consensus", "exa", "unpaywall", "opencitations"]
-}
