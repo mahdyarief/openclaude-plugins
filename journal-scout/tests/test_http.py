@@ -155,6 +155,53 @@ async def test_retry_after_header_is_honoured(monkeypatch):
         await f.close()
 
 
+async def test_garuda_403_retries_as_transient(monkeypatch):
+    calls = {"n": 0}
+    delays = []
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(403, text="temporary gateway block")
+        return httpx.Response(200, json={"ok": True})
+
+    async def no_sleep(delay):
+        delays.append(delay)
+
+    monkeypatch.setattr("josc.http.asyncio.sleep", no_sleep)
+    f = _fetcher(handler)
+    try:
+        assert await f.get_json("https://example.test/search", provider="garuda") == {
+            "ok": True
+        }
+        assert calls["n"] == 2
+        assert delays == [1.0]
+    finally:
+        await f.close()
+
+
+async def test_other_provider_403_is_not_retried(monkeypatch):
+    calls = {"n": 0}
+    delays = []
+
+    def handler(request):
+        calls["n"] += 1
+        return httpx.Response(403, text="forbidden")
+
+    async def no_sleep(delay):
+        delays.append(delay)
+
+    monkeypatch.setattr("josc.http.asyncio.sleep", no_sleep)
+    f = _fetcher(handler)
+    try:
+        with pytest.raises(ProviderError, match="Access forbidden"):
+            await f.get_json("https://example.test/search", provider="scopus")
+        assert calls["n"] == 1
+        assert delays == []
+    finally:
+        await f.close()
+
+
 async def test_permanent_500_raises_provider_error():
     def handler(request):
         return httpx.Response(500, text="boom")

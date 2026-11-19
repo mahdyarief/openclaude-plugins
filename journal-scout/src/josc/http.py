@@ -103,6 +103,13 @@ class Fetcher:
                 backoff *= 2
                 continue
             if last_status == 403:
+                if provider == "garuda":
+                    retries -= 1
+                    if retries <= 0:
+                        break
+                    await asyncio.sleep(min(backoff, MAX_BACKOFF_SECONDS))
+                    backoff *= 2
+                    continue
                 els_status = response.headers.get("X-ELS-Status", "") or ""
                 if "ENTITLEMENTS_ERROR" in els_status:
                     raise ProviderError(
