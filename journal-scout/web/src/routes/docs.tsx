@@ -1,4 +1,6 @@
-import { Card, Chip, LINK_CLASS, PageHeader } from "../components/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Button, Card, Chip, cn, Input, LINK_CLASS, PageHeader } from "../components/ui";
+import { Check, ChevronDown, Copy } from "lucide-react";
 
 type ToolEntry = {
   name: string;
@@ -63,7 +65,106 @@ const GROUPS: ToolEntry["group"][] = [
   "Keys",
 ];
 
+const DEFAULT_OPEN_GROUPS: Record<ToolEntry["group"], boolean> = {
+  Search: true,
+  Papers: true,
+  "Graph & metrics": false,
+  "Export & archive": false,
+  "Review (SLR)": false,
+  Keys: false,
+};
+
+const CONFIG_SNIPPET = `{
+  "mcpServers": {
+    "journal-scout": {
+      "type": "http",
+      "url": "${MCP_URL}"
+    }
+  }
+}`;
+
+function filterTools(query: string) {
+  const normalized = query.trim().toLocaleLowerCase();
+  return GROUPS.map((group) => ({
+    group,
+    tools: TOOLS.filter((tool) => {
+      if (tool.group !== group) return false;
+      if (!normalized) return true;
+      if (group.toLocaleLowerCase().includes(normalized)) return true;
+      return [tool.name, tool.purpose].some((value) =>
+        value.toLocaleLowerCase().includes(normalized),
+      );
+    }),
+  })).filter(({ tools }) => tools.length > 0);
+}
+
+function CopySnippetButton({ snippet }: { snippet: string }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setCopied(true);
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="absolute right-2 top-2"
+      aria-label={copied ? "Snippet disalin" : "Salin konfigurasi MCP"}
+      onClick={handleCopy}
+    >
+      {copied ? <Check aria-hidden="true" className="h-3.5 w-3.5" /> : <Copy aria-hidden="true" className="h-3.5 w-3.5" />}
+      {copied ? "Tersalin" : "Salin"}
+    </Button>
+  );
+}
+
 export function DocsPage() {
+  const [query, setQuery] = useState("");
+  const groups = useMemo(() => filterTools(query), [query]);
+  const [openGroups, setOpenGroups] = useState(DEFAULT_OPEN_GROUPS);
+  const [activeId, setActiveId] = useState("workflow");
+  const searching = query.trim().length > 0;
+
+  useEffect(() => {
+    const updateActive = () => {
+      const sections = Array.from(document.querySelectorAll<HTMLElement>("main [data-docs-section]"))
+        .map((element) => ({
+          id: element.id,
+          top: element.getBoundingClientRect().top,
+          bottom: element.getBoundingClientRect().bottom,
+        }))
+        .filter(({ top, bottom }) => top < window.innerHeight && bottom > 0)
+        .sort((a, b) => a.top - b.top);
+      if (!sections.length) return;
+      const passed = sections.filter(({ top }) => top <= 96);
+      const atPageEnd =
+        window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      const current = atPageEnd ? sections.at(-1) : (passed.at(-1) ?? sections[0]);
+      if (current) setActiveId((prev) => (prev === current.id ? prev : current.id));
+    };
+    window.addEventListener("scroll", updateActive, { passive: true });
+    window.addEventListener("resize", updateActive);
+    updateActive();
+    return () => {
+      window.removeEventListener("scroll", updateActive);
+      window.removeEventListener("resize", updateActive);
+    };
+  }, []);
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <PageHeader
@@ -99,16 +200,12 @@ export function DocsPage() {
           </a>
         </div>
 
-        <pre className="min-w-0 overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/80 p-4 text-xs leading-6 text-slate-300">
-          <code>{`{
-  "mcpServers": {
-    "journal-scout": {
-      "type": "http",
-      "url": "${MCP_URL}"
-    }
-  }
-}`}</code>
-        </pre>
+        <div className="relative min-w-0">
+          <CopySnippetButton snippet={CONFIG_SNIPPET} />
+          <pre className="min-w-0 overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/80 p-4 pt-12 text-xs leading-6 text-slate-300">
+            <code>{CONFIG_SNIPPET}</code>
+          </pre>
+        </div>
       </section>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
@@ -123,25 +220,41 @@ export function DocsPage() {
             <div className="flex flex-wrap gap-1 lg:flex-col lg:flex-nowrap">
               <a
                 href="#workflow"
-                className="rounded-md px-2 py-1.5 text-sm text-slate-400 transition-colors hover:bg-slate-800/70 hover:text-slate-100"
+                aria-current={activeId === "workflow" ? "location" : undefined}
+                onClick={() => setActiveId("workflow")}
+                className={cn(
+                  "rounded-md px-2 py-1.5 text-sm transition-colors",
+                  activeId === "workflow" ? "bg-slate-800/70 text-slate-100" : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100",
+                )}
               >
                 Alur kerja
               </a>
-              {GROUPS.map((group) => (
-                <a
-                  key={group}
-                  href={`#tools-${group.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                  className="rounded-md px-2 py-1.5 text-sm text-slate-400 transition-colors hover:bg-slate-800/70 hover:text-slate-100"
-                >
-                  {group}
-                </a>
-              ))}
+              {GROUPS.map((group) => {
+                const id = `tools-${group.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+                return (
+                  <a
+                    key={group}
+                    href={`#${id}`}
+                    aria-current={activeId === id ? "location" : undefined}
+                    onClick={() => {
+                      setActiveId(id);
+                      setOpenGroups((current) => ({ ...current, [group]: true }));
+                    }}
+                    className={cn(
+                      "rounded-md px-2 py-1.5 text-sm transition-colors",
+                      activeId === id ? "bg-slate-800/70 text-slate-100" : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100",
+                    )}
+                  >
+                    {group}
+                  </a>
+                );
+              })}
             </div>
           </nav>
         </aside>
 
         <main className="min-w-0 space-y-5">
-          <Card id="workflow" className="space-y-4 p-4 sm:p-5">
+          <Card id="workflow" data-docs-section className="scroll-mt-14 space-y-4 p-4 sm:p-5">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-sky-300">
                 Mulai di sini
@@ -173,42 +286,75 @@ export function DocsPage() {
             </p>
           </Card>
 
-          <div className="space-y-4">
-            {GROUPS.map((group) => {
-              const tools = TOOLS.filter((tool) => tool.group === group);
+          <section aria-label="Daftar tools" className="space-y-4">
+            <div className="space-y-3">
+              <Input
+                aria-label="Cari tool"
+                placeholder="Cari tool berdasarkan nama, deskripsi, atau grup…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              {groups.length === 0 && (
+                <p role="status" className="text-sm text-slate-400">
+                  Tidak ada tool yang cocok dengan “{query.trim()}”.{" "}
+                  <button type="button" className={LINK_CLASS} onClick={() => setQuery("")}>
+                    Hapus pencarian
+                  </button>
+                </p>
+              )}
+            </div>
+            {groups.map(({ group, tools }) => {
               const id = `tools-${group.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+              const expanded = searching || openGroups[group];
               return (
                 <section
                   key={group}
                   id={id}
+                  data-docs-section
                   aria-labelledby={`${id}-title`}
-                  className="scroll-mt-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/30"
+                  className="scroll-mt-14 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/30"
                 >
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 sm:px-5">
-                    <h2 id={`${id}-title`} className="text-sm font-semibold text-slate-100">
-                      {group}
-                    </h2>
-                    <Chip variant="secondary">{tools.length} tools</Chip>
-                  </div>
-                  <dl className="divide-y divide-slate-800/80">
-                    {tools.map((tool) => (
-                      <div
-                        key={tool.name}
-                        className="grid gap-1.5 px-4 py-3 sm:grid-cols-[minmax(10rem,0.32fr)_minmax(0,1fr)] sm:gap-5 sm:px-5"
+                  <div className="border-b border-slate-800 px-4 py-3 sm:px-5">
+                    <h2 id={`${id}-title`} className="w-full">
+                      <button
+                        type="button"
+                        aria-expanded={expanded}
+                        aria-controls={`${id}-list`}
+                        onClick={() => setOpenGroups((current) => ({ ...current, [group]: !current[group] }))}
+                        className="flex w-full items-center justify-between gap-3 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
                       >
-                        <dt>
-                          <code className="break-all rounded bg-slate-800/70 px-1.5 py-1 text-xs font-medium text-sky-200">
-                            {tool.name}
-                          </code>
-                        </dt>
-                        <dd className="text-sm leading-6 text-slate-400">{tool.purpose}</dd>
-                      </div>
-                    ))}
-                  </dl>
+                        <span className="flex min-w-0 items-center gap-2">
+                          <ChevronDown
+                            aria-hidden="true"
+                            className={cn("h-4 w-4 shrink-0 transition-transform", !expanded && "-rotate-90")}
+                          />
+                          <span className="text-sm font-semibold text-slate-100">{group}</span>
+                        </span>
+                        <Chip variant="secondary">{tools.length} tools</Chip>
+                      </button>
+                    </h2>
+                  </div>
+                  {expanded && (
+                    <dl id={`${id}-list`} className="divide-y divide-slate-800/80">
+                      {tools.map((tool) => (
+                        <div
+                          key={tool.name}
+                          className="grid gap-1.5 px-4 py-3 sm:grid-cols-[minmax(10rem,0.32fr)_minmax(0,1fr)] sm:gap-5 sm:px-5"
+                        >
+                          <dt>
+                            <code className="break-all rounded bg-slate-800/70 px-1.5 py-1 text-xs font-medium text-sky-200">
+                              {tool.name}
+                            </code>
+                          </dt>
+                          <dd className="text-sm leading-6 text-slate-400">{tool.purpose}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
                 </section>
               );
             })}
-          </div>
+          </section>
         </main>
       </div>
     </div>
