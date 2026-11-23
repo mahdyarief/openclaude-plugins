@@ -1,6 +1,33 @@
 {
   "office-mcp": {
-    "command": "python",
-    "args": ["${CLAUDE_PLUGIN_ROOT}/server.py"]
+    "command": "uv",
+    "args": [
+      "run",
+      "--quiet",
+      "--no-project",
+      "--python",
+      "3.12",
+      "--with",
+      "mcp[cli]>=1.27,<2",
+      "--with",
+      "python-docx",
+      "--with",
+      "openpyxl",
+      "--with",
+      "python-pptx",
+      "--with",
+      "xlsxwriter",
+      "--with",
+      "mammoth",
+      "--with",
+      "defusedxml",
+      "--with",
+      "pydantic",
+      "${CLAUDE_PLUGIN_ROOT}/server.py"
+    ],
+    "env": {
+      "PYTHONUTF8": "1",
+      "PYTHONIOENCODING": "utf-8"
+    }
   }
 }
