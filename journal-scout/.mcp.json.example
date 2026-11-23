@@ -1,0 +1,14 @@
+{
+  "journal-scout": {
+    "type": "stdio",
+    "command": "uv",
+    "args": [
+      "run",
+      "--directory",
+      "${CLAUDE_PLUGIN_ROOT}",
+      "--extra",
+      "pdf",
+      "journal-scout"
+    ]
+  }
+}

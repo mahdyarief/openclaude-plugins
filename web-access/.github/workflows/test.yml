@@ -1,0 +1,51 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: node ${{ matrix.node }} · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Syntax check
+        shell: bash
+        run: for f in *.js; do node --check "$f"; done
+      - name: Tests (fully mocked, no network or API keys)
+        run: npm test
+
+  manifests:
+    name: plugin manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate JSON and version consistency
+        run: |
+          node -e '
+            const fs = require("fs");
+            const plugin = JSON.parse(fs.readFileSync(".claude-plugin/plugin.json", "utf8"));
+            const market = JSON.parse(fs.readFileSync(".claude-plugin/marketplace.json", "utf8"));
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            JSON.parse(fs.readFileSync(".mcp.json", "utf8"));
+            JSON.parse(fs.readFileSync("web-access.example.json", "utf8"));
+            if (plugin.version !== pkg.version) throw new Error(`version mismatch: plugin.json ${plugin.version} vs package.json ${pkg.version}`);
+            if (!market.plugins.some((p) => p.name === plugin.name)) throw new Error("plugin not listed in marketplace.json");
+            console.log(`ok: ${plugin.name}@${plugin.version}`);
+          '

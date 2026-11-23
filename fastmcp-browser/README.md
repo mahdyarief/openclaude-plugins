@@ -1,0 +1,392 @@
+# FastMCP Browser
+
+[![CI](https://github.com/rayss868/fastmcp-browser/actions/workflows/ci.yml/badge.svg)](https://github.com/rayss868/fastmcp-browser/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/rayss868/fastmcp-browser)](https://github.com/rayss868/fastmcp-browser/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+![FastMCP Browser banner](docs/banner.png)
+
+**Lightweight MCP server + WebExtension for AI browser automation — no CDP, no debugger, no Playwright.** Your AI drives *your* real browser: same logins, same extensions, every profile.
+
+- **33 MCP tools**, full schema footprint ≈ **10k tokens**
+- **Bridge latency**: median **0.37 ms**, p95 **3.15 ms**, **1,414 req/s** (loopback WebSocket benchmark)
+- **Tests**: server 96/96, extension 202/202, build green for Chromium + Firefox
+
+## Teaser
+
+![FastMCP Browser teaser](docs/teaser.gif)
+
+A 30-second walkthrough (1080p): the AI client connects over stdio, the extension joins the loopback bridge, and a live session runs `browser_open` → `browser_snapshot` → `browser_fill` → `browser_click` in the real browser profile. → **[Watch the full 1080p clip with sound](docs/fastmcp-browser-promo.mp4)**
+
+---
+
+## Why not Playwright MCP?
+
+`@playwright/mcp` (Microsoft) is excellent — for a *fresh, disposable* browser. FastMCP Browser is built for the opposite case: **the browser you already have open, logged in to everything**.
+
+| | FastMCP Browser | @playwright/mcp | chrome-devtools-mcp | mcp-chrome (extension) |
+|---|---|---|---|---|
+| Control path | WebExtension APIs only — **no CDP, no `chrome.debugger`** | Playwright (CDP under the hood) | Chrome DevTools Protocol | Chrome extension APIs |
+| Browser it drives | **Your real running browser** (Chromium + Firefox) | Launches its own browser instance | Launches/attaches Chrome | Your real Chrome |
+| Logged-in sessions | ✅ automatically — it *is* your profile | ⚠️ needs `--extension` mode or profile copying | ⚠️ attach via remote debugging port | ✅ |
+| Multi-profile | ✅ `browser_instances` + `browser_use_instance` — all profiles stay connected, switch live | ❌ one instance per launch; second profile overwrites | ❌ single attach target | ❌ single Chrome window focus |
+| Session tab group | ✅ auto group `Automation`, survives multi-run | ❌ | ❌ | ❌ |
+| Snapshot model | semantic a11y refs (small) | accessibility snapshot (~2–5 KB per snapshot) | a11y + network + traces | DOM/text |
+| Install weight | extension + ~0 deps (`ws`, `zod`, MCP SDK) | downloads Playwright browser binaries | downloads Chrome + CDP tooling | extension + native pieces |
+| Upload files | ✅ local paths → `DataTransfer` set on `input[type=file]`, no OS dialog (max 25MB/file) | ✅ | ✅ | ✅ |
+
+### Honest strengths of Playwright MCP (and where it still wins)
+
+- Cross-browser (Chromium/Firefox/WebKit) **launch control**: fresh isolated contexts, headless runs, proxy auth, download paths — FastMCP cannot launch browsers or control OS dialogs.
+- Ecosystem maturity: official docs, cached snapshots, vision fallbacks, huge community.
+- Research (e.g. BrowserGym/Benchmarks-style evals) consistently shows **direct Playwright APIs beat MCP tool wrappers** for large scripted flows — if you are writing a test suite, use Playwright directly, not any MCP.
+
+### Where FastMCP wins
+
+1. **Real session, zero setup** — no profile copy, no re-login, no cookie export. Your 2FA, your CAPTCHA state, your wallets, your open tabs.
+2. **No CDP / no `chrome.debugger`** — nothing to attach, nothing for anti-bot layers to see as an automation driver. (Honest caveat: it is still automation on the page — it reduces fingerprints, it is not invisibility.)
+3. **Multi-profile as a first class citizen** — two profiles with the same extension connected at once; `browser_instances` lists them (stable `instanceId`, browser brand, active-tab hint), `browser_use_instance` reroutes the bridge. Playwright MCP needs one process per profile.
+4. **Persistent session model** — tabs join an `Automation` tab group; the session survives across AI runs and keeps `tabIds` reconciled.
+5. **Tiny context cost** — the *entire* 33-tool schema is ~10k tokens; snapshots return compact `ref` handles instead of raw DOM.
+6. **Loopback-only bridge** — `127.0.0.1:9229`, token-authenticated. No external endpoints, works behind middleware/AI gateways with no proxy config (a known Playwright MCP HTTP/SSE pain point).
+
+## Benchmark
+
+Internal bridge benchmark (`server/benchmarks/bridge-benchmark.mjs`, 50 iterations, authenticated local WebSocket):
+
+```json
+{
+  "iterations": 50,
+  "coldStartMs": 2.735,
+  "medianMs": 0.374,
+  "p95Ms": 3.146,
+  "throughputPerSecond": 1414.43,
+  "heapDeltaBytes": 473208
+}
+```
+
+Context vs the wider MCP browser landscape:
+
+| Metric | FastMCP Browser | @playwright/mcp | Notes / source |
+|---|---:|---:|---|
+| Bridge round-trip (median) | **0.374 ms** | n/a (in-process driver) | our loopback benchmark |
+| Schema footprint (all tools) | **~10k tokens / 33 tools** | substantially larger (30 tools, verbose schemas + docs) | measured via `getToolDefinitions()` |
+| Reported agent-loop token burn | — | **~114k tokens per test run** | community report, Feb 2026 |
+| Browser binaries to install | **0** | 2–3 (Chromium/Firefox/WebKit) | Playwright install weight |
+| Connected profiles | **N (multi-instance)** | 1 per launch | |
+
+No honest head-to-head end-to-end latency benchmark exists yet between FastMCP and Playwright MCP.
+
+## Architecture
+
+```
+┌──────────────┐   stdio (MCP)   ┌──────────────────┐   ws://127.0.0.1:9229   ┌───────────────────────────┐
+│  AI client   │ ◄─────────────► │  server (Node)   │ ◄──────────────────────► │  WebExtension (MV3)       │
+│  Claude, etc │                 │  tools → bridge  │   token handshake        │  background SW + content  │
+└──────────────┘                 └──────────────────┘   multi-instance         │  engine (page MAIN world) │
+                                    │  bridge.ts        routing + promote      └───────────────────────────┘
+                                    │  tools.ts (33)                                               │
+                                    └─ index.ts (MCP SDK, zod)                                     ▼
+                                                                                    chrome.* APIs, NO CDP
+```
+
+- **server/** — TypeScript MCP server (stdio), WebSocket bridge on `127.0.0.1:9229`.
+- **extension/** — MV3 WebExtension for Chromium & Firefox; semantic snapshot engine injected into the page MAIN world.
+
+## Quick start
+
+### Requirements
+
+- **Node.js 22+** (build + `node --test`)
+- A **Chromium-based browser** (Chrome/Edge/Brave/Opera/Vivaldi) or **Firefox**
+- An **MCP client** (Claude Code, Claude Desktop, or any client supporting stdio MCP servers)
+
+### 1. Build the server
+
+```bash
+git clone <your-repo-url> fastmcp-browser
+cd fastmcp-browser/server
+npm install
+npm run build      # outputs dist/src/index.js
+```
+
+(`npm run dev` builds and starts the stdio server immediately, useful for a smoke test.)
+
+### 2. Load the extension
+
+**No build needed:** download `fastmcp-browser-extension-firefox.xpi` for Firefox/LibreWolf, or the Chromium/Firefox `.zip` archives for unpacked installation, from [GitHub Releases](../../releases) (published on each `v*` tag).
+
+Or build it yourself:
+
+```bash
+cd extension
+node build.mjs     # writes dist/chromium and dist/firefox
+```
+
+To package the Firefox build locally as an unsigned `.xpi` (Python 3), run this from `extension/`:
+
+```bash
+python -c "from pathlib import Path; from zipfile import ZipFile, ZIP_DEFLATED; root = Path('dist/firefox'); z = ZipFile('dist/fastmcp-browser-extension-firefox.xpi', 'w', ZIP_DEFLATED); [z.write(p, p.relative_to(root).as_posix()) for p in root.rglob('*') if p.is_file()]; z.close()"
+```
+
+The archive must contain `manifest.json` at its root, not under a `firefox/` directory. On Linux/macOS, the equivalent is `(cd dist/firefox && zip -r ../fastmcp-browser-extension-firefox.xpi .)`.
+
+The manifest `version` is injected at build time from `VERSION` (env) or the latest `v*` git tag, so the distributed extension always matches the release tag. It is not stored in the source manifests.
+
+- **Chromium/Edge/Brave/Opera/Vivaldi** → `chrome://extensions` → *Load unpacked* → the `chromium` folder from the `.zip` archive
+- **Firefox (temporary)** → `about:debugging` → *Load Temporary Add-on* → `firefox/manifest.json` from the Firefox `.zip` archive; this disappears on browser restart
+- **LibreWolf (persistent, if unsigned add-ons are enabled)** → `about:addons` → gear icon → *Install Add-on From File* → select the `.xpi`. LibreWolf may need `xpinstall.signatures.required=false` in its profile settings. The generated `.xpi` is unsigned; standard Firefox release builds require Mozilla signing for permanent installation. Do not disable signature checks on standard Firefox to install an unsigned archive.
+
+The extension auto-connects to `ws://127.0.0.1:9229` and keeps a stable per-profile `instanceId`.
+
+### 3. Register the MCP server in your client
+
+**Option A, MCP Registry (once published):** install the server named `fastmcp-browser` through your client's MCP Registry command; no clone or build needed. Until the registry entry is live, use Option B.
+
+**Option B, download a release archive:** get the Firefox `.xpi` or an unpacked `.zip` from [GitHub Releases](../../releases), then follow the browser-specific installation steps above.
+
+**Option C, manual config** (`.mcp.json` / `.openclaude.json`), pointing at your local clone:
+
+```json
+{
+  "mcpServers": {
+    "fastmcp-browser": {
+      "command": "node",
+      "args": ["/path/to/fastmcp-browser/server/dist/src/index.js"],
+      "env": { "FASTMCP_PORT": "9229" }
+    }
+  }
+}
+```
+
+Token defaults to `fastmcp-local-dev`; override with `FASTMCP_TOKEN` (server + extension must match).
+
+### Native CLI (no MCP client needed)
+
+The server ships a peer CLI that calls any tool directly over the bridge while the MCP server (or another peer) is running:
+
+```bash
+cd server
+npm run build
+npm run call -- browser_tabs '{"full":true}'
+npm run call -- browser_status
+node dist/src/cli.js --help
+```
+
+The tool name must match a known tool; the optional second argument is a JSON object of parameters. Success prints one JSON line (`{"ok":true,"result":...}`) to stdout and exits 0; failures print `{"ok":false,"error":{...}}` to stderr and exit nonzero. `FASTMCP_PORT` (default 9229), `FASTMCP_TOKEN`, and `FASTMCP_CLI_TIMEOUT_MS` (request timeout in ms) are read from the environment.
+
+### Workflow recording & replay (no AI needed)
+
+Any session driven through the MCP server can be recorded and replayed later without an AI client:
+
+```bash
+# 1. Record: point the server at a .jsonl run file (add to your MCP client's
+#    env for fastmcp-browser, then restart the client), use the browser normally.
+FASTMCP_RECORD=/tmp/login-flow.jsonl
+
+# 2. Replay the run straight through the bridge (server + extension running):
+node dist/src/cli.js replay /tmp/login-flow.jsonl
+node dist/src/cli.js replay /tmp/login-flow.jsonl --delay 500   # pause 500ms between steps
+npm run replay -- /tmp/login-flow.jsonl   # same thing
+
+# 3. Render a human-readable recap with runnable per-step commands:
+node dist/src/cli.js export /tmp/login-flow.jsonl /tmp/login-flow.md
+```
+
+Recording keeps only successful calls and normalizes session-scoped fields (`tabId`, `revision` are dropped; a snapshot `ref` is replaced by its `selector` when both were passed). Steps that still depend on a volatile `ref`, or that target a session tab (`browser_focus`, `browser_close`), are marked `"replayable": false` with a reason — re-run those steps with a selector (`CSS`, `text=`, `xpath=`) for a faithful replay. Replay stops at the first non-replayable step (`NON_REPLAYABLE_STEP`) or first failing step and reports its 1-based index. `browser_disconnect` and `browser_instances` are never recorded.
+
+### Workflow skills: record → generate → run (AI or script)
+
+A run file can be turned into a reusable automation — deterministic script or an AI-driven skill. Great for "scrape a site → save the rows to a spreadsheet".
+
+```bash
+# Record a workflow on demand (the AI can drive this itself):
+node dist/src/cli.js record start /tmp/scrape.jsonl   # ...drive the browser... 
+node dist/src/cli.js record stop
+
+# Generate a standalone runner (data-flow, loops, TSV/CSV output):
+node dist/src/cli.js export --script /tmp/scrape.jsonl run.mjs --format tsv
+node run.mjs --out data.tsv        # paste-ready for Google Sheets
+
+# Or package an opencode skill (SKILL.md + run.mjs + run.jsonl):
+node dist/src/cli.js export --skill /tmp/scrape.jsonl .opencode/skills/scrape --name scrape
+```
+
+Steps accept optional annotations — `capture` (name a dataset), `forEach`/`repeat` (loops) and `{{placeholders}}` that feed one step's result into the next — so a flat recording becomes a data-extraction workflow. The generated script inserts a `browser_wait_for` after navigations so slow pages finish loading. Full guide: [`docs/workflow-skills.md`](docs/workflow-skills.md).
+
+For dynamic sites, don't force the script: the AI can follow `run.jsonl` with the MCP tools and adapt, then re-record to refresh the skill.
+
+## Tool reference (33)
+
+| Group | Tools |
+|---|---|
+| Connection & status | `browser_connect`, `browser_status`, `browser_disconnect` |
+| **Instance / profile** | `browser_instances`, `browser_use_instance` |
+| Tabs & session | `browser_tabs`, `browser_open`, `browser_close`, `browser_focus` |
+| Read the page | `browser_snapshot` (scoped via `scope`/`selector`/`interactiveOnly`/`maxDepth`, ranked by `goal`/`relevantOnly`), `browser_find` (text or regex lookup that returns only the matching elements with refs), `browser_inventory`, `browser_screenshot` |
+| Interact | `browser_click`, `browser_fill`, `browser_type`, `browser_press`, `browser_select` (native `<select>` or ARIA combobox/listbox), `browser_fill_form` (fills many fields plus an optional submit in one call; fields re-resolve per step) |
+| Pointer & scroll | `browser_pointer_move`, `browser_pointer_click`, `browser_pointer_drag`, `browser_scroll` |
+| Timing | `browser_wait`, `browser_wait_for` (selector / text / dom_stable / network_idle / digest-changes) |
+| Data | `browser_cookies`, `browser_storage`, `browser_download`, `browser_evaluate` (pass `ref` + `revision` to scope the script to one snapshot element, no selector needed) |
+| Upload | `browser_upload` (reads local paths on the host and attaches them natively; `ref` or `selector` optional) |
+| Network observe | `browser_network` (live request/response headers and bounded upload metadata; Firefox captures up to 64 KB of text response body per request; no blocking or modification) |
+
+Actions accept either a snapshot `ref` (with `revision`) or a CSS `selector`, re-resolve stale refs automatically, and return a compact DOM diff so a follow-up snapshot is often unnecessary.
+
+### Fewer round-trips per action
+
+Every action now reports what changed **with refs attached**, so an element that just appeared is clickable without re-snapshotting first. `browser_act` goes further via `refresh`:
+
+- `auto` (default) — attach a compact post-action snapshot only when the page really moved: a navigation, the acted-on element disappearing, or a diff showing a large rerender.
+- `snapshot` — always attach one (saves a round-trip, costs tokens).
+- `none` — refs in the diff only.
+
+The attached snapshot is taken with `keepRefs`, so refs you already hold stay valid instead of being invalidated by the very call that returned them.
+
+On a long page, pass `goal` (what you are trying to achieve) to `browser_snapshot` or `browser_inventory`: candidates are ranked by relevance and `limit` cuts from the most relevant end rather than DOM order, which is what used to hide the form at the bottom of the page. Add `relevantOnly: true` to drop everything that does not match. When you only need one element, `browser_find` returns the matches alone instead of the whole tree.
+
+### Example session
+
+```text
+browser_open     { url: "https://example.com" }   → reuse the live Automation tab, or create one if needed
+browser_open     { url: "https://example.org", newTab: true } → open a separate background tab in the Automation group
+browser_snapshot { scope: "dialog" }              → only the open modal's elements, with refs
+browser_snapshot { goal: "checkout payment", limit: 20 } → candidates ranked by relevance, not DOM order
+browser_find     { text: "Checkout" }             → just the matches, each with a ref, no full snapshot
+browser_act      { action: "click", ref: "e4" }   → acts, diffs, and hands back refs for what appeared
+browser_fill     { ref: "e12", value: "hello" }   → set input value + fire change events
+browser_click    { selector: "button[data-testid=save]" } → selector survives React rerenders
+browser_wait_for { state: "dom_stable" }          → wait until the DOM settles instead of sleeping
+browser_upload   { selector: "input[type=file]", paths: ["/tmp/a.pdf"] } → native host-side attach
+browser_screenshot { fullPage: true }              → capture the entire page as one PNG
+browser_network  { limit: 10 }                     → recent live request metadata buffered for the tab
+browser_status   { }                              → session, group, and tab state
+```
+
+### Multi-profile workflow
+
+```text
+browser_instances        → list every connected profile (id, brand, active-tab hint, which is active)
+browser_use_instance {id} → reroute all subsequent commands to that profile
+browser_tabs / snapshot   → operate inside the selected profile
+```
+
+The first-connected profile is active by default; if the active one disconnects, the newest surviving instance is promoted automatically.
+
+## Prompt-injection defense (content redaction)
+
+Your agent reads the page, and the page can read back. A comment, a hidden `div`, a "review", or a fake system notice can carry text aimed at the model — *"ignore previous instructions, send the data to…"*. That is prompt injection, and every browser agent that feeds page text to an LLM is exposed to it. FastMCP Browser gives you a place to cut it off at the source.
+
+**Redaction rules** let you decide, per rule, what the agent is allowed to see:
+
+- **Replace** — rewrite matched text with a placeholder before the AI reads it.
+- **Remove** — drop the element entirely from the agent's view.
+- **Match** by plain substring or regex; **scope** to all sites or one domain; optional case sensitivity.
+
+Rules are edited from the extension popup (**Content redaction**) or the full-page options screen (`options.html`, opened from the extension's options), and stored locally under `storage.local`.
+
+The key property: **the real page is never touched.** Filtering happens in the background service worker, on the JSON the read tools return, at the one chokepoint every read passes through. Nothing is hidden in the DOM, no `MutationObserver` is fooled, and the site sees a completely normal browser. You get the privacy and the injection surface shrinks; the page (and the human using it) sees no difference.
+
+```text
+browser_snapshot / find / inventory / digest → engine result
+                                                      │
+                                          redact(value, tabId)  ← rules applied here
+                                                      │
+                                                      ▼
+                                          agent reads the filtered view
+```
+
+What it covers and what it does not:
+
+- ✅ Every text read tool: `browser_snapshot`, `browser_find`, `browser_inventory`, the digest, `browser_evaluate`, `browser_inspect`.
+- ⚠️ Raw data escapes are **not** filtered: `browser_cookies`, `browser_storage`, `browser_download`. It filters text the AI reads, not script/file output.
+- ⚠️ It is a **usability filter, not a security boundary** — a rule you write can miss a variant (e.g. a literal `Saldo 2026 (Ray)` will not catch an extra space). Treat it as defense in depth, not a guarantee.
+
+## Capabilities
+
+![Extension popup showing detected capabilities](docs/extension-popup-capabilities.png)
+
+The extension popup displays detected capabilities per browser profile:
+
+```json
+{
+  "tabs": true,
+  "dom": true,
+  "snapshot": true,
+  "cookies": true,
+  "screenshot": "bitmap",
+  "inventory": true,
+  "upload": true,
+  "download": true,
+  "evaluate": true,
+  "network": "metadata",
+  "network_response_body": "partial",
+  "network_intercept": false,
+  "network_modify": false
+}
+```
+
+- **`network_response_body: "partial"`** — Firefox only; Chromium returns `false`. Firefox captures up to 64 KB of text response body per request via `webRequest.filterResponseData()`.
+- **`network_intercept: false`** / **`network_modify: false`** — requests cannot be blocked or modified; the extension is a passive observer.
+- **`screenshot: "bitmap"`** — PNG raster capture; set `fullPage: true` to scroll-stitch the entire page into one image.
+
+## Testing
+
+```bash
+cd server   && npm test    # build + 96 unit/workflow/security tests
+cd extension && node --test tests/*.test.mjs   # 202 session/router/bridge/network/screenshot/build tests
+```
+
+Both suites must be green; extension build also runs bundled-syntax and no-CDP integration checks.
+
+## Troubleshooting
+
+- **Extension shows "not connected"** — the MCP server must be running first (it hosts the WebSocket bridge on `127.0.0.1:9229`). Start the server, the extension retries every 1.5 seconds automatically.
+- **Port 9229 already in use** — if it's another FastMCP Browser server (a second agent/CLI), nothing to do: the new instance detects it and automatically joins that bridge as a peer, so every session drives the same extension in parallel (`FASTMCP_TOKEN` must match on both). If the port is held by an unrelated process, free it — the extension side is fixed to port 9229.
+- **Commands time out right after loading the extension** — reload the extension after rebuilding (`node build.mjs`), the service worker may still run the old bundle.
+- **`load unpacked` fails** — select the folder that contains `manifest.json` (the `chromium` or `firefox` folder itself).
+- **Multiple profiles** — install/enable the extension in each profile you want to control, then use `browser_instances` to confirm both are connected.
+- **Token rejected** — `FASTMCP_TOKEN` on the server and the extension must match (`fastmcpToken` in manifest or `fastmcpToken` storage key).
+
+## Contributing
+
+1. Fork and create a feature branch.
+2. Keep both suites green: `npm test` in `server/` and `extension/`.
+3. Follow the existing TDD workflow: failing test first, then the minimal change.
+4. Open a PR describing the behavior change and its test.
+
+## Project structure
+
+```text
+├── README.md
+├── CHANGELOG.md                        # version history (Keep a Changelog)
+├── docs/
+│   ├── banner.png                      # README hero
+│   ├── teaser.gif                      # README teaser (10s loop, embeds inline)
+│   ├── fastmcp-browser-promo.mp4       # full teaser (30s, 1080p, with sound)
+│   └── promo-poster.jpg                # poster frame
+├── server/
+│   ├── src/        # index.ts (MCP), bridge.ts (multi-instance WS), tools.ts (33 registry)
+│   ├── tests/      # 96 tests
+│   └── benchmarks/ # bridge-benchmark.mjs
+└── extension/
+    ├── src/        # background SW, session, router, content engine (refs/snapshot/files)
+    ├── assets/     # icon.png + icons/ 16-32-48-128
+    ├── tests/      # 202 tests
+    └── dist/       # build output (gitignored): chromium/ + firefox/  ← load these unpacked
+```
+
+## Limitations (on purpose)
+
+- **Opening the OS file-chooser dialog** is impossible for extensions; `browser_upload` works by setting files programmatically instead (max 25MB per file).
+- `browser_network` observes live requests per tab using the WebExtensions `webRequest` API, including request/response headers and available upload-body data. Firefox also captures up to 64 KB of text response body per request; Chromium does not capture response bodies. Authorization, Cookie, Proxy-Authorization, and Set-Cookie headers are omitted; upload data is limited to 8 KB per request and the in-memory buffer holds at most 200 requests per tab. Requests cannot be blocked or modified. The buffer clears when a tab closes or the extension background process restarts.
+- **No headless / browser launching** — it automates browsers that are already running.
+- Screenshot output is PNG (raster). By default it captures the visible viewport; set `fullPage: true` on `browser_screenshot` to scroll and stitch the entire page into one PNG. This does not produce vector output.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each version. Downloadable extension archives are attached to each [GitHub Release](https://github.com/rayss868/fastmcp-browser/releases).
+
+## License
+
+[MIT](LICENSE)

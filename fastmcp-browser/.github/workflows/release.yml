@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build extension
+        run: node build.mjs
+        working-directory: extension
+        env:
+          VERSION: ${{ github.ref_name }}
+      - name: Package archives
+        run: |
+          cd extension/dist
+          zip -r fastmcp-browser-extension-chromium.zip chromium
+          zip -r fastmcp-browser-extension-firefox.zip firefox
+          (cd firefox && zip -r ../fastmcp-browser-extension-firefox.xpi .)
+          python -c "import zipfile; z = zipfile.ZipFile('fastmcp-browser-extension-firefox.xpi'); assert z.testzip() is None and 'manifest.json' in z.namelist()"
+      - name: Create GitHub Release with extension archives
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            WebExtension builds of FastMCP Browser — the MCP bridge that drives Chrome/Firefox over a loopback WebSocket (33 MCP browser tools).
+
+            ### What's new in v0.5.0
+
+            - **Read a page as text.** `browser_snapshot` accepts `format:"text"` to return the rendered text of the page main region (innerText) in one small payload, so an agent reads a text-heavy page directly instead of paying for a screenshot. `format:"digest"` also accepts `includeText:true`, and `maxChars` caps the length.
+            - **Read a long text block in place.** `browser_snapshot` accepts `maxNameChars` to raise the per-element name cap for one call (default 160), so a page whose whole body sits in one block element (`main`, `article`) is no longer truncated in `compact`.
+            - **Screenshot is scoped to non-DOM content.** Its description now steers the model to use it only for canvas, WebGL, image, or PDF content, and to read ordinary text pages with `format:"text"`.
+            - **`browser_wait_for` state `digest-changes`.** Resolves when the AI-readable control digest changes, so an agent waits on state instead of a fixed sleep or a raw DOM settle.
+            - **Workflow recording and replay.** Any session driven through the MCP server can be recorded to a `.jsonl` run file (`FASTMCP_RECORD`) and replayed later through the bridge with no AI client (`cli replay`); `cli export --script` turns a run file into a runnable `.mjs`.
+            - **Label-wrapped controls are visible again.** A `<label>` that wraps or points to a visually-hidden `<input>` (DaisyUI radio tabs, custom checkboxes) is reported with the input's role and the label's text, so it appears in a snapshot and the digest and gets a ref.
+            - **`browser_evaluate` is a gated last resort.** It now requires a `fallback` reason and is refused until the tab has been read through the extension.
+            - **Refs survive long-lived pages**, and `browser_inspect` with a `path` no longer floods the context with React props.
+            - **Content redaction for prompt-injection defense.** User-configurable rules filter what the AI reads from a page, configured from the extension options page.
+
+            ### Install
+
+            Unzip an archive and load it unpacked:
+            - **Chromium** (`fastmcp-browser-extension-chromium.zip`) → `chrome://extensions` → Load unpacked → the `chromium` folder
+            - **Firefox** (`fastmcp-browser-extension-firefox.zip`) → `about:debugging` → Load Temporary Add-on → `firefox/manifest.json`
+
+            The Firefox `.xpi` has `manifest.json` at the archive root. It is unsigned; standard Firefox release builds require a Mozilla-signed add-on for permanent installation. LibreWolf and Firefox Developer Edition/Nightly may allow unsigned add-ons when signature enforcement is disabled.
+          files: |
+            extension/dist/fastmcp-browser-extension-chromium.zip
+            extension/dist/fastmcp-browser-extension-firefox.zip
+            extension/dist/fastmcp-browser-extension-firefox.xpi

@@ -1,0 +1,23 @@
+{
+  "results": [
+    {
+      "id": "https://openalex.org/W2963403868",
+      "doi": "https://doi.org/10.1162/neco.1997.9.8.1735",
+      "title": "Long Short-Term Memory",
+      "publication_year": 1997,
+      "cited_by_count": 42000,
+      "type": "article",
+      "authorships": [
+        {"author": {"display_name": "Sepp Hochreiter"}},
+        {"author": {"display_name": "Jürgen Schmidhuber"}}
+      ],
+      "primary_location": {
+        "source": {"display_name": "Neural Computation"},
+        "landing_page_url": "https://doi.org/10.1162/neco.1997.9.8.1735",
+        "pdf_url": null
+      },
+      "open_access": {"is_oa": true, "oa_url": "https://example.org/lstm.pdf"},
+      "abstract_inverted_index": {"We": [0], "propose": [1], "LSTM": [2]}
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+[
+    {
+        "id": "doi:10.1186/1756-8722-6-59 openalex:W2120377900 pmid:23958373 omid:br/06190834283",
+        "title": "A trial of something interesting",
+        "author": "Doe, Jane [omid:ra/06100000001]; Roe, Richard [orcid:0000-0002-1825-0097 omid:ra/06100000002]",
+        "pub_date": "2013-05-14",
+        "issue": "1",
+        "volume": "6",
+        "venue": "Journal of Hematology & Oncology [doi:10.1186/1756-8722 issn:1756-8722 openalex:S123 omid:br/0613030001]",
+        "page": "59",
+        "type": "journal article",
+        "publisher": "Springer Science and Business Media LLC [crossref:297 omid:ra/0610116000]",
+        "editor": ""
+    }
+]

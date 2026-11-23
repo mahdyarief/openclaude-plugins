@@ -1,0 +1,4 @@
+-r requirements-core.txt
+# Optional: PDF text extraction for reference excerpts.
+pymupdf==1.27.1
+pypdf==6.7.5

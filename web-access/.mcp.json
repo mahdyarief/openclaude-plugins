@@ -1,6 +1,13 @@
 {
-  "web-access": {
-    "command": "node",
-    "args": ["${CLAUDE_PLUGIN_ROOT}/server.js"]
+  "mcpServers": {
+    "web-access": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server.js"],
+      "env": {
+        "TAVILY_API_KEYS": "${user_config.tavily_api_keys}",
+        "EXA_API_KEYS": "${user_config.exa_api_keys}",
+        "WEB_SEARCH_PROVIDER": "${user_config.search_provider}"
+      }
+    }
   }
 }

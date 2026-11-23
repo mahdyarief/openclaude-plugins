@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "paperId": "abc123",
+      "title": "Attention Is All You Need",
+      "abstract": "The dominant sequence transduction models.",
+      "year": 2017,
+      "citationCount": 90000,
+      "venue": "NeurIPS",
+      "externalIds": {"DOI": "10.5555/3295222.3295349", "ArXiv": "1706.03762"},
+      "openAccessPdf": {"url": "https://example.org/attn.pdf"},
+      "authors": [{"name": "Ashish Vaswani"}, {"name": "Noam Shazeer"}],
+      "tldr": {"text": "A new simple network architecture, the Transformer."}
+    }
+  ]
+}

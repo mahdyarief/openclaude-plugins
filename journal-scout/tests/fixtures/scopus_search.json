@@ -1,0 +1,18 @@
+{
+  "search-results": {
+    "entry": [
+      {
+        "dc:identifier": "SCOPUS_ID:85012345678",
+        "eid": "2-s2.0-85012345678",
+        "dc:title": "Deep Learning for Network Intrusion Detection",
+        "dc:creator": "Doe J.",
+        "prism:publicationName": "IEEE Access",
+        "prism:coverDate": "2023-05-01",
+        "citedby-count": "42",
+        "prism:doi": "10.1109/ACCESS.2023.1234567",
+        "dc:description": "We survey deep learning methods for network intrusion detection.",
+        "subtypeDescription": "Article"
+      }
+    ]
+  }
+}
