@@ -1,0 +1,20 @@
+{
+    "status": "ok",
+    "message": {
+        "items": [
+            {
+                "DOI": "10.1124/dmd.111.040840",
+                "title": ["Significant Species Difference In Amide Hydrolysis Of GDC-0834"],
+                "author": [
+                    {"given": "Lichuan", "family": "Liu"},
+                    {"given": "Jason S.", "family": "Halladay"}
+                ],
+                "issued": {"date-parts": [[2011, 7, 8]]},
+                "container-title": ["Drug Metabolism and Disposition"],
+                "is-referenced-by-count": 42,
+                "type": "journal-article",
+                "URL": "https://doi.org/10.1124/dmd.111.040840"
+            }
+        ]
+    }
+}

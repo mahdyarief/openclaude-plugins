@@ -1,0 +1,46 @@
+{
+  "name": "web-access",
+  "version": "1.6.0",
+  "description": "Local MCP server for web search (Exa + Tavily with API key rotation), web pages as Markdown, site crawl, GitHub search/read and daily budgets. Zero dependencies.",
+  "main": "server.js",
+  "bin": {
+    "web-access": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/providers.test.js test/content.test.js test/hardening.test.js test/features.test.js test/enhance.test.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "web-search",
+    "exa",
+    "tavily",
+    "api-key-rotation",
+    "github-search"
+  ],
+  "license": "MIT",
+  "files": [
+    "*.js",
+    ".claude-plugin/",
+    ".mcp.json",
+    "skills/",
+    "web-access.example.json",
+    "README.md",
+    "README.id.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "author": "mahdyarief",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mahdyarief/web-access.git"
+  },
+  "homepage": "https://github.com/mahdyarief/web-access#readme",
+  "bugs": {
+    "url": "https://github.com/mahdyarief/web-access/issues"
+  }
+}

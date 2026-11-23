@@ -1,0 +1,27 @@
+{
+  "provider": "auto",
+  "cacheTtlSeconds": 600,
+  "cachePersist": false,
+  "exa": {
+    "keylessFallback": true,
+    "timeoutMs": 45000,
+    "keys": [
+      "00000000-0000-0000-0000-000000000001",
+      "00000000-0000-0000-0000-000000000002"
+    ],
+    "dailyBudgetUsd": 1
+  },
+  "tavily": {
+    "timeoutMs": 45000,
+    "keys": [
+      "tvly-xxxxxxxxxxxxxxxx",
+      "tvly-yyyyyyyyyyyyyyyy"
+    ],
+    "dailyCreditBudget": 100,
+    "keyless": false
+  },
+  "fetch": {
+    "allowPrivateNetwork": false,
+    "maxBytes": 26214400
+  }
+}

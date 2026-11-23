@@ -1,0 +1,84 @@
+import json
+
+import josc.config as config
+
+
+def _write_config(tmp_path, data):
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps(data), encoding="utf-8")
+    return p
+
+
+def test_api_key_prefers_env(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"api_key": "from_file"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.setenv("SCOPUS_API_KEY", "from_env")
+    assert config.get_api_key() == "from_env"
+
+
+def test_api_key_falls_back_to_file(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"api_key": "from_file"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("SCOPUS_API_KEY", raising=False)
+    assert config.get_api_key() == "from_file"
+
+
+def test_api_key_missing_raises(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("SCOPUS_API_KEY", raising=False)
+    try:
+        config.get_api_key()
+    except ValueError as e:
+        assert "api_key" in str(e)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+def test_openalex_api_key_prefers_env(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"openalex_api_key": "from_file"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.setenv("OPENALEX_API_KEY", "from_env")
+    assert config.get_openalex_api_key() == "from_env"
+
+
+def test_openalex_api_key_falls_back_to_file(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"openalex_api_key": "from_file"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
+    assert config.get_openalex_api_key() == "from_file"
+
+
+def test_polite_email_default(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("JOURNAL_SCOUT_EMAIL", raising=False)
+    assert config.get_polite_email() == "anonymous@example.com"
+
+
+def test_cache_ttl_prefers_env(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"cache_ttl": 100})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.setenv("JOURNAL_SCOUT_CACHE_TTL", "42")
+    assert config.get_cache_ttl() == 42.0
+
+
+def test_cache_ttl_falls_back_to_file(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"cache_ttl": 120})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("JOURNAL_SCOUT_CACHE_TTL", raising=False)
+    assert config.get_cache_ttl() == 120.0
+
+
+def test_cache_ttl_default_when_unset(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("JOURNAL_SCOUT_CACHE_TTL", raising=False)
+    assert config.get_cache_ttl() == config.DEFAULT_CACHE_TTL
+
+
+def test_cache_ttl_invalid_falls_back_to_default(monkeypatch, tmp_path):
+    cfg = _write_config(tmp_path, {"cache_ttl": "not-a-number"})
+    monkeypatch.setattr(config, "CONFIG_FILE", cfg)
+    monkeypatch.delenv("JOURNAL_SCOUT_CACHE_TTL", raising=False)
+    assert config.get_cache_ttl() == config.DEFAULT_CACHE_TTL

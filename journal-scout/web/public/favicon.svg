@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Journal Scout">
+  <rect width="64" height="64" rx="14" fill="#38bdf8" />
+  <text
+    x="32"
+    y="44"
+    text-anchor="middle"
+    font-family="ui-sans-serif, system-ui, 'Segoe UI', Arial, sans-serif"
+    font-size="30"
+    font-weight="700"
+    letter-spacing="-1.5"
+    fill="#020617"
+  >JS</text>
+</svg>

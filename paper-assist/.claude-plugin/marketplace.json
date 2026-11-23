@@ -1,0 +1,33 @@
+{
+  "name": "mahdyarief",
+  "owner": {
+    "name": "mahdyarief"
+  },
+  "metadata": {
+    "description": "Research and academic-writing plugins by mahdyarief.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "paper-assist",
+      "source": "./",
+      "description": "Model-free research OS: deterministic ideation, experiment, writing and review packs, claim/evidence audit and manuscript quality gates. The AI harness is the only language model.",
+      "version": "4.2.0",
+      "author": {
+        "name": "mahdyarief"
+      },
+      "homepage": "https://github.com/mahdyarief/paper-assist",
+      "repository": "https://github.com/mahdyarief/paper-assist",
+      "license": "MIT",
+      "keywords": [
+        "research",
+        "latex",
+        "peer-review",
+        "thesis",
+        "systematic-review",
+        "model-free"
+      ],
+      "category": "productivity"
+    }
+  ]
+}

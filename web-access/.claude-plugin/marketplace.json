@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "mahdyarief",
+  "description": "Claude Code plugins by mahdyarief",
+  "owner": {
+    "name": "mahdyarief",
+    "url": "https://github.com/mahdyarief"
+  },
+  "plugins": [
+    {
+      "name": "web-access",
+      "description": "Web search (Exa + Tavily with API key rotation), URL content extraction and GitHub search via a local zero-dependency MCP server. Exa works without any key.",
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://github.com/mahdyarief/web-access",
+      "keywords": ["web", "search", "exa", "tavily", "mcp"]
+    }
+  ]
+}

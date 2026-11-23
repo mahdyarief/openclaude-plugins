@@ -1,9 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "local-plugins",
+  "name": "mahdyarief",
   "owner": {
-    "name": "Custom",
-    "email": "local@openclaude"
+    "name": "mahdyarief"
   },
   "plugins": [
     {
@@ -21,7 +20,7 @@
     {
       "name": "web-access",
       "source": "./web-access",
-      "description": "Web access for OpenClaude — web search, URL fetching, and GitHub search via local MCP server",
+      "description": "Web access for OpenClaude - web search (Exa/Tavily with API key rotation), URL content extraction, site map/crawl, and GitHub search via a local MCP server. Bypasses built-in WebSearch/WebFetch.",
       "category": "development"
     },
     {
@@ -34,12 +33,6 @@
       "name": "context7",
       "source": "./context7",
       "description": "Context7 documentation lookup for any library/framework with API key rotation. 9 MCP tools: ctx7_resolve_library, ctx7_query_docs, ctx7_add_key, ctx7_remove_key, ctx7_list_keys, ctx7_set_strategy, ctx7_set_limit, ctx7_reset_stats, ctx7_current_key.",
-      "category": "development"
-    },
-    {
-      "name": "productivity-hooks",
-      "source": "./productivity-hooks",
-      "description": "PostToolUse productivity hooks — output-distiller (collapse noisy command output) + adhd-mode (focus tracking). No MCP server.",
       "category": "development"
     },
     {
@@ -95,6 +88,40 @@
       "source": "./academic-research-skills",
       "description": "Contract-audited academic research pipeline: research → write → review → revise → finalize. 5 skills (deep-research, academic-paper, academic-paper-reviewer, academic-pipeline, sr-screener), 35 modes, 16 slash commands (/ars-*), 4 agents. Skill-only, no MCP server.",
       "category": "research"
+    },
+    {
+      "name": "slideck-html",
+      "source": {
+        "source": "github",
+        "repo": "mahdyarief/slideck-html"
+      },
+      "description": "Single-file HTML slide decks with PowerPoint-grade output: frozen 1920x1080 template, 19 designs, 10 themes with embedded fonts, 5 motions, placeholder layouts, SVG charts, concept diagrams, PPTX import/export, and PDF export.",
+      "category": "design"
+    },
+    {
+      "name": "journal-scout",
+      "source": "./journal-scout",
+      "description": "Multi-source journal research MCP: Scopus, arXiv, OpenAlex, Crossref, PubMed, Garuda, Consensus, Exa, Unpaywall, OpenCitations. Unified search with DOI-first de-duplication and metrics context.",
+      "category": "research"
+    },
+    {
+      "name": "paper-assist",
+      "source": "./paper-assist",
+      "description": "Model-free research OS. PaperAssist scaffolds deterministic ideation, experiment, writing, and review packs; the AI harness is the only language model.",
+      "category": "research"
+    },
+    {
+      "name": "fastmcp-browser",
+      "source": "./fastmcp-browser",
+      "description": "FastMCP Browser - lightweight MCP server + WebExtension for AI browser automation. Drives your real browser (Chromium/Firefox) over loopback WebSocket via WebExtensions.",
+      "category": "development"
+    },
+    {
+      "name": "claude-osint",
+      "source": "./claude-osint",
+      "description": "Claude-OSINT external recon skills: 9 skills, 100+ recon capabilities, 80 secret-regex patterns, 80+ Google dorks across 9 categories, read-only passive methodology.",
+      "category": "security"
     }
-  ]
+  ],
+  "description": "Plugins by mahdyarief - one marketplace for web access, browser automation, code intelligence, document tooling, research, slides, and OSINT."
 }

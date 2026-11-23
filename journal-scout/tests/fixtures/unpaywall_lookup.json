@@ -1,0 +1,14 @@
+{
+  "doi": "10.1162/neco.1997.9.8.1735",
+  "is_oa": true,
+  "oa_status": "green",
+  "title": "Long Short-Term Memory",
+  "year": 1997,
+  "journal_name": "Neural Computation",
+  "best_oa_location": {
+    "url_for_pdf": "https://example.org/lstm.pdf",
+    "url_for_landing_page": "https://example.org/lstm",
+    "host_type": "repository",
+    "version": "acceptedVersion"
+  }
+}

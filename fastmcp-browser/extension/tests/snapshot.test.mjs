@@ -1,0 +1,215 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { createReferenceStore } from '../src/content/refs.js';
+import { createDomSemantics } from '../src/content/semantics.js';
+import { createSnapshotEngine } from '../src/content/snapshot.js';
+
+function fixture() {
+  const nodes = [
+    { tagName: 'BUTTON', role: 'button', text: 'Save', visible: true },
+    { tagName: 'A', role: 'link', text: 'Docs', visible: true },
+    { tagName: 'INPUT', role: 'textbox', text: 'Email', visible: true, type: 'email', value: 'a@example.com' },
+    { tagName: 'INPUT', role: 'textbox', text: 'Password', visible: true, type: 'password', value: 'secret' },
+    { tagName: 'H1', role: 'heading', text: 'Title', visible: true },
+    { tagName: 'SPAN', role: 'span', text: 'hidden', visible: false }
+  ];
+  const documentRef = {
+    title: 'Fixture',
+    querySelectorAll: () => nodes.filter(node => node.visible),
+    getElementById: () => null
+  };
+  const windowRef = {
+    location: { href: 'https://fixture.test/' },
+    getComputedStyle: element => ({ display: element.visible ? 'block' : 'none', visibility: 'visible' }),
+    HTMLInputElement: class {},
+    HTMLButtonElement: class {},
+    HTMLFormElement: class {},
+    CSS: { escape: value => value }
+  };
+  for (const node of nodes) {
+    node.getAttribute = key => key === 'role' ? node.role : null;
+    node.getBoundingClientRect = () => ({ x: 1, y: 2, width: 30, height: 10 });
+    node.isConnected = true;
+    node.tagName = node.tagName;
+    node.textContent = node.text;
+  }
+  const semantics = createDomSemantics(documentRef, windowRef);
+  return { documentRef, windowRef, semantics };
+}
+
+test('snapshot returns semantic elements and redacts password values', () => {
+  const { documentRef, windowRef, semantics } = fixture();
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+  const result = engine.snapshot();
+  assert.equal(result.title, 'Fixture');
+  assert.equal(result.elements.length, 5);
+  const password = result.elements.find(element => element.name === 'Password');
+  assert.equal(password.value, '[REDACTED]');
+  assert.ok(result.elements.every(element => element.visible === true));
+});
+
+test('snapshot engine assigns refs to elements', () => {
+  const { documentRef, windowRef, semantics } = fixture();
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+  const result = engine.snapshot();
+  assert.equal(typeof result.revision, 'number');
+  assert.ok(result.elements.every(element => /^e\d+$/.test(element.ref)));
+});
+
+test('snapshot selector discovers non-standard interactive controls', () => {
+  let capturedSelector = '';
+  const nodes = [
+    { tagName: 'SPAN', role: null, text: '81', visible: true },
+    { tagName: 'LABEL', role: null, text: 'should have known about', visible: true }
+  ];
+  const documentRef = {
+    title: 'Fixture',
+    querySelectorAll: selector => { capturedSelector = selector; return nodes.filter(node => node.visible); },
+    getElementById: () => null
+  };
+  const windowRef = {
+    location: { href: 'https://fixture.test/' },
+    getComputedStyle: () => ({ display: 'block', visibility: 'visible' }),
+    HTMLInputElement: class {},
+    HTMLButtonElement: class {},
+    HTMLFormElement: class {},
+    CSS: { escape: value => value }
+  };
+  for (const node of nodes) {
+    node.getAttribute = key => key === 'class' && node.tagName === 'SPAN' ? 'button is-link' : null;
+    node.getBoundingClientRect = () => ({ x: 1, y: 2, width: 30, height: 10 });
+    node.isConnected = true;
+    node.textContent = node.text;
+  }
+  const semantics = createDomSemantics(documentRef, windowRef);
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+  engine.snapshot();
+
+  assert.match(capturedSelector, /label/i, 'selector must include option labels');
+  assert.match(capturedSelector, /\[class\*=/i, 'selector must include class-based buttons');
+  assert.match(capturedSelector, /\[role=/i, 'selector must include explicit ARIA roles');
+});
+
+test('inventory groups elements and applies filters', () => {
+  const { documentRef, windowRef, semantics } = fixture();
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+  const result = engine.inventory();
+  assert.ok(result.buttons.length >= 1);
+  assert.ok(result.headings.length >= 1);
+  assert.equal(engine.inventory({ filter: 'interactive' }).headings.length, 0);
+});
+
+test('snapshot applies interactiveOnly and limit filters', () => {
+  const { documentRef, windowRef, semantics } = fixture();
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+
+  const interactive = engine.snapshot({ interactiveOnly: true });
+  assert.ok(interactive.elements.length > 0);
+  assert.ok(interactive.elements.every(element => element.role !== 'heading'), 'headings must be filtered out');
+
+  const limited = engine.snapshot({ limit: 2 });
+  assert.equal(limited.elements.length, 2);
+});
+
+test('snapshot applies a selector scope', () => {
+  const { documentRef, windowRef, semantics } = fixture();
+  const scopedDocument = {
+    ...documentRef,
+    querySelectorAll: selector => (selector === '#main' ? documentRef.querySelectorAll().slice(0, 1) : documentRef.querySelectorAll())
+  };
+  const engine = createSnapshotEngine({ documentRef: scopedDocument, windowRef, semantics, refs: createReferenceStore() });
+  const result = engine.snapshot({ selector: '#main' });
+  assert.equal(result.elements.length, 1);
+  assert.equal(result.elements[0].name, 'Save');
+});
+
+test('dialog scope selects the last visible nested modal', () => {
+  const outer = { tagName: 'DIV', visible: true };
+  const inner = { tagName: 'DIV', visible: true };
+  const outerButton = { tagName: 'BUTTON', role: 'button', textContent: 'Outer action', visible: true };
+  const innerButton = { tagName: 'BUTTON', role: 'button', textContent: 'Inner action', visible: true };
+  outer.contains = element => element === outer || element === outerButton;
+  inner.contains = element => element === inner || element === innerButton;
+  for (const node of [outer, inner, outerButton, innerButton]) {
+    node.getAttribute = key => key === 'role' ? node.role : null;
+    node.getBoundingClientRect = () => ({ x: 1, y: 2, width: 30, height: 10 });
+    node.isConnected = true;
+  }
+  const documentRef = {
+    title: 'Fixture',
+    querySelectorAll: selector => selector.includes('dialog[open]') ? [outer, inner] : [outerButton, innerButton],
+    getElementById: () => null
+  };
+  const windowRef = {
+    location: { href: 'https://fixture.test/' },
+    getComputedStyle: element => ({ display: element.visible ? 'block' : 'none', visibility: 'visible' }),
+    HTMLInputElement: class {},
+    HTMLButtonElement: class {},
+    HTMLFormElement: class {},
+    CSS: { escape: value => value }
+  };
+  const semantics = createDomSemantics(documentRef, windowRef);
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+  const result = engine.catalog({ scope: 'dialog' });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].name, 'Inner action');
+});
+
+test('catalog returns compact descriptors without touching refs', () => {
+  const { documentRef, windowRef, semantics } = fixture();
+  const refs = createReferenceStore();
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs });
+  engine.snapshot();
+  const revision = refs.revision;
+
+  const catalog = engine.catalog();
+  assert.equal(refs.revision, revision, 'catalog must not bump the revision');
+  assert.ok(catalog.length >= 5);
+  assert.deepEqual(Object.keys(catalog[0]).sort(), ['name', 'role']);
+});
+
+// A text-heavy page keeps its whole body in one block element, so its name is
+// the entire page text. The default 160-char cap truncated it in every format;
+// maxNameChars raises the cap for that one call.
+function textBlockFixture(text) {
+  const nodes = [
+    { tagName: 'MAIN', role: null, text, visible: true }
+  ];
+  const documentRef = {
+    title: 'Fixture',
+    querySelectorAll: () => nodes.filter(node => node.visible),
+    getElementById: () => null
+  };
+  const windowRef = {
+    location: { href: 'https://fixture.test/' },
+    getComputedStyle: element => ({ display: element.visible ? 'block' : 'none', visibility: 'visible' }),
+    HTMLInputElement: class {},
+    HTMLButtonElement: class {},
+    HTMLFormElement: class {},
+    CSS: { escape: value => value }
+  };
+  for (const node of nodes) {
+    node.getAttribute = () => null;
+    node.getBoundingClientRect = () => ({ x: 1, y: 2, width: 300, height: 400 });
+    node.isConnected = true;
+    node.textContent = node.text;
+  }
+  return { documentRef, windowRef, semantics: createDomSemantics(documentRef, windowRef) };
+}
+
+test('a block element name is capped at 160 chars by default', () => {
+  const { documentRef, windowRef, semantics } = textBlockFixture('x'.repeat(500));
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+  const result = engine.snapshot({ format: 'compact' });
+
+  assert.ok(result.text.includes('x'.repeat(160)), 'the default cap must still apply');
+  assert.ok(!result.text.includes('x'.repeat(161)), 'the default must not exceed 160 chars');
+});
+
+test('maxNameChars raises the per-element cap so compact can carry long text', () => {
+  const { documentRef, windowRef, semantics } = textBlockFixture('x'.repeat(500));
+  const engine = createSnapshotEngine({ documentRef, windowRef, semantics, refs: createReferenceStore() });
+  const result = engine.snapshot({ format: 'compact', maxNameChars: 500 });
+
+  assert.ok(result.text.includes('x'.repeat(500)), 'the raised cap must return the full block text');
+});

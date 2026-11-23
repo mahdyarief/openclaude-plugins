@@ -1,0 +1,32 @@
+{
+  "name": "claude-osint",
+  "version": "2.1",
+  "description": "Claude-OSINT external recon skills (elementalsouls): 9 skills, 100+ recon capabilities, 80 secret-regex patterns, 80+ Google dorks across 9 categories, read-only credential validators, and 27 attack-path templates for authorized red-team / bug-bounty engagements.",
+  "author": {
+    "name": "elementalsouls",
+    "url": "https://github.com/elementalsouls/Claude-OSINT"
+  },
+  "homepage": "https://github.com/elementalsouls/Claude-OSINT",
+  "repository": "https://github.com/elementalsouls/Claude-OSINT",
+  "license": "MIT",
+  "keywords": [
+    "osint",
+    "dorking",
+    "recon",
+    "red-team",
+    "bug-bounty",
+    "google-dorks",
+    "attack-surface"
+  ],
+  "skills": [
+    "./osint-methodology",
+    "./osint-autopilot",
+    "./offensive-osint",
+    "./org-attack-surface",
+    "./cloud-saas-exposure",
+    "./identity-provider-recon",
+    "./email-domain-security",
+    "./exposure-risk-quantification",
+    "./continuous-exposure-monitoring"
+  ]
+}

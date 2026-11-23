@@ -1,23 +1,51 @@
 /**
- * Exa API Key Rotator — Load keys from JSON file, round-robin with thread-safe index
- * Source: /home/dy/ai-agent/exa-api-key.json (3 UUIDs)
+ * Exa API Key Rotator — round-robin over keys.
+ *
+ * Key sources (first non-empty wins):
+ *   1. EXA_API_KEYS / EXA_API_KEY env — set by the Claude Code plugin's
+ *      "exa_api_keys" option, or manually (comma separated)
+ *   2. Unified config ~/.openclaude/web-access.json → "exa"  (see config.js)
+ *   3. Legacy file: EXA_KEYS_FILE env or ~/.openclaude/exa_keys.json
  */
 
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const { getProviderKeys, envKeys } = require("./config");
+const { isCooling } = require("./key-health");
 
 // Default keys file location
 const DEFAULT_KEYS_FILE = path.join(os.homedir(), ".openclaude", "exa_keys.json");
 
 let _index = 0;
+let _warned = false;
+let _source = "none";
 
 function loadKeys(keysFile = null) {
+  if (!keysFile) {
+    const fromEnv = [...new Set(envKeys("EXA_API_KEYS", "EXA_API_KEY"))];
+    if (fromEnv.length) {
+      _source = "env / plugin settings";
+      return fromEnv;
+    }
+    const fromConfig = [...new Set(
+      getProviderKeys("exa").filter((k) => typeof k === "string" && k.trim()).map((k) => k.trim())
+    )];
+    if (fromConfig.length) {
+      _source = "config file";
+      return fromConfig;
+    }
+  }
+
   const filePath = keysFile || process.env.EXA_KEYS_FILE || DEFAULT_KEYS_FILE;
+  _source = "legacy key file";
 
   try {
     if (!fs.existsSync(filePath)) {
-      console.error(`[exa-rotator] Keys file not found: ${filePath}, using anonymous mode`);
+      if (!_warned) {
+        console.error(`[exa-rotator] No Exa keys configured, using anonymous mode`);
+        _warned = true;
+      }
       return [];
     }
 
@@ -46,24 +74,29 @@ function loadKeys(keysFile = null) {
   }
 }
 
-function nextKey(keysFile = null) {
+/**
+ * Returns usable keys ordered from the current round-robin position and
+ * advances the position, so each request starts on a different key.
+ */
+function keysInRotationOrder(keysFile = null) {
   const keys = loadKeys(keysFile);
-  if (!keys || keys.length === 0) return null;
-
-  const idx = parseInt(process.env.EXA_KEY_INDEX || "0", 10);
-  const key = keys[idx % keys.length];
-  process.env.EXA_KEY_INDEX = String((idx + 1) % keys.length);
-
-  return key;
+  if (keys.length === 0) return [];
+  const start = _index % keys.length;
+  _index = (start + 1) % keys.length;
+  // Skip keys on cooldown (exhausted / rate-limited / invalid) — see key-health.js
+  return keys
+    .slice(start)
+    .concat(keys.slice(0, start))
+    .filter((k) => !isCooling("exa", k));
 }
 
-function rotateToNext(keysFile = null) {
-  const keys = loadKeys(keysFile);
-  if (!keys || keys.length === 0) return null;
-
-  const idx = parseInt(process.env.EXA_KEY_INDEX || "0", 10);
-  process.env.EXA_KEY_INDEX = String((idx + 1) % keys.length);
-  return keys[(idx + 1) % keys.length];
+function hasKeys(keysFile = null) {
+  return loadKeys(keysFile).length > 0;
 }
 
-module.exports = { loadKeys, nextKey, rotateToNext };
+/** Where the currently loaded keys came from (for web_access_status). */
+function keySource() {
+  return loadKeys().length ? _source : "none";
+}
+
+module.exports = { loadKeys, keysInRotationOrder, hasKeys, keySource };

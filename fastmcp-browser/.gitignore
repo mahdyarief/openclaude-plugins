@@ -1,0 +1,24 @@
+# Agent config — jangan di-push
+AGENTS.md
+AGENT.md
+.memory/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Private local research
+docs/research-browser-automation.md
+
+# Logs & local env
+*.log
+.env
+.env.*
+
+# Local workflow recordings (FASTMCP_RECORD)
+*.jsonl
+record-test.md
+out/

@@ -1,0 +1,1 @@
+# PaperAssist core has no third-party dependencies (standard library only).

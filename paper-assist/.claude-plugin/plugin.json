@@ -1,0 +1,32 @@
+{
+  "name": "paper-assist",
+  "displayName": "PaperAssist",
+  "version": "4.2.0",
+  "description": "Model-free research OS. PaperAssist scaffolds deterministic ideation, experiment, writing and review packs; the AI harness is the only language model.",
+  "author": {
+    "name": "PaperAssist contributors"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/mahdyarief/paper-assist",
+  "keywords": [
+    "research",
+    "latex",
+    "peer-review",
+    "experiments",
+    "reproducibility",
+    "model-free"
+  ],
+  "skills": "./skills",
+  "mcpServers": {
+    "paperassist": {
+      "command": "python",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/mcp_servers/stdio.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}",
+        "PYTHONIOENCODING": "utf-8"
+      }
+    }
+  }
+}
