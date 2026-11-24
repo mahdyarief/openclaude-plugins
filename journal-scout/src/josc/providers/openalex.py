@@ -46,6 +46,9 @@ def _topic_path(topic: dict) -> List[str]:
     return path
 
 
+_OR_FILTER_CHUNK = 50
+
+
 class OpenAlexProvider(ProviderBase):
     name = "openalex"
     supports_search = True
@@ -89,14 +92,20 @@ class OpenAlexProvider(ProviderBase):
     def _to_paper(work):
         authors = []
         institutions = []
+        countries: List[str] = []
         for a in work.get("authorships", []) or []:
             name = (a.get("author") or {}).get("display_name")
             if name:
                 authors.append(name)
+            codes = list(a.get("countries") or [])
             for institution in a.get("institutions") or []:
                 label = institution.get("display_name")
                 if label and label not in institutions:
                     institutions.append(label)
+                codes.append(institution.get("country_code"))
+            for code in codes:
+                if code and code.upper() not in countries:
+                    countries.append(code.upper())
         primary = work.get("primary_location") or {}
         source = primary.get("source") or {}
         oa = work.get("open_access") or {}
@@ -153,6 +162,8 @@ class OpenAlexProvider(ProviderBase):
             topic_paths=topic_paths,
             keywords=keywords,
             institutions=institutions,
+            countries=countries,
+            references=[ref for ref in work.get("referenced_works") or [] if ref],
             language=work.get("language"),
         )
 
@@ -280,13 +291,20 @@ class OpenAlexProvider(ProviderBase):
             requests.append(("openalex", work_ids))
 
         async def _fetch(field: str, values: List[str]) -> List[Paper]:
-            params = {
-                "filter": "|".join(f"{field}:{value}" for value in values),
-                "per-page": len(values),
-                "mailto": get_polite_email(),
-            }
-            data = await self._fetch_json(OPENALEX_URL, params=params)
-            return [self._to_paper(work) for work in data.get("results", []) or []]
+            # OpenAlex ORs values inside one filter (``doi:A|B``); repeating the
+            # field name (``doi:A|doi:B``) is rejected as an OR across filters.
+            # One OR filter takes at most 100 values, so chunk below that.
+            papers: List[Paper] = []
+            for start in range(0, len(values), _OR_FILTER_CHUNK):
+                chunk = values[start : start + _OR_FILTER_CHUNK]
+                params = {
+                    "filter": f"{field}:" + "|".join(chunk),
+                    "per-page": len(chunk),
+                    "mailto": get_polite_email(),
+                }
+                data = await self._fetch_json(OPENALEX_URL, params=params)
+                papers.extend(self._to_paper(work) for work in data.get("results", []) or [])
+            return papers
 
         outcomes = await asyncio.gather(
             *(_fetch(field, values) for field, values in requests),

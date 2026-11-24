@@ -396,7 +396,9 @@ def build_network(
     }
 
 
-def to_graphml(network: Dict[str, Any]) -> str:
+def to_graphml(
+    network: Dict[str, Any], directed: bool = True, graph_id: str = "citation-network"
+) -> str:
     """Serialize a network dict to GraphML for VOSviewer/Gephi import."""
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -411,7 +413,7 @@ def to_graphml(network: Dict[str, Any]) -> str:
         '  <key id="doi" for="node" attr.name="doi" attr.type="string"/>',
         '  <key id="weight" for="edge" attr.name="weight" attr.type="int"/>',
         '  <key id="type" for="edge" attr.name="type" attr.type="string"/>',
-        '  <graph id="citation-network" edgedefault="directed">',
+        f'  <graph id={quoteattr(graph_id)} edgedefault="{"directed" if directed else "undirected"}">',
     ]
     for node in network.get("nodes", []):
         lines.append(f"    <node id={quoteattr(str(node['id']))}>")

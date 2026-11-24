@@ -28,6 +28,8 @@ class Paper:
     topic_paths: list[list[str]] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
     institutions: list[str] = field(default_factory=list)
+    countries: list[str] = field(default_factory=list)
+    references: list[str] = field(default_factory=list)
     funders: list[str] = field(default_factory=list)
     publication_types: list[str] = field(default_factory=list)
     language: str | None = None
@@ -64,6 +66,8 @@ class Paper:
             "topic_paths": self.topic_paths,
             "keywords": self.keywords,
             "institutions": self.institutions,
+            "countries": self.countries,
+            "references": self.references,
             "funders": self.funders,
             "publication_types": self.publication_types,
             "language": self.language,

@@ -37,6 +37,7 @@ other tools return metadata and open-access links, not article bodies.
 | `get_related_works` | Semantically related papers |
 | `build_citation_network` | Citation graph: `cites`, `coupled`, `cocited` edges |
 | `compute_metrics` | h-index, i10, g-index, AWCR, citation velocity |
+| `bibliometric_analysis` | Science mapping: growth, top sources/authors/countries, Bradford, Lotka, co-authorship/co-word/co-citation/coupling networks, thematic map, trend topics, bursts, RPYS; GraphML/Pajek export |
 | `export_results` | BibTeX, RIS, EndNote, CSV, APA/Chicago/Harvard/Vancouver |
 | `search_<source>` | One provider only, e.g. `search_scopus`, `search_pubmed` |
 | `search_corpus` | AND search over saved search results already in the archive; no network calls |

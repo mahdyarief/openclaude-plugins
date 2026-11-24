@@ -2,8 +2,9 @@ import asyncio
 import re
 from typing import Any, Dict, Iterable, List, Optional
 
+from . import bibliometrics as _bibliometrics
 from .metrics import compute_metrics as _compute_metrics
-from .network import build_network, node_id
+from .network import build_network, node_id, to_graphml
 from .landscape import build_landscape as _build_landscape
 from .merge import merge_papers
 from .models import Paper, ProviderError
@@ -720,3 +721,154 @@ async def compute_metrics(
     metrics["errors"] = result["errors"]
     metrics["counts"] = result["counts"]
     return metrics
+
+
+def _as_paper(item: Any) -> Paper:
+    if isinstance(item, Paper):
+        return item
+    fields = set(Paper.__dataclass_fields__)
+    data = {k: v for k, v in dict(item).items() if k in fields and k != "retraction"}
+    if isinstance(data.get("citations_by_year"), dict):
+        data["citations_by_year"] = {
+            int(year): count for year, count in data["citations_by_year"].items()
+            if str(year).isdigit()
+        }
+    return Paper(**data)
+
+
+async def _resolve_references(
+    providers: List[ProviderBase], papers: List[Paper], limit: int
+) -> Dict[str, Dict[str, Any]]:
+    """Metadata for the ``limit`` most locally-cited references, via OpenAlex.
+
+    Reference lists hold bare OpenAlex work ids; co-citation labels and RPYS
+    need each reference's year and title. Only the most cited ones are
+    looked up so the cost stays at a few batched requests.
+    """
+    if limit <= 0:
+        return {}
+    provider = next((p for p in providers if p.name == "openalex" and hasattr(p, "get_many")), None)
+    if provider is None:
+        return {}
+    cited: Dict[str, int] = {}
+    for paper in papers:
+        for ref in dict.fromkeys(paper.references):
+            cited[ref] = cited.get(ref, 0) + 1
+    wanted = [ref for ref, _ in sorted(cited.items(), key=lambda kv: (-kv[1], kv[0]))[:limit]]
+    if not wanted:
+        return {}
+    try:
+        resolved = await provider.get_many(wanted)
+    except Exception:
+        return {}
+    meta: Dict[str, Dict[str, Any]] = {}
+    for paper in resolved:
+        key = paper.ids.get("openalex")
+        if key:
+            meta[key] = {"title": paper.title, "year": paper.year,
+                         "authors": paper.authors[:3], "doi": paper.doi}
+    return meta
+
+
+def _fit_bibliometric_budget(report: Dict[str, Any], max_chars: int) -> Dict[str, Any]:
+    """Halve network edges, then node lists, until the payload fits."""
+    import json
+
+    def size() -> int:
+        return len(json.dumps(report, ensure_ascii=False, default=str))
+
+    networks = report.get("networks") or {}
+    rounds = 0
+    while size() > max_chars and networks and rounds < 12:
+        rounds += 1
+        for network in networks.values():
+            edges = network.get("edges") or []
+            if len(edges) > 20:
+                network["stats"]["edges_dropped"] = network["stats"].get("edges_dropped", 0) + len(edges) // 2
+                network["edges"] = edges[: len(edges) // 2]
+            elif len(network.get("nodes") or []) > 10:
+                keep = network["nodes"][: len(network["nodes"]) // 2]
+                ids = {n["id"] for n in keep}
+                network["nodes"] = keep
+                network["edges"] = [e for e in edges if e["source"] in ids and e["target"] in ids]
+    if rounds:
+        report.setdefault("notes", []).append(
+            "Networks were trimmed to fit the tool-result size limit; lower max_nodes or "
+            "request graph_format='graphml'/'pajek' for one network.")
+    if size() > max_chars and report.get("rpys"):
+        report["rpys"]["spectrum"] = [r for r in report["rpys"]["spectrum"] if r["references"]]
+    return report
+
+
+async def bibliometric_analysis(
+    providers: List[ProviderBase],
+    query: Optional[str] = None,
+    papers: Optional[List[Any]] = None,
+    analyses: Optional[List[str]] = None,
+    networks: Optional[List[str]] = None,
+    keyword_field: str = "keywords",
+    limit_per_source: int = 100,
+    year_from: Optional[int] = None,
+    year_to: Optional[int] = None,
+    sources: Optional[List[str]] = None,
+    tech_only: bool = False,
+    topic: Optional[str] = None,
+    top: int = 10,
+    max_nodes: int = 50,
+    min_occurrences: int = 2,
+    resolve_references: int = 200,
+    graph_format: str = "json",
+    graph_network: Optional[str] = None,
+    max_chars: int = 75_000,
+) -> Dict[str, Any]:
+    """Bibliometrix-style science mapping over a searched or supplied corpus."""
+    errors: Dict[str, Any] = {}
+    counts: Dict[str, Any] = {}
+    warnings: List[str] = []
+    if papers:
+        corpus = [_as_paper(item) for item in papers]
+    elif query:
+        payload = await search_all(
+            providers, query, limit_per_source=limit_per_source, year_from=year_from,
+            year_to=year_to, tech_only=tech_only, sources=sources, topic=topic,
+        )
+        corpus = [_as_paper(item) for item in payload["results"]]
+        errors = payload.get("errors", {})
+        counts = payload.get("counts", {})
+        warnings = list(payload.get("query_warnings", []))
+    else:
+        raise ValueError("bibliometric_analysis needs either 'query' or 'papers'.")
+    if not corpus:
+        return {"query": query, "documents": 0, "errors": errors,
+                "notes": ["No papers to analyse."]}
+
+    wants_refs = (analyses is None or "rpys" in analyses
+                  or ("networks" in analyses and (networks is None or "co_citation" in networks)))
+    meta = await _resolve_references(providers, corpus, resolve_references) if wants_refs else {}
+
+    if graph_network:
+        if graph_format not in ("graphml", "pajek", "json"):
+            raise ValueError("graph_format must be 'json', 'graphml' or 'pajek'.")
+        report = _bibliometrics.analyze(
+            corpus, analyses=["networks"], networks=[graph_network],
+            keyword_field=keyword_field, max_nodes=max_nodes,
+            min_occurrences=min_occurrences, reference_meta=meta,
+        )
+        network = report["networks"].get(graph_network)
+        if network is None:
+            return {"query": query, "network": graph_network, "notes": report["notes"]}
+        if graph_format == "json":
+            return {"query": query, "network": graph_network, **network, "notes": report["notes"]}
+        text = (to_graphml(network, directed=False, graph_id=graph_network)
+                if graph_format == "graphml" else _bibliometrics.to_pajek(network))
+        return {"query": query, "network": graph_network, "format": graph_format,
+                graph_format: text, "stats": network["stats"]}
+
+    report = _bibliometrics.analyze(
+        corpus, analyses=analyses, networks=networks, keyword_field=keyword_field,
+        top=top, max_nodes=max_nodes, min_occurrences=min_occurrences, reference_meta=meta,
+    )
+    report = {"query": query, "documents": len(corpus), **report,
+              "references_resolved": len(meta), "errors": errors, "counts": counts,
+              "query_warnings": warnings}
+    return _fit_bibliometric_budget(report, max_chars)

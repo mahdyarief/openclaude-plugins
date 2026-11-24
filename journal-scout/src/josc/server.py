@@ -22,6 +22,7 @@ from .models import ProviderError
 from .identify import resolve_document
 from .pdf_text import extract_pdf_text
 from .providers import build_providers, search_provider_names
+from .bibliometrics import ANALYSES as BIBLIOMETRIC_ANALYSES, NETWORKS as BIBLIOMETRIC_NETWORKS
 from .quota import quota_report
 from .store import build_store, cached_call
 from .api.state import _store
@@ -37,6 +38,7 @@ UNIFIED_TOOLS = [
     "build_citation_network",
     "build_research_landscape",
     "compute_metrics",
+    "bibliometric_analysis",
     "export_results",
     "identify_paper",
     "check_watches",
@@ -75,12 +77,14 @@ MAX_TOOL_RESULT_CHARS = 80_000
 # fields go first so titles/years/DOIs (what a landscape pass actually needs)
 # survive as long as possible.
 _SHRINK_FIELDS = (
+    "references",
     "topic_paths",
     "abstract",
     "keywords",
     "topics",
     "topic_ids",
     "institutions",
+    "countries",
     "funders",
     "citations_by_year",
     "ids",
@@ -549,6 +553,41 @@ def _tool_list() -> List[types.Tool]:
             },
         ),
         types.Tool(
+            name="bibliometric_analysis",
+            description=(
+                "Bibliometrix/VOSviewer-style science mapping of a corpus (search a query, "
+                "or pass paper dicts): main information (growth rate, collaboration index, "
+                "international co-authorship), top sources/authors/institutions/countries/"
+                "keywords, Bradford zones, Lotka's law, co-authorship / keyword co-occurrence / "
+                "country / co-citation / bibliographic-coupling networks with Louvain clusters, "
+                "Callon thematic map, trend topics, Kleinberg keyword bursts, RPYS and a "
+                "three-field plot. Set graph_network + graph_format='graphml'|'pajek' to export "
+                "one network for Gephi/VOSviewer. Reference-based analyses need OpenAlex records."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query; mutually exclusive with papers."},
+                    "papers": {"type": "array", "items": {"type": "object"}, "description": "Paper dicts (e.g. search_all results) to analyse instead of searching."},
+                    "analyses": {"type": "array", "items": {"type": "string", "enum": list(BIBLIOMETRIC_ANALYSES)}, "description": "Subset to run; default all."},
+                    "networks": {"type": "array", "items": {"type": "string", "enum": list(BIBLIOMETRIC_NETWORKS)}, "description": "Networks to build when 'networks' is selected; default all."},
+                    "keyword_field": {"type": "string", "enum": ["keywords", "topics"], "default": "keywords", "description": "Term source for keyword analyses; 'topics' uses the OpenAlex/Scopus topic taxonomy."},
+                    "limit_per_source": {"type": "integer", "default": 100},
+                    "sources": {"type": "array", "items": {"type": "string"}, "description": "Providers to search; include openalex for references and countries."},
+                    "year_from": {"type": "integer"},
+                    "year_to": {"type": "integer"},
+                    "tech_only": {"type": "boolean", "default": False},
+                    "topic": {"type": "string"},
+                    "top": {"type": "integer", "default": 10, "description": "Rows per top-N table."},
+                    "max_nodes": {"type": "integer", "default": 50},
+                    "min_occurrences": {"type": "integer", "default": 2, "description": "Minimum frequency for a term, author or reference to enter a network or theme."},
+                    "resolve_references": {"type": "integer", "default": 200, "description": "How many of the most-cited references to look up on OpenAlex for co-citation labels and RPYS; 0 disables."},
+                    "graph_network": {"type": "string", "enum": list(BIBLIOMETRIC_NETWORKS), "description": "Return only this network."},
+                    "graph_format": {"type": "string", "enum": ["json", "graphml", "pajek"], "default": "json"},
+                },
+            },
+        ),
+        types.Tool(
             name="export_results",
             description="Export a list of paper dicts to a bibliography format (BibTeX, RIS, CSV, EndNote, WoS, citation styles, JSON).",
             inputSchema={
@@ -832,6 +871,27 @@ async def build_json(name: str, arguments: Dict[str, Any], providers, scopus_pro
             year_to=arguments.get("year_to"),
             sources=arguments.get("sources"),
             mode=arguments.get("mode", "basic"),
+        )
+    if name == "bibliometric_analysis":
+        return await aggregator.bibliometric_analysis(
+            providers,
+            query=arguments.get("query"),
+            papers=arguments.get("papers"),
+            analyses=arguments.get("analyses"),
+            networks=arguments.get("networks"),
+            keyword_field=arguments.get("keyword_field", "keywords"),
+            limit_per_source=arguments.get("limit_per_source", 100),
+            year_from=arguments.get("year_from"),
+            year_to=arguments.get("year_to"),
+            sources=arguments.get("sources"),
+            tech_only=arguments.get("tech_only", False),
+            topic=arguments.get("topic"),
+            top=arguments.get("top", 10),
+            max_nodes=arguments.get("max_nodes", 50),
+            min_occurrences=arguments.get("min_occurrences", 2),
+            resolve_references=arguments.get("resolve_references", 200),
+            graph_network=arguments.get("graph_network"),
+            graph_format=arguments.get("graph_format", "json"),
         )
     if name == "identify_paper":
         text = extract_pdf_text(arguments["path"])

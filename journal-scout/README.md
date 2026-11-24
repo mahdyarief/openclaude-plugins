@@ -68,7 +68,7 @@ See [Remote MCP server](#remote-mcp-server) below: one Docker image serves
 
 ## Tools (44)
 
-| Unified (11) | Papers & abstracts (6) | Per-source (8) |
+| Unified (12) | Papers & abstracts (6) | Per-source (8) |
 |---|---|---|
 | `search_all` | `get_paper` | `search_scopus` |
 | `search_author` | `get_paper_abstract` | `search_arxiv` |
@@ -81,6 +81,7 @@ See [Remote MCP server](#remote-mcp-server) below: one Docker image serves
 | `build_research_landscape` | | |
 | `batch_lookup` | | |
 | `topic_classify` | | |
+| `bibliometric_analysis` | | |
 
 | Scopus detail (3) | SciVal (5) | Local archive (2) |
 |---|---|---|
@@ -251,6 +252,35 @@ citations, h-index, i10-index, g-index, max/mean citations, and citation
 velocity over the merged multi-source result set. `mode="extended"` adds the
 Publish-or-Perish indices: `hc_index`, `hI_index` (Batista), `hI_norm`,
 `hm_index` (Schreiber), `AWCR`, `AW_index`, `AWCRpA`, plus citation ratios.
+
+### Bibliometric analysis
+
+`bibliometric_analysis` runs bibliometrix/VOSviewer-style science mapping over
+a corpus: pass `query` to search (same filters as `search_all`) or `papers` to
+analyse records you already have. Every analysis is pure Python with no new
+dependencies; pick a subset with `analyses`.
+
+| Analysis | What it returns |
+|---|---|
+| `summary` | Main information: timespan, annual growth rate, average citations, collaboration index, co-authors per document, international co-authorship %, field coverage |
+| `annual_production` | Papers and citations per year |
+| `sources` / `authors` / `institutions` / `keywords` | Top-N with documents, citations, h-index (authors also fractionalised) |
+| `countries` | SCP/MCP production per country and country collaboration pairs |
+| `bradford` | Bradford zones, core sources, Bradford multiplier |
+| `lotka` | Author productivity, fitted beta, K-S test against classic Lotka |
+| `networks` | Co-authorship, keyword co-occurrence, country and institution collaboration, co-citation, bibliographic coupling; Louvain communities, association strength |
+| `thematic_map` | Callon centrality/density quadrants (motor, niche, basic, emerging/declining) |
+| `trend_topics` | Q1/median/Q3 year per term |
+| `bursts` | Kleinberg keyword bursts with start, end and strength |
+| `rpys` | Reference Publication Year Spectroscopy with peak years |
+| `three_field` | Sankey links authors → keywords → countries (or sources) |
+
+References and countries come from OpenAlex, so include `openalex` in
+`sources` for `co_citation`, `bibliographic_coupling` and `rpys`. The
+`resolve_references` most-cited references (default 200) are looked up on
+OpenAlex for co-citation labels and RPYS years; the result reports coverage.
+Export one network with `graph_network` and `graph_format="graphml"` (Gephi)
+or `"pajek"` (VOSviewer, Pajek). Authors are matched by normalised name.
 
 ## Config
 

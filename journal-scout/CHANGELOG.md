@@ -5,9 +5,20 @@ All notable changes to this project will be documented in this file.
 Historical entries are reconstructed from the upstream commit history
 (`3ae2bcc` → `92ae1b7`), not from the development branch.
 
-## [Unreleased]
+## [2.6.0] - 2026-11-24
 
 ### Added
+- `bibliometric_analysis` MCP tool: bibliometrix/VOSviewer-style science
+  mapping over a searched or supplied corpus (main information, top
+  sources/authors/institutions/countries/keywords, Bradford, Lotka,
+  co-authorship / keyword / country / institution / co-citation /
+  bibliographic-coupling networks with Louvain communities, Callon thematic
+  map, trend topics, Kleinberg bursts, RPYS, three-field plot) plus GraphML
+  and Pajek export. Pure Python in `src/josc/bibliometrics.py`; algorithms
+  re-implemented from the original papers because bibliometrix, pybibx and
+  metaknowledge are GPL and this project is MIT
+- `Paper.countries` and `Paper.references`, parsed from OpenAlex
+  `authorships` and `referenced_works` and merged across sources
 - Garuda provider (Indonesian scholarly index) with `search_garuda`
 - `topic` filter on `search_all`, `GET /api/search`, and the web UI. It runs
   after the merge and matches case-insensitively against `topics`; it is not
@@ -27,6 +38,9 @@ Historical entries are reconstructed from the upstream commit history
 - `skills/journal-scout/SKILL.md` so the plugin registers as a callable skill
 
 ### Fixed
+- OpenAlex `get_many` sent `doi:A|doi:B`, which OpenAlex rejects as an OR
+  across filters, so batch lookups of more than one id silently returned
+  nothing. It now sends `doi:A|B` in chunks of 50
 - Crossref records now join `subtitle` into the title, fall back to
   `publisher` for venue, and read `approved`/`created` when `issued` is
   empty — BSI standards were rendering as identical bare rows

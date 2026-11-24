@@ -140,6 +140,8 @@ def merge_two(a: Paper, b: Paper) -> Paper:
         topic_paths=_union_paths(a.topic_paths, b.topic_paths),
         keywords=_union(a.keywords, b.keywords),
         institutions=_union(a.institutions, b.institutions),
+        countries=_union(a.countries, b.countries),
+        references=_union(a.references, b.references),
         funders=_union(a.funders, b.funders),
         publication_types=_union(a.publication_types, b.publication_types),
         language=_pick_text(preferred.language, fallback.language),

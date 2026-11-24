@@ -36,7 +36,7 @@ tools.
 
    - **Unified:** `search_all`, `search_author`, `get_paper`, `get_citations`,
      `get_references`, `get_related_works`, `build_citation_network`,
-     `compute_metrics`, `export_results`
+     `compute_metrics`, `bibliometric_analysis`, `export_results`
    - **Per-source:** `search_scopus`, `search_arxiv`, `search_openalex`,
      `search_crossref`, `search_pubmed`, `search_garuda`, `search_consensus`,
      `search_exa`

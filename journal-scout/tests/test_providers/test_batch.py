@@ -39,7 +39,7 @@ async def test_openalex_get_many_uses_one_filtered_request():
     try:
         papers = await provider.get_many(["10.1/a", "10.1/b"])
         assert [p.doi for p in papers] == ["10.1/a", "10.1/b"]
-        assert seen["filter"] == "doi:10.1/a|doi:10.1/b"
+        assert seen["filter"] == "doi:10.1/a|10.1/b"
         assert seen["url"].startswith("https://api.openalex.org/works")
     finally:
         await client.aclose()
@@ -105,3 +105,40 @@ async def test_arxiv_get_many_uses_id_list_batch():
         assert [p.ids.get("arxiv") for p in papers] == ["2401.12345", "2401.00001"]
     finally:
         await client.aclose()
+
+
+async def test_openalex_get_many_chunks_long_id_lists():
+    filters = []
+
+    def handler(request):
+        value = request.url.params.get("filter")
+        filters.append(value)
+        ids = value[len("openalex:"):].split("|")
+        return httpx.Response(200, json={"results": [_work(i, None, i) for i in ids]})
+
+    client = _client(handler)
+    provider = OpenAlexProvider(client)
+    try:
+        ids = [f"W{n}" for n in range(1, 121)]
+        papers = await provider.get_many(ids)
+        assert len(papers) == 120
+        assert len(filters) == 3
+        assert all(f.count("openalex:") == 1 for f in filters)
+    finally:
+        await client.aclose()
+
+
+def test_openalex_to_paper_reads_countries_and_references():
+    paper = OpenAlexProvider._to_paper({
+        "id": "https://openalex.org/W9",
+        "title": "T",
+        "authorships": [
+            {"author": {"display_name": "A"}, "countries": ["id"],
+             "institutions": [{"display_name": "UI", "country_code": "ID"}]},
+            {"author": {"display_name": "B"}, "countries": [],
+             "institutions": [{"display_name": "MIT", "country_code": "US"}]},
+        ],
+        "referenced_works": ["https://openalex.org/W1", "https://openalex.org/W2"],
+    })
+    assert paper.countries == ["ID", "US"]
+    assert paper.references == ["https://openalex.org/W1", "https://openalex.org/W2"]
