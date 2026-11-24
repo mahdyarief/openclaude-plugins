@@ -118,8 +118,10 @@ function main() {
     return;
   }
 
+  // OpenClaude validates hookEventName against the canonical event name
+  // ("SessionStart"), not the CLI arg ("session-start").
   if (!exists) {
-    emit(event,
+    emit('SessionStart',
       `project-memory: created ${file} because it did not exist. ` +
       `Populate it with set_project_memory or update_project_memory; never write it directly with Write/Edit.`);
     return;
@@ -127,7 +129,7 @@ function main() {
 
   const d = digest(content);
   const toc = d.headings.length ? ` Sections: ${d.headings.join(' | ')}.` : '';
-  emit(event,
+  emit('SessionStart',
     `project-memory: ${file} exists (${d.lineCount} lines, ${d.bytes} bytes).${toc} ` +
     `Read it with get_project_memory(project_path=${JSON.stringify(dir)}) before making decisions; ` +
     `update via update_project_memory, not Write/Edit.`);
