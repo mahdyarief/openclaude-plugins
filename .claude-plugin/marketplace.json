@@ -109,6 +109,12 @@
       "source": "./claude-osint",
       "description": "Claude-OSINT external recon skills: 9 skills, 100+ recon capabilities, 80 secret-regex patterns, 80+ Google dorks across 9 categories, read-only passive methodology.",
       "category": "security"
+    },
+    {
+      "name": "basecoat-ui",
+      "source": "./basecoat-ui",
+      "description": "Basecoat UI for HTML — shadcn/ui look without React. File-based skills with 58 component markup references (variants, FSM states, anti-patterns), dashboard block patterns and chart blueprints. 2 slash commands. Skill-only, no MCP server, no background process.",
+      "category": "development"
     }
   ],
   "description": "Plugins by mahdyarief - one marketplace for web access, browser automation, code intelligence, document tooling, research, slides, and OSINT."

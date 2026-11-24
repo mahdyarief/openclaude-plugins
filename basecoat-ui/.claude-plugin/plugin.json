@@ -1,0 +1,21 @@
+{
+  "name": "basecoat-ui",
+  "version": "2.0.0",
+  "description": "Basecoat UI for HTML: the shadcn/ui look without React. File-based skills with 58 component markup references, guardrails, dashboard blocks and chart blueprints. No MCP server and no background process.",
+  "author": {
+    "name": "Žygimantas Jasiulionis / Intellmedia (upstream)",
+    "url": "https://github.com/zygiu-zygis/basecoat-ui-mcp"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/zygiu-zygis/basecoat-ui-mcp",
+  "homepage": "https://basecoatui.com",
+  "keywords": [
+    "basecoat",
+    "tailwind",
+    "shadcn",
+    "html",
+    "components",
+    "dashboard"
+  ],
+  "skills": "./skills"
+}
