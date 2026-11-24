@@ -5,6 +5,17 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.2] - 2026-11-24
+
+### 修复
+
+- **旧版 `.xls` 支持**：`.xls` 文件现在由基于 `xlrd` 的 `XlsReader` 读取；`openpyxl` 无法解析旧版 BIFF 格式
+- **工作簿清理**：`ExcelReader` 在读取失败时也会关闭工作簿
+
+### 变更
+
+- 新增 `xlrd>=2.0.1` 依赖
+
 ## [1.3.1] - 2026-03-13
 
 ### 安全修复

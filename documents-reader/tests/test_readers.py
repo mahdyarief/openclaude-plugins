@@ -1,11 +1,12 @@
-"""DocumentReader 抽象基类及各 Reader 实现测试。
+"""Tests for the DocumentReader abstract base class and each Reader implementation.
 
-测试内容：
-- DocumentReader 抽象基类验证
-- DocxReader 单元测试
-- PdfReader 单元测试
-- TxtReader 单元测试（多种编码）
-- ExcelReader 单元测试
+Coverage:
+- DocumentReader abstract base class
+- DocxReader unit tests
+- PdfReader unit tests
+- TxtReader unit tests (multiple encodings)
+- ExcelReader unit tests
+- XlsReader unit tests
 """
 
 from pathlib import Path
@@ -18,22 +19,23 @@ from mcp_documents_reader import (
     ExcelReader,
     PdfReader,
     TxtReader,
+    XlsReader,
 )
 
 
 class TestDocumentReader:
-    """DocumentReader 抽象基类测试类。"""
+    """Test class for the DocumentReader abstract base class."""
 
     def test_cannot_instantiate_abstract_class(self) -> None:
-        """测试无法直接实例化抽象基类。"""
+        """Test that the abstract base class cannot be instantiated directly."""
         with pytest.raises(TypeError):
             DocumentReader()  # type: ignore[abstract]
 
     def test_subclass_must_implement_read(self) -> None:
-        """测试子类必须实现 read 方法。"""
+        """Test that subclasses must implement the read method."""
 
         class IncompleteReader(DocumentReader):
-            """不完整的 Reader 实现。"""
+            """Incomplete Reader implementation."""
 
             pass
 
@@ -41,13 +43,13 @@ class TestDocumentReader:
             IncompleteReader()  # type: ignore[abstract]
 
     def test_subclass_with_read_implementation(self) -> None:
-        """测试正确实现 read 方法的子类可以实例化。"""
+        """Test that a subclass implementing read can be instantiated."""
 
         class CompleteReader(DocumentReader):
-            """完整的 Reader 实现。"""
+            """Complete Reader implementation."""
 
             def read(self, file_path: str) -> str:  # noqa: ARG002
-                """读取文件内容。"""
+                """Read the file content."""
                 return "test content"
 
         reader = CompleteReader()
@@ -55,64 +57,64 @@ class TestDocumentReader:
 
 
 class TestDocxReader:
-    """DocxReader 测试类。"""
+    """Test class for DocxReader."""
 
     def test_read_docx_with_content(self, sample_docx_file: Path) -> None:
-        """测试读取包含内容的 DOCX 文件。
+        """Test reading a DOCX file with content.
 
         Args:
-            sample_docx_file: 示例 DOCX 文件路径
+            sample_docx_file: Sample DOCX file path
         """
         reader = DocxReader()
         result = reader.read(str(sample_docx_file))
 
-        # 验证提取的内容包含预期文本
+        # Verify the extracted content contains the expected text
         assert "测试文档标题" in result
         assert "第一段文本内容" in result
         assert "第二段文本内容" in result
 
     def test_read_docx_with_table(self, sample_docx_file: Path) -> None:
-        """测试读取包含表格的 DOCX 文件。
+        """Test reading a DOCX file containing a table.
 
         Args:
-            sample_docx_file: 示例 DOCX 文件路径
+            sample_docx_file: Sample DOCX file path
         """
         reader = DocxReader()
         result = reader.read(str(sample_docx_file))
 
-        # 验证表格内容被提取
+        # Verify the table content is extracted
         assert "姓名" in result
         assert "年龄" in result
         assert "张三" in result
         assert "李四" in result
 
     def test_read_empty_docx(self, empty_docx_file: Path) -> None:
-        """测试读取空的 DOCX 文件。
+        """Test reading an empty DOCX file.
 
         Args:
-            empty_docx_file: 空 DOCX 文件路径
+            empty_docx_file: Empty DOCX file path
         """
         reader = DocxReader()
         result = reader.read(str(empty_docx_file))
 
-        # 空文档应返回提示信息
+        # An empty document should return a prompt message
         assert "No text found" in result
 
     def test_read_corrupted_docx(self, fixtures_dir: Path) -> None:
-        """测试读取损坏的 DOCX 文件。
+        """Test reading a corrupted DOCX file.
 
         Args:
-            fixtures_dir: fixtures 目录路径
+            fixtures_dir: Fixtures directory path
         """
         reader = DocxReader()
         corrupted_file = fixtures_dir / "corrupted.docx"
         result = reader.read(str(corrupted_file))
 
-        # 损坏文件应返回错误信息
+        # A corrupted file should return an error message
         assert "Error reading DOCX" in result
 
     def test_read_nonexistent_file(self) -> None:
-        """测试读取不存在的文件。"""
+        """Test reading a nonexistent file."""
         reader = DocxReader()
         result = reader.read("/nonexistent/path/file.docx")
 
@@ -120,48 +122,48 @@ class TestDocxReader:
 
 
 class TestPdfReader:
-    """PdfReader 测试类。"""
+    """Test class for PdfReader."""
 
     def test_read_pdf_with_content(self, sample_pdf_file: Path) -> None:
-        """测试读取包含内容的 PDF 文件。
+        """Test reading a PDF file with content.
 
         Args:
-            sample_pdf_file: 示例 PDF 文件路径
+            sample_pdf_file: Sample PDF file path
         """
         reader = PdfReader()
         result = reader.read(str(sample_pdf_file))
 
-        # 验证提取的内容包含预期文本
+        # Verify the extracted content contains the expected text
         assert "test PDF document" in result
         assert "multiple lines" in result
 
     def test_read_empty_pdf(self, empty_pdf_file: Path) -> None:
-        """测试读取空的 PDF 文件。
+        """Test reading an empty PDF file.
 
         Args:
-            empty_pdf_file: 空 PDF 文件路径
+            empty_pdf_file: Empty PDF file path
         """
         reader = PdfReader()
         result = reader.read(str(empty_pdf_file))
 
-        # 空 PDF 应返回提示信息
+        # An empty PDF should return a prompt message
         assert "No text found" in result
 
     def test_read_corrupted_pdf(self, fixtures_dir: Path) -> None:
-        """测试读取损坏的 PDF 文件。
+        """Test reading a corrupted PDF file.
 
         Args:
-            fixtures_dir: fixtures 目录路径
+            fixtures_dir: Fixtures directory path
         """
         reader = PdfReader()
         corrupted_file = fixtures_dir / "corrupted.pdf"
         result = reader.read(str(corrupted_file))
 
-        # 损坏文件应返回错误信息
+        # A corrupted file should return an error message
         assert "Error reading PDF" in result
 
     def test_read_nonexistent_file(self) -> None:
-        """测试读取不存在的文件。"""
+        """Test reading a nonexistent file."""
         reader = PdfReader()
         result = reader.read("/nonexistent/path/file.pdf")
 
@@ -169,149 +171,185 @@ class TestPdfReader:
 
 
 class TestTxtReader:
-    """TxtReader 测试类。"""
+    """Test class for TxtReader."""
 
     def test_read_utf8_txt(self, sample_txt_file: Path) -> None:
-        """测试读取 UTF-8 编码的 TXT 文件。
+        """Test reading a UTF-8 encoded TXT file.
 
         Args:
-            sample_txt_file: 示例 TXT 文件路径
+            sample_txt_file: Sample TXT file path
         """
         reader = TxtReader()
         result = reader.read(str(sample_txt_file))
 
-        # 验证提取的内容
+        # Verify the extracted content
         assert "测试文本文件" in result
         assert "多行内容" in result
         assert "中文" in result
 
     def test_read_gbk_txt(self, sample_txt_gbk_file: Path) -> None:
-        """测试读取 GBK 编码的 TXT 文件。
+        """Test reading a GBK encoded TXT file.
 
         Args:
-            sample_txt_gbk_file: GBK 编码的示例 TXT 文件路径
+            sample_txt_gbk_file: Sample GBK encoded TXT file path
         """
         reader = TxtReader()
         result = reader.read(str(sample_txt_gbk_file))
 
-        # 验证 GBK 编码文件被正确读取
+        # Verify the GBK encoded file is read correctly
         assert "GBK 编码" in result
         assert "中文内容" in result
 
     def test_read_empty_txt(self, empty_txt_file: Path) -> None:
-        """测试读取空的 TXT 文件。
+        """Test reading an empty TXT file.
 
         Args:
-            empty_txt_file: 空 TXT 文件路径
+            empty_txt_file: Empty TXT file path
         """
         reader = TxtReader()
         result = reader.read(str(empty_txt_file))
 
-        # 空文件应返回提示信息
+        # An empty file should return a prompt message
         assert "No text found" in result
 
     def test_read_binary_file(self, fixtures_dir: Path) -> None:
-        """测试读取二进制文件。
+        """Test reading a binary file.
 
-        注意：latin-1 编码可以解码任何字节序列，所以二进制文件
-        会被 latin-1 成功读取，返回解码后的内容。
+        Note: latin-1 can decode any byte sequence, so a binary file
+        will be read successfully by latin-1 and its decoded content returned.
 
         Args:
-            fixtures_dir: fixtures 目录路径
+            fixtures_dir: Fixtures directory path
         """
         reader = TxtReader()
         binary_file = fixtures_dir / "binary.txt"
         result = reader.read(str(binary_file))
 
-        # latin-1 可以解码任何字节，所以会返回解码后的内容
-        # 验证返回的是解码后的内容，而不是错误信息
+        # latin-1 can decode any byte, so the decoded content is returned
+        # Verify that decoded content is returned rather than an error message
         assert result != ""
         assert "Error reading TXT" not in result
 
     def test_read_nonexistent_file(self) -> None:
-        """测试读取不存在的文件。"""
+        """Test reading a nonexistent file."""
         reader = TxtReader()
         result = reader.read("/nonexistent/path/file.txt")
 
-        # 不存在的文件应返回错误信息
+        # A nonexistent file should return an error message
         assert "Error reading TXT" in result
 
 
 class TestExcelReader:
-    """ExcelReader 测试类。"""
+    """Test class for ExcelReader."""
 
     def test_read_excel_with_content(self, sample_excel_file: Path) -> None:
-        """测试读取包含内容的 Excel 文件。
+        """Test reading an Excel file with content.
 
         Args:
-            sample_excel_file: 示例 Excel 文件路径
+            sample_excel_file: Sample Excel file path
         """
         reader = ExcelReader()
         result = reader.read(str(sample_excel_file))
 
-        # 验证提取的内容包含工作表标题
+        # Verify the extracted content contains worksheet titles
         assert "=== Sheet: Sheet1 ===" in result
         assert "=== Sheet: Sheet2 ===" in result
 
     def test_read_excel_sheet1_data(self, sample_excel_file: Path) -> None:
-        """测试读取 Excel Sheet1 数据。
+        """Test reading Excel Sheet1 data.
 
         Args:
-            sample_excel_file: 示例 Excel 文件路径
+            sample_excel_file: Sample Excel file path
         """
         reader = ExcelReader()
         result = reader.read(str(sample_excel_file))
 
-        # 验证 Sheet1 数据
+        # Verify Sheet1 data
         assert "姓名" in result
         assert "年龄" in result
         assert "张三" in result
         assert "李四" in result
 
     def test_read_excel_sheet2_data(self, sample_excel_file: Path) -> None:
-        """测试读取 Excel Sheet2 数据。
+        """Test reading Excel Sheet2 data.
 
         Args:
-            sample_excel_file: 示例 Excel 文件路径
+            sample_excel_file: Sample Excel file path
         """
         reader = ExcelReader()
         result = reader.read(str(sample_excel_file))
 
-        # 验证 Sheet2 数据
+        # Verify Sheet2 data
         assert "产品" in result
         assert "价格" in result
         assert "苹果" in result
         assert "香蕉" in result
 
     def test_read_empty_excel(self, empty_excel_file: Path) -> None:
-        """测试读取空的 Excel 文件。
+        """Test reading an empty Excel file.
 
         Args:
-            empty_excel_file: 空 Excel 文件路径
+            empty_excel_file: Empty Excel file path
         """
         reader = ExcelReader()
         result = reader.read(str(empty_excel_file))
 
-        # 空 Excel 应返回提示信息或工作表标题
-        # 由于有空工作表，可能返回工作表标题但没有数据
+        # An empty Excel file should return a prompt message or worksheet titles
+        # Because there is an empty worksheet, titles may be returned with no data
         assert "Sheet" in result or "No text found" in result
 
     def test_read_corrupted_excel(self, fixtures_dir: Path) -> None:
-        """测试读取损坏的 Excel 文件。
+        """Test reading a corrupted Excel file.
 
         Args:
-            fixtures_dir: fixtures 目录路径
+            fixtures_dir: Fixtures directory path
         """
         reader = ExcelReader()
         corrupted_file = fixtures_dir / "corrupted.xlsx"
         result = reader.read(str(corrupted_file))
 
-        # 损坏文件应返回错误信息
+        # A corrupted file should return an error message
         assert "Error reading Excel" in result
 
     def test_read_nonexistent_file(self) -> None:
-        """测试读取不存在的文件。"""
+        """Test reading a nonexistent file."""
         reader = ExcelReader()
         result = reader.read("/nonexistent/path/file.xlsx")
+
+        assert "Error reading Excel" in result
+
+class TestXlsReader:
+    """Test class for XlsReader."""
+
+    def test_read_xls_with_content(self, sample_xls_file: Path) -> None:
+        """Test reading a legacy XLS file with content.
+
+        Args:
+            sample_xls_file: Sample XLS file path
+        """
+        reader = XlsReader()
+        result = reader.read(str(sample_xls_file))
+
+        assert "=== Sheet: Sheet1 ===" in result
+        assert "Name" in result
+        assert "Value" in result
+        assert "A" in result
+        assert "2" in result
+
+    def test_read_corrupted_xls(self, fixtures_dir: Path) -> None:
+        """Test reading a corrupted XLS file.
+
+        Args:
+            fixtures_dir: Fixtures directory path
+        """
+        reader = XlsReader()
+        result = reader.read(str(fixtures_dir / "corrupted.xls"))
+
+        assert "Error reading Excel" in result
+
+    def test_read_nonexistent_xls(self) -> None:
+        """Test reading a nonexistent XLS file."""
+        reader = XlsReader()
+        result = reader.read("/nonexistent/path/file.xls")
 
         assert "Error reading Excel" in result

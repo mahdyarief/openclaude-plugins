@@ -90,7 +90,7 @@ reader = ExcelReader()
 content = reader.read("/path/to/spreadsheet.xlsx")
 ```
 
-**支持扩展名：** `.xlsx`, `.xls`
+**支持扩展名：** `.xlsx`（旧版 `.xls` 由 `XlsReader` 处理）
 
 **特性：**
 - 多工作表支持
@@ -152,7 +152,7 @@ readers_map = DocumentReaderFactory._readers
 | `.docx` | DocxReader |
 | `.pdf` | PdfReader |
 | `.xlsx` | ExcelReader |
-| `.xls` | ExcelReader |
+| `.xls` | XlsReader |
 
 ---
 

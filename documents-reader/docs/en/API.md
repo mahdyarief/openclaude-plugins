@@ -90,7 +90,7 @@ reader = ExcelReader()
 content = reader.read("/path/to/spreadsheet.xlsx")
 ```
 
-**Supported Extensions:** `.xlsx`, `.xls`
+**Supported Extensions:** `.xlsx` (legacy `.xls` is handled by `XlsReader`)
 
 **Features:**
 - Multi-sheet support
@@ -152,7 +152,7 @@ readers_map = DocumentReaderFactory._readers
 | `.docx` | DocxReader |
 | `.pdf` | PdfReader |
 | `.xlsx` | ExcelReader |
-| `.xls` | ExcelReader |
+| `.xls` | XlsReader |
 
 ---
 

@@ -1,1 +1,1 @@
-"""测试 fixtures 目录。"""
+"""Test fixtures directory."""

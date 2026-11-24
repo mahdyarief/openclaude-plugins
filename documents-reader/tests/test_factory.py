@@ -1,10 +1,10 @@
-"""DocumentReaderFactory 工厂类测试。
+"""Tests for the DocumentReaderFactory class.
 
-测试内容：
-- get_reader 方法测试
-- is_supported 方法测试
-- 支持的文件类型验证
-- 不支持的文件类型处理
+Coverage:
+- get_reader method
+- is_supported method
+- Supported file types
+- Unsupported file type handling
 """
 
 import pytest
@@ -15,13 +15,14 @@ from mcp_documents_reader import (
     ExcelReader,
     PdfReader,
     TxtReader,
+    XlsReader,
 )
 
 
 class TestDocumentReaderFactory:
-    """DocumentReaderFactory 工厂类测试类。"""
+    """Test class for DocumentReaderFactory."""
 
-    # ==================== get_reader 方法测试 ====================
+    # ==================== get_reader method tests ====================
 
     @pytest.mark.parametrize(
         "file_path,expected_reader",
@@ -34,24 +35,24 @@ class TestDocumentReaderFactory:
             ("report.PDF", PdfReader),
             ("data.xlsx", ExcelReader),
             ("data.XLSX", ExcelReader),
-            ("data.xls", ExcelReader),
-            ("data.XLS", ExcelReader),
+            ("data.xls", XlsReader),
+            ("data.XLS", XlsReader),
         ],
     )
     def test_get_reader_supported_types(
         self, file_path: str, expected_reader: type
     ) -> None:
-        """测试获取支持的文件类型的 Reader。
+        """Test getting the Reader for supported file types.
 
         Args:
-            file_path: 文件路径
-            expected_reader: 期望的 Reader 类型
+            file_path: File path
+            expected_reader: Expected Reader type
         """
         reader = DocumentReaderFactory.get_reader(file_path)
         assert isinstance(reader, expected_reader)
 
     def test_get_reader_unsupported_type(self) -> None:
-        """测试获取不支持的文件类型应抛出异常。"""
+        """Test that unsupported file types raise an exception."""
         with pytest.raises(ValueError) as exc_info:
             DocumentReaderFactory.get_reader("test.unknown")
 
@@ -73,30 +74,30 @@ class TestDocumentReaderFactory:
         ],
     )
     def test_get_reader_various_unsupported_types(self, file_path: str) -> None:
-        """测试各种不支持的文件类型。
+        """Test various unsupported file types.
 
         Args:
-            file_path: 不支持的文件路径
+            file_path: Unsupported file path
         """
         with pytest.raises(ValueError):
             DocumentReaderFactory.get_reader(file_path)
 
     def test_get_reader_with_path_containing_dots(self) -> None:
-        """测试文件名包含多个点的情况。"""
+        """Test a filename that contains multiple dots."""
         reader = DocumentReaderFactory.get_reader("my.document.final.txt")
         assert isinstance(reader, TxtReader)
 
     def test_get_reader_with_directory_path(self) -> None:
-        """测试包含目录路径的文件。"""
+        """Test a file path that includes directories."""
         reader = DocumentReaderFactory.get_reader("/path/to/document.pdf")
         assert isinstance(reader, PdfReader)
 
     def test_get_reader_with_windows_path(self) -> None:
-        """测试 Windows 路径格式。"""
+        """Test Windows path format."""
         reader = DocumentReaderFactory.get_reader(r"C:\Users\test\document.xlsx")
         assert isinstance(reader, ExcelReader)
 
-    # ==================== is_supported 方法测试 ====================
+    # ==================== is_supported method tests ====================
 
     @pytest.mark.parametrize(
         "file_path",
@@ -114,10 +115,10 @@ class TestDocumentReaderFactory:
         ],
     )
     def test_is_supported_returns_true(self, file_path: str) -> None:
-        """测试支持的文件类型返回 True。
+        """Test that supported file types return True.
 
         Args:
-            file_path: 支持的文件路径
+            file_path: Supported file path
         """
         assert DocumentReaderFactory.is_supported(file_path) is True
 
@@ -136,29 +137,29 @@ class TestDocumentReaderFactory:
         ],
     )
     def test_is_supported_returns_false(self, file_path: str) -> None:
-        """测试不支持的文件类型返回 False。
+        """Test that unsupported file types return False.
 
         Args:
-            file_path: 不支持的文件路径
+            file_path: Unsupported file path
         """
         assert DocumentReaderFactory.is_supported(file_path) is False
 
     def test_is_supported_case_insensitive(self) -> None:
-        """测试文件扩展名大小写不敏感。"""
+        """Test that file extension matching is case-insensitive."""
         assert DocumentReaderFactory.is_supported("test.TXT") is True
         assert DocumentReaderFactory.is_supported("test.Docx") is True
         assert DocumentReaderFactory.is_supported("test.PdF") is True
 
     def test_is_supported_with_complex_paths(self) -> None:
-        """测试复杂路径的支持检测。"""
+        """Test support detection for complex paths."""
         assert DocumentReaderFactory.is_supported("/a/b/c/d/file.txt") is True
         assert DocumentReaderFactory.is_supported(r"C:\Users\test\file.docx") is True
         assert DocumentReaderFactory.is_supported("./relative/path/file.pdf") is True
 
-    # ==================== 返回新实例测试 ====================
+    # ==================== New instance tests ====================
 
     def test_get_reader_returns_new_instance(self) -> None:
-        """测试每次调用返回新的 Reader 实例。"""
+        """Test that each call returns a new Reader instance."""
         reader1 = DocumentReaderFactory.get_reader("test.txt")
         reader2 = DocumentReaderFactory.get_reader("test.txt")
 
@@ -166,10 +167,10 @@ class TestDocumentReaderFactory:
         assert isinstance(reader1, TxtReader)
         assert isinstance(reader2, TxtReader)
 
-    # ==================== 内部映射测试 ====================
+    # ==================== Internal mapping tests ====================
 
     def test_readers_mapping_contains_expected_types(self) -> None:
-        """测试内部映射包含所有预期的文件类型。"""
+        """Test that the internal mapping contains all expected file types."""
         readers = DocumentReaderFactory._readers
 
         assert ".txt" in readers
@@ -182,4 +183,4 @@ class TestDocumentReaderFactory:
         assert readers[".docx"] == DocxReader
         assert readers[".pdf"] == PdfReader
         assert readers[".xlsx"] == ExcelReader
-        assert readers[".xls"] == ExcelReader
+        assert readers[".xls"] == XlsReader

@@ -94,11 +94,12 @@ class TxtReader(DocumentReader):
 
 
 class ExcelReader(DocumentReader):
-    """Excel document reader implementation"""
+    """Excel (.xlsx) document reader implementation"""
 
     @override
     def read(self, file_path: str) -> str:
-        """Read and extract text from Excel file"""
+        """Read and extract text from an XLSX file"""
+        wb = None
         try:
             wb = load_workbook(file_path, read_only=True)
             text = []
@@ -115,7 +116,43 @@ class ExcelReader(DocumentReader):
                 text.append("")
 
             extracted_text = "\n".join(text)
-            wb.close()
+            return (
+                extracted_text if extracted_text else "No text found in the Excel file."
+            )
+        except Exception as e:
+            return f"Error reading Excel: {str(e)}"
+        finally:
+            if wb is not None:
+                wb.close()
+
+
+class XlsReader(DocumentReader):
+    """Legacy Excel (.xls) reader implementation backed by xlrd"""
+
+    @override
+    def read(self, file_path: str) -> str:
+        """Read and extract text from an XLS file"""
+        try:
+            import xlrd  # xlrd 2.x reads legacy BIFF .xls only
+
+            book = xlrd.open_workbook(file_path)
+            text = []
+
+            for sheet in book.sheets():
+                text.append(f"=== Sheet: {sheet.name} ===")
+
+                for row_index in range(sheet.nrows):
+                    row_text = []
+                    for value in sheet.row_values(row_index):
+                        if isinstance(value, float) and value.is_integer():
+                            value = int(value)
+                        row_text.append(str(value).strip())
+                    if any(row_text):
+                        text.append("\t".join(row_text))
+
+                text.append("")
+
+            extracted_text = "\n".join(text)
             return (
                 extracted_text if extracted_text else "No text found in the Excel file."
             )
@@ -131,7 +168,7 @@ class DocumentReaderFactory:
         ".docx": DocxReader,
         ".pdf": PdfReader,
         ".xlsx": ExcelReader,
-        ".xls": ExcelReader,
+        ".xls": XlsReader,
     }
 
     @classmethod

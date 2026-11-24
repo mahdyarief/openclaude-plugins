@@ -1,8 +1,8 @@
-"""pytest 配置文件和共享 fixtures。
+"""pytest configuration and shared fixtures.
 
-本模块提供测试所需的共享配置和 fixture 对象，包括：
-- 测试文档文件路径
-- 临时目录管理
+Provides the shared configuration and fixture objects used by the tests:
+- Test document file paths
+- Temporary directory management
 """
 
 import tempfile
@@ -17,137 +17,150 @@ FIXTURES_DIR = PROJECT_ROOT / "tests" / "fixtures"
 
 @pytest.fixture
 def fixtures_dir() -> Path:
-    """获取测试 fixtures 目录路径。
+    """Get the test fixtures directory path.
 
     Returns:
-        Path: fixtures 目录的 Path 对象
+        Path: Path object for the fixtures directory
     """
     return FIXTURES_DIR
 
 
 @pytest.fixture
 def sample_txt_file(fixtures_dir: Path) -> Path:
-    """获取示例 TXT 文件路径。
+    """Get the sample TXT file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 示例 TXT 文件路径
+        Path: Sample TXT file path
     """
     return fixtures_dir / "sample.txt"
 
 
 @pytest.fixture
 def sample_txt_gbk_file(fixtures_dir: Path) -> Path:
-    """获取 GBK 编码的示例 TXT 文件路径。
+    """Get the sample GBK-encoded TXT file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: GBK 编码的示例 TXT 文件路径
+        Path: Sample GBK-encoded TXT file path
     """
     return fixtures_dir / "sample_gbk.txt"
 
 
 @pytest.fixture
 def sample_docx_file(fixtures_dir: Path) -> Path:
-    """获取示例 DOCX 文件路径。
+    """Get the sample DOCX file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 示例 DOCX 文件路径
+        Path: Sample DOCX file path
     """
     return fixtures_dir / "sample.docx"
 
 
 @pytest.fixture
 def sample_pdf_file(fixtures_dir: Path) -> Path:
-    """获取示例 PDF 文件路径。
+    """Get the sample PDF file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 示例 PDF 文件路径
+        Path: Sample PDF file path
     """
     return fixtures_dir / "sample.pdf"
 
 
 @pytest.fixture
 def sample_excel_file(fixtures_dir: Path) -> Path:
-    """获取示例 Excel 文件路径。
+    """Get the sample Excel file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 示例 Excel 文件路径
+        Path: Sample Excel file path
     """
     return fixtures_dir / "sample.xlsx"
 
 
 @pytest.fixture
-def empty_txt_file(fixtures_dir: Path) -> Path:
-    """获取空 TXT 文件路径。
+def sample_xls_file(fixtures_dir: Path) -> Path:
+    """Get the sample legacy Excel (.xls) file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 空 TXT 文件路径
+        Path: Sample .xls file path
+    """
+    return fixtures_dir / "sample.xls"
+
+
+@pytest.fixture
+def empty_txt_file(fixtures_dir: Path) -> Path:
+    """Get the empty TXT file path.
+
+    Args:
+        fixtures_dir: Fixtures directory path
+
+    Returns:
+        Path: Empty TXT file path
     """
     return fixtures_dir / "empty.txt"
 
 
 @pytest.fixture
 def empty_docx_file(fixtures_dir: Path) -> Path:
-    """获取空 DOCX 文件路径。
+    """Get the empty DOCX file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 空 DOCX 文件路径
+        Path: Empty DOCX file path
     """
     return fixtures_dir / "empty.docx"
 
 
 @pytest.fixture
 def empty_pdf_file(fixtures_dir: Path) -> Path:
-    """获取空 PDF 文件路径。
+    """Get the empty PDF file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 空 PDF 文件路径
+        Path: Empty PDF file path
     """
     return fixtures_dir / "empty.pdf"
 
 
 @pytest.fixture
 def empty_excel_file(fixtures_dir: Path) -> Path:
-    """获取空 Excel 文件路径。
+    """Get the empty Excel file path.
 
     Args:
-        fixtures_dir: fixtures 目录路径
+        fixtures_dir: Fixtures directory path
 
     Returns:
-        Path: 空 Excel 文件路径
+        Path: Empty Excel file path
     """
     return fixtures_dir / "empty.xlsx"
 
 
 @pytest.fixture
 def temp_document_dir() -> Generator[str, None, None]:
-    """创建临时文档目录。
+    """Create a temporary document directory.
 
     Yields:
-        str: 临时目录路径
+        str: Temporary directory path
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         yield tmpdir

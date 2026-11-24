@@ -1,1 +1,1 @@
-"""测试包初始化文件。"""
+"""Test package initialization."""
