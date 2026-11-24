@@ -33,23 +33,35 @@ uvx --version
 ## Install Plugin
 
 ```bash
-openclaude plugin install project-memory@local-plugins
+openclaude plugin install project-memory@mahdyarief
 ```
 
 ## Tools
 
 | Tool | Description |
 |---|---|
-| `save` | Store a new memory in project MEMORY.md |
-| `update` | Incrementally update existing memory via SEARCH/REPLACE |
-| `search` | Find memories by substring with line numbers |
-| `read` | Full read of memory file with line numbers |
-| `dream` | Consolidate, deduplicate, and clean up memories |
+| `get_project_memory` | Read MEMORY.md (`head_only=True` for a size + section TOC; `offset`/`limit` for chunks) |
+| `search_project_memory` | Find memories by substring with line numbers |
+| `update_project_memory` | Incremental update via one SEARCH/REPLACE block (preferred) |
+| `set_project_memory` | Full write — for new files or complete rewrites |
 
 ## How It Works
 
-- Memories are stored in `MEMORY.md` files in your project directory
-- Auto-read hook loads memory on first prompt of each session
+- Memories are stored in `MEMORY.md` at the project root
+- A `SessionStart` hook auto-creates the file (with a section scaffold) when a
+  project has none, then injects a bounded digest (line/byte count + headings) —
+  never the whole file, so context cost stays small
+- Auto-create only runs in directories that look like a project (`.git`,
+  `package.json`, `pyproject.toml`, `CLAUDE.md`, `.trail`, …) and never in the
+  home directory; disable with `PROJECT_MEMORY_AUTOCREATE=0`
 - Incremental updates via SEARCH/REPLACE patches (no full rewrites)
-- Dream consolidation auto-cleans when file exceeds 50KB
 - Size limit: 20K tokens per memory file
+
+## Troubleshooting
+
+- **`FileNotFoundError … MEMORY.md`** — the file did not exist. The hook creates
+  it on the next session start; to create it immediately, call
+  `set_project_memory` with a starter document.
+- **`PermissionError … not in allowed directories`** — the server only accepts
+  paths under the directory it was started in (the session project). Start the
+  session in that project, or pass the session project's own path.
