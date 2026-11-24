@@ -1,0 +1,10 @@
+{
+  "name": "slr-assist",
+  "version": "1.0.0",
+  "description": "Systematic literature review assistant: Kitchenham & Charters (2007) for conducting, PRISMA 2020 for reporting. File-based tools without a server (slr.py, Python stdlib): project init, PRISMA-S search log, RIS/BibTeX/CSV/JSON import with DOI/title dedup, staged screening with protocol exclusion codes and researcher sign-off, quality appraisal, extraction, PRISMA flow counts + Mermaid diagram, BibTeX/RIS export. 1 skill, 1 slash command (/slr).",
+  "author": {
+    "name": "mahdyarief"
+  },
+  "keywords": ["slr", "systematic-review", "prisma", "prisma-2020", "kitchenham", "screening", "research", "skill"],
+  "skills": "./skills"
+}

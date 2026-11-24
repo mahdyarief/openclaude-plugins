@@ -117,6 +117,12 @@
       "source": "./basecoat-ui",
       "description": "Basecoat UI for HTML — shadcn/ui look without React. File-based skills with 58 component markup references (variants, FSM states, anti-patterns), dashboard block patterns and chart blueprints. 2 slash commands. Skill-only, no MCP server, no background process.",
       "category": "development"
+    },
+    {
+      "name": "slr-assist",
+      "source": "./slr-assist",
+      "description": "Systematic literature review assistant: Kitchenham (conduct) + PRISMA 2020 (report). File-based tools without a server (slr.py, Python stdlib): search log, RIS/BibTeX/CSV/JSON import with dedup, staged screening with protocol exclusion codes and researcher sign-off, quality appraisal, extraction, PRISMA flow + Mermaid diagram, BibTeX/RIS export. 1 skill, /slr command.",
+      "category": "research"
     }
   ]
 }
