@@ -6,12 +6,6 @@
   },
   "plugins": [
     {
-      "name": "codebase-intelligence",
-      "source": "./codebase-intelligence",
-      "description": "Codebase intelligence — scan, search, analyze impact of any project directory",
-      "category": "development"
-    },
-    {
       "name": "vision-ocr",
       "source": "./vision-ocr",
       "description": "Vision OCR plugin for OpenClaude — extract text from images, PDFs, and URLs using RapidOCR (ONNX, CPU)",
@@ -44,19 +38,13 @@
     {
       "name": "project-memory",
       "source": "./project-memory",
-      "description": "Persistent project memory via MEMORY.md. Store, search, and incrementally update project knowledge across sessions.",
+      "description": "Persistent project memory via MEMORY.md. Store, search, and incrementally update project knowledge across sessions. SessionStart hook auto-creates MEMORY.md in new projects and injects a bounded section digest.",
       "category": "development"
     },
     {
       "name": "office-mcp",
       "source": "./office-mcp",
       "description": "MCP server for managing Word, Excel, and PowerPoint documents (docx, xlsx, pptx) — 47 tools for read, write, edit, format, and export via LibreOffice.",
-      "category": "development"
-    },
-    {
-      "name": "codebase-memory",
-      "source": "./codebase-memory",
-      "description": "Codebase Memory — high-performance codebase knowledge graph MCP server (native binary v0.10.2, 158 languages). Index repos in milliseconds, sub-ms structural queries. Tools: index_repository, search_graph, trace_path, get_code_snippet, query_graph, get_architecture, index_status, list_projects, search_code, check_index_coverage.",
       "category": "development"
     },
     {
