@@ -33,6 +33,7 @@ Trigger this skill whenever designing, scaffolding, or generating UI code for:
    - Use semantic CSS tokens exclusively: `var(--primary)`, `var(--secondary)`, `var(--background)`, `var(--foreground)`, `var(--card)`, `var(--card-foreground)`, `var(--muted)`, `var(--muted-foreground)`, `var(--border)`, `var(--destructive)`.
    - Hardcoded hex codes (`#09090b`, `#ffffff`) or low-contrast pairings are FORBIDDEN.
    - Theme resolver: Single dark mode strategy using `html.dark` class and `localStorage` key `"themeMode"` via `window.basecoat.theme`.
+   - Brand or domain colors (for example a clinical blue for hospitals) are set by overriding token values in `:root` and again in `.dark`, never by new classes. See [../basecoat/rules/lean.md](../basecoat/rules/lean.md) section 4.
 5. **Card 1px Ring Contract**:
    - The Basecoat `.card` component includes its own subtle 1px ring and shadow. Adding `border` or `border-border` to `.card` is strictly FORBIDDEN.
 6. **Deterministic Class Ordering**:
@@ -67,3 +68,4 @@ Consult the specialized dashboard guides before generating markup:
 - [page-types/settings.md](./page-types/settings.md) - Workspace settings and preferences
 - [page-types/reading-views.md](./page-types/reading-views.md) - Document viewers, detail slide-overs
 - [audit/checklist.md](./audit/checklist.md) - Quality inspection checklist and audit protocol
+- [../basecoat/rules/lean.md](../basecoat/rules/lean.md) - Lean single-file HTML: CDN setup, real 1.3 markup traps, token theming, mobile, zero-KB effects, theme-aware charts

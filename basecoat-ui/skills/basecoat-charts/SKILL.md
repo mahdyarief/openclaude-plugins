@@ -14,7 +14,8 @@ Basecoat Charts provides robust, theme-aware chart blueprints designed to integr
 3. **Glassmorphic Tooltip Markup**: Interactive chart tooltips must feature Basecoat glassmorphic styling: `<div class="rounded-lg border border-border bg-background/95 p-2.5 text-xs shadow-xl backdrop-blur-sm" data-chart-tooltip>...</div>` with indicator dot/line/dashed/badge and numeric value formatting with `tabular-nums`.
 4. **Screen-Reader Data Fallback**: Every chart blueprint embeds an accessible table fallback for assistive technology: `<table class="sr-only"><caption>${title}</caption><thead>...</thead><tbody>...</tbody></table>`.
 5. **Zero Framework Wrappers**: Do not require heavy framework wrappers like `react-apexcharts`. Initialize charts directly with client-side vanilla ApexCharts mounts across all 5 supported frameworks (`vanilla`, `astro`, `react`, `vue`, `svelte`).
-6. **SVG Fallback & Macro Dashboard Binding**: For offline dashboards without third-party dependencies, declarative Basecoat SVG area charts (`svg-area-chart`) and layout blocks like `dashboard-01` bind directly to `data-chart-id="area-interactive"`.
+6. **Resolve Tokens Before Passing to ApexCharts**: ApexCharts cannot parse `oklch()` and breaks opacity on `var(...)` strings. Resolve each token to `rgb()` through a 1x1 canvas, give charts a numeric pixel height, and re-create them on `basecoat:themechange`. See [../basecoat/rules/lean.md](../basecoat/rules/lean.md) section 7.
+7. **SVG Fallback & Macro Dashboard Binding**: For offline dashboards without third-party dependencies, declarative Basecoat SVG area charts (`svg-area-chart`) and layout blocks like `dashboard-01` bind directly to `data-chart-id="area-interactive"`.
 
 ## Chart Categories
 

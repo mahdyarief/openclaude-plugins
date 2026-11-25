@@ -22,7 +22,7 @@ Basecoat is a headless component library: pure CSS classes on semantic HTML with
 <script src="https://cdn.jsdelivr.net/npm/basecoat-css@1.3.0/dist/js/all.min.js" defer></script>
 ```
 
-The CDN bundle contains only the Tailwind utilities that Basecoat itself uses. Do not introduce utilities like `bg-primary`; use semantic tokens such as `var(--primary)` inside an inline `<style>` instead. For a fully offline file, inline both assets, roughly 295KB CSS and 56KB JS.
+The CDN bundle contains only the Tailwind utilities that Basecoat itself uses. For layout utilities and token utilities such as `bg-primary`, add the Tailwind v4 browser runtime with an `@theme inline` mapping and the border-color reset described in [rules/lean.md](./rules/lean.md). Without the runtime, use semantic tokens such as `var(--primary)`. For a fully offline file, inline both assets, roughly 295KB CSS and 56KB JS.
 
 Style packs replace the filename: `basecoat-{nova|maia|lyra|mira|luma|sera|rhea}.cdn.min.css`. The plain `basecoat.cdn.min.css` is Vega, the default. Dark mode is `class="dark"` on `<html>`.
 
@@ -45,11 +45,12 @@ Read [install.md](./install.md) for Astro, Vite, Next.js, SvelteKit, and HTMX sp
 4. Icons use `data-icon="inline-start"` or `data-icon="inline-end"`. Never add sizing classes to icon SVGs.
 5. Utility order: Basecoat class, layout, position, alignment, sizing, spacing, typography, background, border, effects, state.
 6. No raw colors and no `space-x/y-*`; use `flex gap-*`. Use `size-*` for symmetrical elements.
+7. Stay lean: no hand-written component CSS, no class names that collide with Basecoat components, theme only by overriding token values, and no animation libraries. Read [rules/lean.md](./rules/lean.md) before building a full page.
 
 ## Component Workflow
 
 1. Identify the intent, not the name. "Confirm a destructive action" maps to alert-dialog, not button.
 2. Read `components/<name>.md` before writing markup. Never invent Basecoat class names.
 3. Copy the Anatomy HTML, keep its `class` and `data-*` attributes, and replace only the content.
-4. Apply the matching rule file: composition [rules/composition.md](./rules/composition.md), forms [rules/forms.md](./rules/forms.md), icons [rules/icons.md](./rules/icons.md), styling [rules/styling.md](./rules/styling.md).
+4. Apply the matching rule file: lean pages [rules/lean.md](./rules/lean.md), composition [rules/composition.md](./rules/composition.md), forms [rules/forms.md](./rules/forms.md), icons [rules/icons.md](./rules/icons.md), styling [rules/styling.md](./rules/styling.md).
 5. Re-read the Incorrect Anti-Pattern example in the component file before finishing.

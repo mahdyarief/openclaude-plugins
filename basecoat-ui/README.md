@@ -9,7 +9,7 @@ no Node entry point, and no background process.
 
 | Path | Contents |
 |---|---|
-| `skills/basecoat/` | Core protocol, 58 component references, rules, design system, install guide |
+| `skills/basecoat/` | Core protocol, 58 component references, rules (including `rules/lean.md` for lean single-file HTML), design system, install guide |
 | `skills/basecoat-dashboard/` | Page blueprints, block patterns, audit checklist |
 | `skills/basecoat-charts/` | ApexCharts and SVG chart blueprints |
 | `commands/` | `/basecoat-ui:find <intent>` and `/basecoat-ui:component <name>` |
