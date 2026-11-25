@@ -97,6 +97,11 @@ Short component docs can lag behind the CSS. When in doubt, the shipped CSS sele
 - Do let wide data scroll inside its card: tables in `.table-container`, heatmaps in
   `overflow-x-auto` with a `min-w-xl` inner wrapper.
 - Do test at 390 px and check `document.documentElement.scrollWidth === clientWidth`.
+- Do style scrollbars with Basecoat's built-in classes, never with your own
+  `::-webkit-scrollbar` CSS: `.scrollbar` on `<html>` for the page, and
+  `.scrollbar .scrollbar-thin` on every inner scroll area (`.table-container`,
+  `overflow-x-auto` heatmap wrappers, chat logs, sheet bodies). The colors come from
+  `--scrollbar-thumb` and `--scrollbar-track`, so they follow light and dark mode.
 
 ## 6. Effects that cost nothing
 
@@ -153,6 +158,7 @@ Short component docs can lag behind the CSS. When in doubt, the shipped CSS sele
 - [ ] Every token overridden in `:root` is redefined in `.dark`.
 - [ ] Border reset to `var(--border)` is present when the Tailwind runtime is loaded.
 - [ ] No horizontal page scroll at 390 px; wide tables and heatmaps scroll inside their card.
+- [ ] Every scroll area carries `.scrollbar` (plus `.scrollbar-thin` inside the page).
 - [ ] Statuses use variant plus icon plus label, not color alone.
 - [ ] Charts read tokens through `col()` and re-render on `basecoat:themechange`.
 - [ ] All motion is disabled under `prefers-reduced-motion`.

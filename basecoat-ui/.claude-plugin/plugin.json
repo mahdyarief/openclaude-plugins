@@ -1,6 +1,6 @@
 {
   "name": "basecoat-ui",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Basecoat UI for HTML: the shadcn/ui look without React. File-based skills with 58 component markup references, guardrails, dashboard blocks and chart blueprints. No MCP server and no background process.",
   "author": {
     "name": "Žygimantas Jasiulionis / Intellmedia (upstream)",
