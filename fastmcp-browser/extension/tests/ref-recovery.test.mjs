@@ -106,3 +106,46 @@ test('an unknown ref is never resolved', () => {
   const refs = createReferenceStore();
   assert.throws(() => refs.resolve('e404', refs.revision), error => error.code === 'ELEMENT_NOT_FOUND');
 });
+
+test('a ref expires when the page URL changes under it', () => {
+  // On an SPA the JS world survives a route change, so a node from the previous
+  // view can still be isConnected — resolving it would act on the wrong page.
+  let url = 'https://fixture.test/step-1';
+  const refs = createReferenceStore(() => url);
+  const node = { isConnected: true };
+  const ref = refs.refFor(node, 'e', { role: 'button', name: 'Next' });
+  assert.equal(refs.resolve(ref, refs.revision), node);
+
+  url = 'https://fixture.test/step-2';
+  assert.throws(() => refs.resolve(ref, refs.revision), error => error.code === 'STALE_REF' && error.navigated === true);
+});
+
+test('a hash-only change does not expire refs', () => {
+  // CTFd opens a challenge as #Challenge-96 without replacing the document, so
+  // every ref minted before that hash change must stay resolvable. Comparing the
+  // full href made ref-based actions fail forever on such pages while snapshots
+  // (which mint new refs) kept working.
+  let url = 'https://ctf.test/challenges';
+  const refs = createReferenceStore(() => url);
+  const node = { isConnected: true };
+  const ref = refs.refFor(node, 'e', { role: 'textbox', name: 'Flag' });
+
+  url = 'https://ctf.test/challenges#AI%20Rule-96';
+
+  assert.equal(refs.resolve(ref, refs.revision), node);
+});
+
+test('reset re-anchors the store so refs minted on the new page resolve', () => {
+  // After a navigation the caller re-snapshots (reset), which clears the map and
+  // records the new URL — refs minted from that point must resolve normally, or
+  // the store would be permanently poisoned by the first route change.
+  let url = 'https://fixture.test/a';
+  const refs = createReferenceStore(() => url);
+  refs.refFor({ isConnected: true }, 'e', { role: 'link', name: 'Home' });
+
+  url = 'https://fixture.test/b';
+  refs.reset();
+  const node = { isConnected: true };
+  const fresh = refs.refFor(node, 'e', { role: 'link', name: 'Home' });
+  assert.equal(refs.resolve(fresh, refs.revision), node);
+});

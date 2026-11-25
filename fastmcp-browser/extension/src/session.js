@@ -73,6 +73,24 @@ export function createSessionManager({
     }
   }
 
+  // Memory Saver discards background tabs, and a discarded tab answers every
+  // injected call with an empty result until the user revisits it. Tabs the
+  // agent is driving must survive that: opt them out as soon as they join the
+  // group. Browsers without autoDiscardable reject the update harmlessly.
+  async function keepAlive(tabId) {
+    try {
+      // Only write when the flag actually needs changing: tabs.update is also
+      // how this module navigates, and a redundant write there would look like
+      // a navigation to callers that watch the tab.
+      if (typeof api.tabs.get !== 'function') return;
+      const tab = await api.tabs.get(tabId);
+      if (!tab || tab.autoDiscardable === false) return;
+      await api.tabs.update(tabId, { autoDiscardable: false });
+    } catch {
+      // older Firefox has no autoDiscardable; wakeTab still covers it
+    }
+  }
+
   async function groupTab(tabId) {
     if (!supportsNativeGroups()) return;
     const s = session;
@@ -101,17 +119,38 @@ export function createSessionManager({
 
   let opening = Promise.resolve();
 
+  // Two URLs point at the same page when origin, path (ignoring a trailing
+  // slash) and query match; only the hash may differ.
+  function samePage(a, b) {
+    try {
+      const ua = new URL(a);
+      const ub = new URL(b);
+      const trim = path => path.replace(/\/$/, '');
+      return ua.origin === ub.origin && trim(ua.pathname) === trim(ub.pathname) && ua.search === ub.search;
+    } catch {
+      return false;
+    }
+  }
+
   return {
     mode,
 
     async openTab(url, { newTab = false } = {}) {
       const operation = opening.then(async () => {
         const s = await ensure();
-        const openTabs = newTab ? [] : await api.tabs.query({});
+        const groupTabs = await this.listTabs();
+        // A URL already loaded in the group is reused as-is — no create, no
+        // navigation, so the model revisiting a page does not reload it and a
+        // second site does not clobber the first tab.
+        if (!newTab) {
+          const already = groupTabs.find(tab => tab.url && samePage(tab.url, url));
+          if (already) return { ...already, reused: true };
+        }
         // Native groups are the source of truth, so reuse any live tab already
         // in the Automation group rather than only the ids this session
         // recorded. s.tabIds can lag behind a tab the user dragged in, and
         // restricting reuse to recorded ids would open a duplicate instead.
+        const openTabs = newTab ? [] : await api.tabs.query({});
         const reusableTabId = newTab
           ? undefined
           : supportsNativeGroups() && s.groupId !== null
@@ -121,7 +160,20 @@ export function createSessionManager({
           ? await api.tabs.create({ url, active: false })
           : await api.tabs.update(reusableTabId, { url });
         const tabId = Number(tab?.id ?? reusableTabId);
+        // addTab groups the tab and returns the session info, but the caller
+        // (and the model) needs the tab's own identity: a fresh tab reports
+        // groupId -1 until grouping lands, so read it back instead of returning
+        // the create() snapshot that still says "outside the Automation group".
         if (Number.isInteger(tabId)) await this.addTab(tabId);
+        if (Number.isInteger(tabId)) {
+          try {
+            const live = await api.tabs.get(tabId);
+            if (live) return live;
+          } catch {
+            // the tab may already be gone; the create/update snapshot is still
+            // the best answer we have
+          }
+        }
         return tab;
       });
       opening = operation.catch(() => {});
@@ -133,6 +185,7 @@ export function createSessionManager({
       if (!Number.isInteger(tabId)) return infoOf(s);
       if (!s.tabIds.includes(tabId)) s.tabIds.push(tabId);
       await groupTab(tabId);
+      await keepAlive(tabId);
       await persist();
       return infoOf(s);
     },

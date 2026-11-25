@@ -1,8 +1,15 @@
 {
   "name": "fastmcp-browser",
-  "description": "FastMCP Browser — lightweight MCP server + WebExtension for AI browser automation. Drives your real browser (Chromium/Firefox) over loopback WebSocket via WebExtension APIs (no CDP, no Playwright). Exposes 33 tools (open, navigate, click, fill, snapshot, screenshot, etc.).",
-  "version": "0.1.0",
-  "keywords": ["browser", "automation", "webextension", "mcp", "playwright-alternative", "no-cdp"],
+  "description": "FastMCP Browser — lightweight MCP server + WebExtension for AI browser automation. Drives your real browser (Chromium/Firefox) over loopback WebSocket via WebExtension APIs (no CDP, no Playwright). Synced from upstream rayss868/fastmcp-browser; server builds on first run.",
+  "version": "0.9.0",
+  "keywords": [
+    "browser",
+    "automation",
+    "webextension",
+    "mcp",
+    "playwright-alternative",
+    "no-cdp"
+  ],
   "author": {
     "name": "rayss868"
   }

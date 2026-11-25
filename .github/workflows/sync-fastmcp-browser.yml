@@ -1,0 +1,53 @@
+name: Sync fastmcp-browser with upstream
+
+# Checks rayss868/fastmcp-browser for a new release every Monday and opens a
+# pull request that updates fastmcp-browser/ (plugin files are kept).
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sync from upstream release
+        id: sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/sync-fastmcp-browser.mjs | tee sync.log
+          grep -E '^(changed|version)=' sync.log >> "$GITHUB_OUTPUT"
+          rm sync.log
+
+      - name: Build and test server
+        if: steps.sync.outputs.changed == 'true'
+        working-directory: fastmcp-browser/server
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test
+
+      - name: Open pull request
+        if: steps.sync.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: sync/fastmcp-browser-${{ steps.sync.outputs.version }}
+          commit-message: 'chore(fastmcp-browser): sync upstream v${{ steps.sync.outputs.version }}'
+          title: 'chore(fastmcp-browser): sync upstream v${{ steps.sync.outputs.version }}'
+          body: |
+            Automated sync of `fastmcp-browser/` from upstream [rayss868/fastmcp-browser v${{ steps.sync.outputs.version }}](https://github.com/rayss868/fastmcp-browser/releases/tag/v${{ steps.sync.outputs.version }}).
+
+            Plugin-owned files (`.claude-plugin/`, `.mcp.json`, `launch.mjs`) are kept; `plugin.json` version is bumped. Server build and tests ran in this workflow.
+
+            After merging, reload the browser extension from the matching upstream release.
+          delete-branch: true

@@ -16,13 +16,19 @@ const PAGE_METHODS = new Set([
   'browser_pointer_drag',
   'browser_act',
   'browser_evaluate',
-  'browser_inspect'
+  'browser_inspect',
+  'browser_workspace_info',
+  'browser_workspace_select',
+  'browser_workspace_write',
+  'browser_workspace_read',
+  'browser_state'
 ]);
 
 const TAB_METHODS = new Set([
   'browser_close',
   'browser_focus',
   'browser_screenshot',
+  'browser_image',
   'browser_cookies',
   'browser_storage',
   'browser_download',
